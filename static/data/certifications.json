@@ -1,0 +1,114 @@
+[
+  {
+    "id": "cert_1",
+    "role": "AWS Certified",
+    "title": "Solutions Architect",
+    "subtitle": "Associate Level",
+    "vision": "Design highly available, scalable, and secure systems.",
+    "arch": "VPC, EC2, S3, RDS, IAM, Serverless architecture.",
+    "impl": "Applied to my company CAIP and ezGenAI infrastructure.",
+    "busCase": "Ensured 99.9% uptime for core internal GenAI APIs.",
+    "tags": [
+      "AWS",
+      "Architecture"
+    ]
+  },
+  {
+    "id": "cert_2",
+    "role": "AWS Partner",
+    "title": "Architecting SAP",
+    "subtitle": "AWS Cloud",
+    "vision": "Migrate complex enterprise workloads to the cloud.",
+    "arch": "High-Memory EC2, EFS, SAP HANA integration.",
+    "impl": "Mapped infrastructure and BOM calculations.",
+    "busCase": "Optimized enterprise migration costs.",
+    "tags": [
+      "SAP",
+      "Migration"
+    ]
+  },
+  {
+    "id": "cert_3",
+    "role": "AWS Certified",
+    "title": "AI Practitioner",
+    "subtitle": "Machine Learning",
+    "vision": "Leverage managed AI/ML services effectively.",
+    "arch": "Amazon Bedrock, SageMaker, Rekognition.",
+    "impl": "Built POCs for international telecom clients.",
+    "busCase": "Secured international SOW sign-offs.",
+    "tags": [
+      "AI/ML",
+      "Bedrock"
+    ]
+  },
+  {
+    "id": "cert_4",
+    "role": "AWS Certified",
+    "title": "Cloud Practitioner",
+    "subtitle": "Foundations",
+    "vision": "Understand core cloud computing principles.",
+    "arch": "AWS Global Infrastructure, Pricing Models.",
+    "impl": "Streamlined cloud operations.",
+    "busCase": "Enabled effective communication with technical teams.",
+    "tags": [
+      "Cloud",
+      "AWS"
+    ]
+  },
+  {
+    "id": "cert_5",
+    "role": "Google Certified",
+    "title": "Data Analytics",
+    "subtitle": "Professional",
+    "vision": "Extract actionable insights from raw data.",
+    "arch": "SQL, R Programming, Tableau.",
+    "impl": "Cleaned and processed system logs for analysis.",
+    "busCase": "Reduced root-cause analysis time during incidents.",
+    "tags": [
+      "Data",
+      "SQL"
+    ]
+  },
+  {
+    "id": "cert_6",
+    "role": "ISC2 Certified",
+    "title": "Cybersecurity (CC)",
+    "subtitle": "Security Foundations",
+    "vision": "Build defense-in-depth for AI platforms.",
+    "arch": "Network security, IAM, Incident Response.",
+    "impl": "Integrated prompt security guardrails.",
+    "busCase": "Mitigated hallucination and data leakage risks.",
+    "tags": [
+      "Security",
+      "ISC2"
+    ]
+  },
+  {
+    "id": "cert_7",
+    "role": "Meta Certified",
+    "title": "Front-End Dev",
+    "subtitle": "Professional",
+    "vision": "Build intuitive, responsive user interfaces.",
+    "arch": "React.js, Tailwind, DOM manipulation.",
+    "impl": "Developed interactive dashboards and UIs.",
+    "busCase": "Bridged the gap between UI/UX and backend systems.",
+    "tags": [
+      "React",
+      "UI/UX"
+    ]
+  },
+  {
+    "id": "cert_8",
+    "role": "IBM Verified",
+    "title": "Core Tech Suite",
+    "subtitle": "Fundamentals",
+    "vision": "Establish a rock-solid technical baseline.",
+    "arch": "Cybersecurity, Cloud, Software Engineering, Networking.",
+    "impl": "Completed IBM verified training modules.",
+    "busCase": "Enhanced end-to-end system comprehension.",
+    "tags": [
+      "IBM",
+      "Fundamentals"
+    ]
+  }
+]

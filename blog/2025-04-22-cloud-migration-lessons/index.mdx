@@ -1,0 +1,172 @@
+---
+slug: cloud-migration-lessons
+title: "Azure to AWS: Cloud Migration War Stories"
+description: "Lessons from migrating Droppii's e-commerce platform from Azure to AWS — Landing Zone architecture, cost optimization, and the surprises we didn't see coming."
+authors: [catvy]
+tags: [cloud, aws, azure, migration, architecture]
+date: 2025-04-22
+image: https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=1200&q=80
+---
+
+import Blog3DScene from '@site/src/components/blog/Blog3DScene';
+
+<Blog3DScene type="particles" color="#ffaa00" density={1} height="45vh" />
+
+Migrating an e-commerce platform between cloud providers is not for the faint of heart. When Droppii — a growing e-commerce business — needed to move from Azure to AWS, I was brought in as the cloud engineer to design the target architecture. The migration needed to be seamless, secure, and cost-optimized, with zero data loss and minimal downtime.
+
+Here's what we did, what went well, and what surprised us.
+
+## Why Migrate?
+
+Droppii's Azure setup had grown organically. What started as a few VMs had become a complex web of services without clear governance. The team wanted:
+- **Better cost visibility** — Azure bills were difficult to attribute to specific services
+- **Auto-scaling capabilities** — Black Friday traffic spikes were handled with manual intervention
+- **Standardized infrastructure** — Infrastructure-as-Code for reproducibility
+- **AWS ecosystem alignment** — The team was more experienced with AWS tooling
+
+## The Migration Architecture
+
+### Target State: AWS Landing Zone
+
+```
+AWS Organization
+│
+├── Management Account
+│   ├── AWS Organizations (SCPs)
+│   ├── AWS SSO (Identity Center)
+│   └── Consolidated Billing
+│
+├── Security Account
+│   ├── AWS Config (compliance rules)
+│   ├── GuardDuty (threat detection)
+│   ├── Security Hub (centralized findings)
+│   └── IAM Access Analyzer
+│
+├── Log Archive Account
+│   └── S3 (CloudTrail, VPC Flow Logs, Config)
+│
+└── Workload Accounts
+    ├── Dev
+    ├── Staging
+    └── Production
+        ├── VPC (ap-southeast-1)
+        │   ├── Public Subnets (ALB, NAT GW)
+        │   ├── Private Subnets (ECS, Lambda)
+        │   └── Data Subnets (RDS, ElastiCache)
+        ├── ECS Fargate (containerized app)
+        ├── RDS Multi-AZ (PostgreSQL)
+        ├── S3 (static assets + CloudFront)
+        └── Route 53 (DNS)
+```
+
+### Key Architecture Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **ECS Fargate over EKS** | Smaller team, simpler operations; no Kubernetes expertise needed |
+| **Multi-AZ RDS** | Automatic failover for the database tier |
+| **Transit Gateway** | Future-proof for multi-VPC expansion |
+| **Terraform IaC** | Full reproducibility, peer-reviewed infrastructure changes |
+| **S3 + CloudFront** | Global edge caching for product images |
+| **Secrets Manager** | No hardcoded credentials in code or config |
+
+## The Migration Process
+
+### Phase 1: Discovery & Mapping (2 weeks)
+
+We documented every Azure resource — VMs, databases, storage accounts, networking, DNS — and mapped each to its AWS equivalent. The complexity wasn't in individual services but in their interconnections:
+
+```
+Azure VM (Web)       → AWS ECS Fargate (Container)
+Azure VM (Worker)    → AWS ECS Fargate (Background Task)
+Azure PostgreSQL     → AWS RDS PostgreSQL (Multi-AZ)
+Azure Blob Storage   → AWS S3 + CloudFront
+Azure DNS            → AWS Route 53
+Azure VNet           → AWS VPC
+Azure AD             → AWS SSO (federated)
+```
+
+### Phase 2: Infrastructure as Code (3 weeks)
+
+We wrote the entire target architecture in Terraform. Every resource — VPCs, subnets, security groups, IAM roles, ECS clusters, RDS instances — was defined as code. This was non-negotiable. If we couldn't recreate the environment from scratch with `terraform apply`, we weren't ready to migrate.
+
+Key Terraform modules:
+- `terraform-aws-modules/vpc/aws` — VPC with public/private/database subnets
+- `terraform-aws-modules/ecs/aws` — ECS cluster with Fargate task definitions
+- `terraform-aws-modules/rds/aws` — Multi-AZ PostgreSQL with automated backups
+- `terraform-aws-modules/iam/aws` — IAM roles with least-privilege policies
+
+### Phase 3: Data Migration (1 week)
+
+We used AWS Database Migration Service (DMS) for the PostgreSQL migration:
+1. Set up DMS replication instance in the target VPC
+2. Configure source (Azure PostgreSQL) and target (RDS PostgreSQL) endpoints
+3. Run full load + ongoing replication (change data capture)
+4. Monitor replication lag until it approached zero
+5. Stop writes to source, verify final sync, cut over DNS
+
+For blob storage, we used `aws s3 sync` with parallel transfers and integrity verification via MD5 checksums.
+
+### Phase 4: Cutover (1 weekend)
+
+The cutover plan was rehearsed twice in staging before production:
+1. **Friday 10 PM:** Enable maintenance page on Azure (static HTML on S3, pre-deployed)
+2. **Friday 10:15 PM:** Stop application writes; wait for DMS replication to catch up
+3. **Friday 10:45 PM:** Verify RDS data integrity (row counts, checksums)
+4. **Friday 11 PM:** Update Route 53 DNS records to point to AWS ALB
+5. **Friday 11:05 PM:** Verify application health on AWS (smoke tests)
+6. **Friday 11:30 PM:** Disable maintenance page; monitor for 2 hours
+7. **Saturday:** Full regression testing; performance benchmarking
+8. **Sunday:** Buffer day for unexpected issues
+
+The actual cutover took 45 minutes with zero data loss and 5 minutes of user-facing downtime (the maintenance page window).
+
+## Cost Optimization Lessons
+
+The Bill of Materials (BOM) I produced during the planning phase was essential. It accurately forecasted $8K+ MRR, which gave stakeholders confidence to approve the migration. Key cost optimizations:
+
+| Resource | Azure Monthly | AWS Monthly | Savings |
+|----------|--------------|-------------|---------|
+| **Compute** | $3,200 (VMs) | $2,100 (Fargate) | -34% |
+| **Database** | $2,800 (Managed PG) | $2,200 (RDS Multi-AZ) | -21% |
+| **Storage** | $600 (Blob) | $450 (S3 IA) | -25% |
+| **CDN** | $400 (Azure CDN) | $350 (CloudFront) | -12% |
+| **Networking** | $500 | $380 | -24% |
+| **Total** | $7,500 | $5,480 | -27% |
+
+The savings came from:
+- **Right-sizing** — Azure VMs were over-provisioned (learned during discovery)
+- **Fargate Spot** — 30% of tasks ran on Spot capacity for dev/staging
+- **S3 Intelligent-Tiering** — Automatic lifecycle management for infrequently accessed assets
+- **Reserved Instances** — 1-year RDS Reserved for production database
+
+## What Surprised Us
+
+### Surprise 1: DNS Propagation Was the Longest Step
+
+Despite planning for near-instant Route 53 updates, some ISPs took up to 30 minutes to propagate DNS changes. A small percentage of users saw the maintenance page long after we had disabled it. Lesson: set low TTLs (60 seconds) on DNS records at least 24 hours before cutover.
+
+### Surprise 2: Connection Pool Exhaustion
+
+After cutover, we saw intermittent 503 errors. The culprit: the app's database connection pool was sized for Azure's network latency profile. AWS had lower latency, which meant connections were completing faster — but the pool wasn't large enough for the increased throughput. Increasing `max_connections` from 20 to 50 resolved it.
+
+### Surprise 3: CloudFront Cache Warming
+
+We assumed CloudFront would "just work" after pointing it at the S3 origin. Reality: the first request for each asset had 100-300ms origin fetch latency. We pre-warmed the cache by scripting requests to the top 10,000 most-accessed product images before the DNS cutover.
+
+### Surprise 4: Log Costs in the First Month
+
+CloudWatch Logs ingestion cost was 3x our estimate in the first month because debug-level logging had been enabled during testing and never turned off. We implemented log level controls and sampling in the Terraform configuration to prevent recurrence.
+
+## Advice for Your Own Migration
+
+1. **IaC from day one** — If it's not in Terraform, it doesn't exist
+2. **Rehearse the cutover** — At least twice in staging, with the full team
+3. **Plan the rollback** — Every step should have a reverse step documented
+4. **Monitor everything** — CloudWatch dashboards with traffic, latency, errors, and cost
+5. **Over-communicate** — Stakeholders would rather hear "on track" 10 times than "delayed" once with silence in between
+6. **Budget for the unexpected** — Add 20% contingency to your cost estimates for the first 3 months
+
+The Droppii migration proved that cloud-to-cloud migrations, while challenging, are entirely manageable with proper planning. The keys were meticulous discovery, infrastructure-as-code, rehearsed cutover procedures, and relentless focus on cost optimization from the architecture phase.
+
+Today, Droppii runs fully on AWS with automated scaling, comprehensive monitoring, and a governance model that would have been impossible in the organic-growth Azure environment they started with.

@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-05-03T19:15:45.285Z",
+  "files": {
+    "projects": "/data/projects.json",
+    "certifications": "/data/certifications.json",
+    "community": "/data/community.json",
+    "knowledge": "/data/knowledge.json"
+  }
+}

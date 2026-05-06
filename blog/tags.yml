@@ -1,0 +1,109 @@
+genai:
+  label: Generative AI
+  permalink: /genai
+  description: Posts about Generative AI, LLMs, RAG, and AI architecture
+
+aws:
+  label: AWS
+  permalink: /aws
+  description: Posts about Amazon Web Services and cloud infrastructure
+
+cloud:
+  label: Cloud
+  permalink: /cloud
+  description: Posts about cloud computing, migration, and architecture
+
+security:
+  label: Security
+  permalink: /security
+  description: Posts about cybersecurity, AI guardrails, and platform defense
+
+rag:
+  label: RAG
+  permalink: /rag
+  description: Posts about Retrieval-Augmented Generation
+
+architecture:
+  label: Architecture
+  permalink: /architecture
+  description: Posts about system design, architecture patterns, and integration
+
+career:
+  label: Career
+  permalink: /career
+  description: Posts about career growth, mentorship, and professional development
+
+enterprise:
+  label: Enterprise
+  permalink: /enterprise
+  description: Posts about enterprise-scale deployments and strategy
+
+leadership:
+  label: Leadership
+  permalink: /leadership
+  description: Posts about leadership, team building, and management
+
+open-source:
+  label: Open Source
+  permalink: /open-source
+  description: Posts about open source projects and contributions
+
+agents:
+  label: AI Agents
+  permalink: /agents
+  description: Posts about AI agents, multi-agent systems, and orchestration
+
+banking:
+  label: Banking
+  permalink: /banking
+  description: Posts about banking technology and financial systems
+
+certification:
+  label: Certification
+  permalink: /certification
+  description: Posts about professional certifications and learning paths
+
+hiring:
+  label: Hiring
+  permalink: /hiring
+  description: Posts about technical recruitment and talent acquisition
+
+mentorship:
+  label: Mentorship
+  permalink: /mentorship
+  description: Posts about mentorship programs and growing talent
+
+personal:
+  label: Personal
+  permalink: /personal
+  description: Personal stories and reflections
+
+growth:
+  label: Growth
+  permalink: /growth
+  description: Posts about professional and personal growth
+
+lessons:
+  label: Lessons Learned
+  permalink: /lessons
+  description: Posts sharing lessons learned from real projects
+
+ai:
+  label: AI
+  permalink: /ai
+  description: Posts about artificial intelligence
+
+azure:
+  label: Azure
+  permalink: /azure
+  description: Posts about Microsoft Azure
+
+migration:
+  label: Migration
+  permalink: /migration
+  description: Posts about technology migration projects
+
+prompt-engineering:
+  label: Prompt Engineering
+  permalink: /prompt-engineering
+  description: Posts about prompt engineering techniques and security

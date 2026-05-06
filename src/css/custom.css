@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Tailwind button base reset (compensate preflight:false) ---------- */
+@layer base {
+  button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:focus-visible {
+    outline: 2px solid rgba(0, 243, 255, 0.5);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------- Portfolio scope — only active when .portfolio-page is on <html> ---------- */
+html.portfolio-page,
+html.portfolio-page body,
+html.portfolio-page #__docusaurus {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100dvh;
+  height: 100vh;
+}
+html.portfolio-page .navbar {
+  z-index: 500;
+}
+
+/* ---------- Global dark theme (site-wide consistency) ---------- */
+:root {
+  --bg-deep: #030305;
+  --bg-surface: #0a0c12;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-background-color: var(--bg-deep);
+  --ifm-background-surface-color: var(--bg-surface);
+  --ifm-navbar-background-color: rgba(3, 3, 5, 0.85);
+}
+
+/* ---------- Global scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ---------- Accordion ---------- */
+.accordion-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: border-color 0.3s;
+}
+.accordion-item:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.accordion-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.accordion-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  color: inherit;
+}
+.accordion-body {
+  overflow: hidden;
+  transition: all 0.4s ease-in-out;
+}
+.accordion-open {
+  max-height: 800px;
+  opacity: 1;
+}
+.accordion-closed {
+  max-height: 0;
+  opacity: 0;
+}
+.accordion-content {
+  padding: 20px;
+  font-size: 13px;
+  color: #d1d5db;
+  line-height: 1.625;
+  border-left: 2px solid;
+}
+
+/* ---------- Custom scrollbar utility ---------- */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* ---------- Animations ---------- */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ---------- Page transition ---------- */
+.page-transition-enter {
+  animation: fade-in 0.4s ease-out;
+}
+.page-transition-exit {
+  animation: fade-out 0.3s ease-out;
+}
+
+/* ---------- Navbar style overrides for dark theme consistency ---------- */
+.navbar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.navbar__link {
+  position: relative;
+  transition: color 0.2s;
+}
+.navbar__link--active {
+  color: #00f3ff !important;
+}
+.navbar__link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #00f3ff, #bc13fe);
+  border-radius: 2px;
+  transform: scaleX(1);
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.navbar__link:not(.navbar__link--active)::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, #00f3ff, #bc13fe);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.navbar__link:not(.navbar__link--active):hover::after {
+  transform: scaleX(1);
+}
+.navbar__link:hover {
+  color: #fff !important;
+}
+
+/* ---------- Code block enhancements ---------- */
+.theme-code-block {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+.prism-code {
+  font-size: 13px !important;
+}
+
+/* ---------- Blog post page layout ---------- */
+.blog-post-page {
+  padding: 80px 0 40px;
+}

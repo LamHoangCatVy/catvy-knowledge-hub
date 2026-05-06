@@ -1,0 +1,58 @@
+{
+  "autoBuild": false,
+  "domains": [
+    {
+      "id": "llm-engineering",
+      "label": "LLM Engineering",
+      "icon": "fas fa-robot",
+      "color": "#00f3ff",
+      "visible": true,
+      "subcategories": [
+        { "id": "openai", "label": "OpenAI", "visible": true },
+        { "id": "claude-ai", "label": "Claude AI", "visible": true },
+        { "id": "architecture", "label": "Architecture", "visible": true },
+        { "id": "math", "label": "Math & Theory", "visible": true }
+      ],
+      "pages": [{ "slug": "index", "visible": true }]
+    },
+    {
+      "id": "cloud-engineering",
+      "label": "Cloud Engineering",
+      "icon": "fas fa-cloud",
+      "color": "#00ff88",
+      "visible": true,
+      "subcategories": [
+        { "id": "aws", "label": "AWS", "visible": true },
+        { "id": "azure", "label": "Azure", "visible": true },
+        { "id": "multi-cloud", "label": "Multi-Cloud", "visible": true }
+      ],
+      "pages": [{ "slug": "index", "visible": true }]
+    },
+    {
+      "id": "systems-design",
+      "label": "Systems Design",
+      "icon": "fas fa-sitemap",
+      "color": "#bc13fe",
+      "visible": true,
+      "subcategories": [
+        { "id": "distributed-systems", "label": "Distributed Systems", "visible": true },
+        { "id": "api-design", "label": "API Design", "visible": true },
+        { "id": "event-driven", "label": "Event-Driven Architecture", "visible": true }
+      ],
+      "pages": [{ "slug": "index", "visible": true }]
+    },
+    {
+      "id": "security",
+      "label": "Security",
+      "icon": "fas fa-shield-alt",
+      "color": "#ff0055",
+      "visible": true,
+      "subcategories": [
+        { "id": "prompt-security", "label": "Prompt Security", "visible": true },
+        { "id": "cloud-security", "label": "Cloud Security", "visible": true },
+        { "id": "ai-threats", "label": "AI Threats", "visible": true }
+      ],
+      "pages": [{ "slug": "index", "visible": true }]
+    }
+  ]
+}

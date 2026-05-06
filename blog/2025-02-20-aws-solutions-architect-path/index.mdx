@@ -1,0 +1,109 @@
+---
+slug: aws-solutions-architect-path
+title: "My AWS Solutions Architect Certification Journey"
+description: "Study strategies, resources, and how the AWS Solutions Architect Associate certification applied to real-world banking and e-commerce architectures."
+authors: [catvy]
+tags: [aws, certification, cloud, career]
+date: 2025-02-20
+image: https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80
+---
+
+When I decided to pursue the AWS Solutions Architect Associate certification, I wasn't just looking for a credential. I was mid-way through architecting a multi-account AWS Landing Zone for Droppii's Azure-to-AWS migration, designing GenAI infrastructure for my company, and leading an ECS-to-EKS container orchestration migration. I needed the structured knowledge to ensure I wasn't making architectural decisions based on incomplete understanding.
+
+Here's how I approached it, what worked, and how the knowledge immediately translated to real-world impact.
+
+## My Study Strategy
+
+### Phase 1: Foundation (2 weeks)
+
+I started with **A Cloud Guru's** AWS Solutions Architect course. ACG is great for building a mental model of the AWS landscape — what each service does, how they fit together, and the "AWS way" of thinking. I watched at 1.5x speed, taking notes in Obsidian with a focus on service comparisons (when to use SQS vs. Kinesis, ECS vs. EKS, RDS vs. DynamoDB).
+
+### Phase 2: Deep Dive (3 weeks)
+
+**Tutorials Dojo practice exams** were the single most valuable resource. Their questions are harder than the actual exam, and the answer explanations are exceptional — each one explains not just why the correct answer is right, but why each wrong answer is wrong. This is where the real learning happens.
+
+I took each practice exam in "Review Mode" first, reading explanations as I went. After completing all exams, I retook them in "Timed Mode" to simulate exam conditions. My scores:
+- First pass: 65-75%
+- Second pass: 85-95%
+
+### Phase 3: Hands-On (ongoing)
+
+I was fortunate to be working on real AWS architectures simultaneously. At my company, I was:
+- Designing multi-AZ deployments with ALB and Auto Scaling Groups
+- Configuring VPCs with public/private subnets and NAT Gateways
+- Implementing IAM roles with least-privilege policies
+- Working with RDS Multi-AZ, S3 lifecycle policies, and CloudWatch alarms
+
+For Droppii, I was architecting a full Landing Zone with Transit Gateway, AWS SSO, and Terraform infrastructure-as-code. This hands-on experience solidified concepts that practice exams could only approximate.
+
+## Key Topics That Matter Most (Beyond the Exam)
+
+### The Well-Architected Framework
+
+The six pillars became my mental checklist for every architecture decision:
+1. **Operational Excellence** — Are we automating operations? Do we have runbooks?
+2. **Security** — Least privilege? Encryption at rest and in transit? No hardcoded secrets?
+3. **Reliability** — Multi-AZ? Automated recovery? Backups tested?
+4. **Performance Efficiency** — Right-sized instances? Serverless where appropriate?
+5. **Cost Optimization** — Reserved instances? S3 Intelligent-Tiering? Resource cleanup?
+6. **Sustainability** — Region selection for renewable energy? Auto-scaling to match demand?
+
+### Networking Deep Dive
+
+The exam's networking questions go deep. You need to understand:
+- VPC CIDR design and subnet planning
+- Route table propagation (main vs. custom route tables)
+- NAT Gateway vs. NAT Instance (and why NAT Gateway is almost always the answer)
+- VPC Endpoints (Gateway vs. Interface) for private service access
+- Transit Gateway for hub-and-spoke multi-VPC architectures
+- Direct Connect vs. VPN for hybrid connectivity
+
+This networking knowledge proved invaluable when designing my company's multi-account architecture. Understanding why you need a Transit Gateway (not VPC peering) at scale, and when to use VPC Endpoints to keep traffic off the public internet, came directly from certification study.
+
+### Storage Tiers
+
+The exam loves storage questions. Knowing the difference between S3 Standard, Intelligent-Tiering, Standard-IA, One Zone-IA, and Glacier tiers — and their retrieval times and costs — has direct financial impact. At my company, we saved ~30% on OpenSearch log storage by moving indexes older than 30 days to UltraWarm storage, a pattern I recognized from studying S3 lifecycle management.
+
+## How the Certification Applied to Real Work
+
+### Droppii Migration (Azure → AWS)
+
+When I designed the Droppii Landing Zone, the certification was directly applicable:
+- **Multi-account strategy** — Management, Security, Log Archive, Dev, Staging, Prod accounts
+- **Networking** — Transit Gateway for inter-VPC routing, VPC Endpoints for S3 and DynamoDB
+- **Identity** — AWS SSO integrated with existing Azure AD
+- **Cost** — Savings Plans for baseline compute, Spot Instances for burst workloads
+
+### my company GenAI Platform
+
+For the ezGenAI platform:
+- **Serverless** — Lambda + API Gateway for query routing, reducing costs during idle periods
+- **Container orchestration** — ECS Fargate for stateful AI services, removing EC2 management overhead
+- **Security** — IAM roles with granular Bedrock and SageMaker permissions, KMS for model artifact encryption
+- **Observability** — CloudWatch dashboards with custom GenAI metrics (latency, token usage, retrieval quality)
+
+### ECS to EKS Migration
+
+Understanding the trade-offs between ECS (simpler, AWS-native) and EKS (Kubernetes ecosystem, multi-cloud portability) was essential when leading this migration. The certification covered both services in depth, giving me the vocabulary and mental models to explain to stakeholders why EKS was the right long-term investment despite higher initial complexity.
+
+## Resources I Recommend
+
+| Resource | Best For | Time Investment |
+|----------|----------|----------------|
+| **A Cloud Guru** | Building foundational knowledge | 20-30 hours |
+| **Tutorials Dojo** | Practice exams and deep explanations | 15-20 hours |
+| **AWS Documentation** | Reference during hands-on work | Ongoing |
+| **AWS Well-Architected Labs** | Hands-on practice with real scenarios | 10-15 hours |
+| **Adrian Cantrill's Course** | Deep technical understanding (recommended by many) | 40-60 hours |
+
+## Advice for Your Own Journey
+
+1. **Don't just memorize — understand the "why."** The exam will ask you to choose between SQS and Kinesis. Knowing the feature list won't help — understanding that Kinesis is for real-time streaming with multiple consumers while SQS is for decoupling with exactly-once processing will.
+
+2. **Build something.** Even a simple serverless app with Lambda, API Gateway, and DynamoDB teaches more than any video course. Deploy it, break it, fix it.
+
+3. **Study the wrong answers.** On practice exams, the most learning happens when you get a question wrong and understand why your answer was incorrect and why the right answer is better.
+
+4. **Connect concepts to cost.** Every AWS service choice has a cost implication. The best architects don't just build correct systems — they build cost-efficient systems.
+
+The AWS Solutions Architect certification isn't just a badge. It's a structured way to internalize cloud-native design principles that apply whether you're on AWS, Azure, or GCP. The patterns — loose coupling, designing for failure, automating everything, securing at every layer — are universal.

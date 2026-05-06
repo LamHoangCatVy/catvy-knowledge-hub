@@ -1,0 +1,165 @@
+---
+slug: open-source-yummy
+title: "Building yummy: An Open Source AI Multi-Agent Platform"
+description: "Technical overview of the yummy platform — architecture decisions, multi-agent orchestration, and why we open sourced it."
+authors: [catvy]
+tags: [open-source, ai, agents, architecture, genai]
+date: 2025-04-15
+image: https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=1200&q=80
+---
+
+import Blog3DScene from '@site/src/components/blog/Blog3DScene';
+
+<Blog3DScene type="orbit" color="#00ff88" density={1.5} height="45vh" />
+
+One of the most rewarding projects I've worked on is **yummy** — an open source AI multi-agent platform that enables developers to build, deploy, and orchestrate autonomous AI agents. After building proprietary agent systems for enterprise clients, I wanted to create something that anyone could use, modify, and learn from.
+
+This post covers the architecture, key design decisions, and what we learned building it.
+
+## What Is yummy?
+
+yummy is a platform for creating multi-agent AI systems. You define agents with specific capabilities, give them tools, and let them collaborate to solve complex tasks. Think of it as an operating system for AI agents — handling the plumbing (message passing, state management, tool execution) so developers can focus on agent logic.
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   yummy Platform                       │
+│                                                        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
+│  │  Agent   │  │  Agent   │  │  Agent           │   │
+│  │  Runtime │  │ Registry │  │  Orchestrator    │   │
+│  └────┬─────┘  └────┬─────┘  └────────┬─────────┘   │
+│       │             │               │                │
+│  ┌────┴─────────────┴───────────────┴────────────┐  │
+│  │              Message Bus (Event-Driven)        │  │
+│  └────┬───────────────────────────────────────────┘  │
+│       │                                               │
+│  ┌────┴──────────────────────────────────────────┐   │
+│  │              Tool Marketplace                   │  │
+│  │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────────────┐ │  │
+│  │  │ Web  │ │ Code │ │ Data │ │ Custom Tools │ │  │
+│  │  │Search│ │ Exec │ │Query │ │ (BYO)        │ │  │
+│  │  └──────┘ └──────┘ └──────┘ └──────────────┘ │  │
+│  └─────────────────────────────────────────────────┘ │
+│                                                        │
+│  ┌─────────────────────────────────────────────────┐  │
+│  │              Memory & State Layer                │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌─────────────────┐ │  │
+│  │  │ Short-term│ │ Long-term│ │ Shared Context  │ │  │
+│  │  │ Memory   │ │ Memory   │ │ (Vector Store)  │ │  │
+│  │  └──────────┘ └──────────┘ └─────────────────┘ │  │
+│  └─────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+**Agent Runtime** — Isolated execution environments for each agent. Supports LangChain, LlamaIndex, and custom agent frameworks. Agents can be written in Python or configured via YAML for simpler use cases.
+
+**Agent Registry** — A catalog of available agents with their capabilities, requirements, and interfaces. Agents discover each other through the registry and negotiate task assignments.
+
+**Agent Orchestrator** — The conductor. It receives high-level tasks, decomposes them, assigns sub-tasks to appropriate agents, monitors progress, and synthesizes results. The orchestrator implements multiple strategies: sequential, parallel, hierarchical, and voting-based.
+
+**Message Bus** — Event-driven communication between agents using a publish-subscribe pattern. Built on Redis Pub/Sub for simplicity and performance, with optional Kafka support for production deployments.
+
+**Tool Marketplace** — A curated collection of tools that agents can use: web search, code execution, database queries, API calls, and file operations. Developers can contribute custom tools following a simple interface contract.
+
+**Memory Layer** — Three-tier memory system:
+- *Short-term memory*: In-context conversation history (current session)
+- *Long-term memory*: Summarized and compressed important interactions (vector store)
+- *Shared context*: Information explicitly shared between agents (structured, versioned)
+
+## Design Decisions
+
+### Why Event-Driven?
+
+Agents are inherently asynchronous. An agent might take 30 seconds to complete a complex analysis while another finishes in 2 seconds. A synchronous call chain would create bottlenecks. The event-driven architecture allows:
+- **Parallel execution** of independent sub-tasks
+- **Loose coupling** between agents (agents don't need to know about each other)
+- **Observability** (every message is logged and traceable)
+- **Resilience** (message persistence means no work is lost if an agent crashes)
+
+### Agent Communication Protocol
+
+We designed a simple JSON-based protocol:
+
+```json
+{
+  "message_id": "msg_abc123",
+  "timestamp": "2025-04-15T10:30:00Z",
+  "from_agent": "researcher",
+  "to_agent": "analyst",
+  "type": "task_request",
+  "payload": {
+    "task": "Analyze the market trends in the attached report",
+    "context": {
+      "report_id": "doc_xyz789",
+      "focus_areas": ["competitor_moves", "pricing_changes"]
+    },
+    "expected_output": "structured_analysis",
+    "deadline": "2025-04-15T10:35:00Z"
+  }
+}
+```
+
+### Tool Interface Standard
+
+Every tool implements a simple interface:
+
+```python
+class BaseTool:
+    name: str
+    description: str
+    parameters: dict  # JSON Schema for input validation
+
+    async def execute(self, params: dict, context: dict) -> ToolResult:
+        raise NotImplementedError
+
+    def validate_input(self, params: dict) -> bool:
+        # Validate against self.parameters schema
+        pass
+```
+
+This standardization means any developer can create a tool that works with any agent, and the orchestrator can automatically match tools to agent capabilities.
+
+### Memory with Tiered Retrieval
+
+The memory system uses a hybrid approach:
+1. **Recent messages** — Kept in Redis for sub-millisecond access
+2. **Important messages** — Identified by an LLM "memory curator" agent, embedded, and stored in a vector database
+3. **Archived context** — Older context compressed into summaries with pointers to original data
+
+When an agent needs context, it queries the memory layer, which returns a tiered result: recent messages first, then relevant archived memories, then a summary of older context.
+
+## Why Open Source?
+
+I believe the future of AI is open. Proprietary agent platforms create vendor lock-in and limit innovation to a single company's roadmap. By open sourcing yummy:
+
+- **Transparency** — You can inspect exactly how agents make decisions
+- **Customizability** — Add your own tools, agents, and orchestration patterns
+- **Community** — Shared patterns and tools benefit everyone
+- **Education** — Students and newcomers can learn by studying a real multi-agent system
+
+## What's Next for yummy
+
+The roadmap includes:
+- **Visual Agent Builder** — Drag-and-drop interface for designing agent workflows
+- **Evaluation Framework** — Built-in metrics for agent performance assessment
+- **Multi-modal Agents** — Support for image, audio, and video processing agents
+- **Enterprise Features** — SSO, audit logging, RBAC for team deployments
+- **Agent Marketplace** — Community-contributed agents that anyone can deploy
+
+## Getting Started
+
+yummy is available on GitHub. The README includes a quickstart guide that gets you from zero to running multi-agent workflows in under 10 minutes:
+
+1. Clone the repository
+2. Set your LLM API key (OpenAI, Anthropic, or local model)
+3. Run `docker-compose up`
+4. Open the playground at `http://localhost:3000`
+5. Define your first agent in YAML and watch it collaborate
+
+The project welcomes contributors of all experience levels. Whether you're interested in agent architectures, developer tooling, documentation, or building example agents — there's a way to contribute.
+
+Building yummy has reinforced my belief that the most impactful AI systems will be collaborative — not just between humans and AI, but between AIs themselves. Multi-agent architectures aren't just a research curiosity; they're the practical answer to problems that are too complex for any single model to solve alone.

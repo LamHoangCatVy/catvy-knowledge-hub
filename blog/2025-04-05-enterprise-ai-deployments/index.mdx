@@ -1,0 +1,125 @@
+---
+slug: enterprise-ai-deployments
+title: "20 Enterprise AI Deployments: Lessons Learned"
+description: "Patterns, pitfalls, and hard-won wisdom from deploying 20+ AI systems across banking, telecom, and e-commerce."
+authors: [catvy]
+tags: [genai, enterprise, lessons, architecture, security]
+date: 2025-04-05
+image: https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1200&q=80
+---
+
+Over the past three years, I've been involved in 20+ enterprise AI deployments — from a bank-wide GenAI platform serving thousands of employees to specialized chatbots for anti-money laundering, from policy intelligence engines to telecom support assistants. Some succeeded spectacularly. Others taught hard lessons. Here are the patterns that emerged.
+
+## The Deployment Spectrum
+
+My projects spanned a wide range of AI maturity and complexity:
+
+| Project | Type | Scale | Key Challenge |
+|---------|------|-------|---------------|
+| **ezPolicy** | Agentic RAG | 15,000+ users | Multi-policy synthesis |
+| **AML Chatbot** | Compliance RAG | 85 daily active users | Zero-tolerance hallucination |
+| **ezGenAI Platform** | AI Foundation | 100+ use cases | Standardization at scale |
+| **Omni Chatbots** | Customer Support | Omnichannel | Content management integration |
+| **Droppii Migration** | Cloud Infrastructure | E-commerce | Multi-cloud complexity |
+| **Telecom RAG** | Pre-Sales PoC | International | Cross-timezone collaboration |
+| **Arxiv Assistant** | R&D Tool | Internal | Complex document parsing |
+| **Prompt Security Gate** | Security Middleware | Platform-wide | Zero false negatives |
+
+## The Patterns
+
+### Pattern 1: RAG Quality Depends on Retrieval, Not Generation
+
+Across all RAG projects, the #1 determinant of output quality was retrieval quality, not model capability. A well-tuned retrieval pipeline with GPT-3.5 consistently outperformed a naive retrieval pipeline with GPT-4.
+
+The retrieval quality stack, in order of impact:
+1. **Chunking strategy** (by far the biggest lever — 40-50% impact on accuracy)
+2. **Embedding model choice** (20-30% impact)
+3. **Relevance filtering and reranking** (10-20% impact)
+4. **LLM generation quality** (10-15% impact)
+
+Most teams obsess over the LLM. The winning teams obsess over chunking.
+
+### Pattern 2: Enterprise GenAI Has a Trust Problem
+
+Every enterprise deployment faced the same initial resistance: "How do I know the answer is correct?" Users who happily accepted imperfect Google results demanded 100% accuracy from internal AI.
+
+The solution was multi-layered:
+- **Always provide citations** with clickable links to source documents
+- **Display confidence scores** (but be honest — don't claim 98% when it's 75%)
+- **Allow user feedback** on every answer (thumbs up/down with optional comments)
+- **Show your work** — a "Why this answer?" expandable section showing retrieval steps
+- **Never hallucinate citations** — if the system can't cite it, it shouldn't say it
+
+At my company, the AML chatbot achieved 93.15% relevance but gained 100% user trust because of transparent citation handling. When the system wasn't sure, it said so — and users respected that more than a confident wrong answer.
+
+### Pattern 3: The Last Mile Is Always Harder Than Expected
+
+Prototype-to-production time was consistently 3-5x longer than initial estimates. The reasons:
+
+| Phase | Typical Estimate | Actual | What We Missed |
+|-------|-----------------|--------|---------------|
+| **Retrieval pipeline** | 2 weeks | 4 weeks | Edge cases in document formats, encoding issues |
+| **Evaluation framework** | 1 week | 3 weeks | Hand-labeling test queries, building evaluation harness |
+| **Production hardening** | 2 weeks | 6 weeks | Rate limiting, authentication, audit logging, error handling |
+| **User onboarding** | 1 week | 3 weeks | Training, documentation, feedback loops |
+| **Compliance review** | 1 week | 4 weeks | Legal review, security audit, data protection assessment |
+
+The lesson: multiply initial time estimates by 3x for anything that must go to production. Prototypes are cheap; production is expensive.
+
+### Pattern 4: Cost Management Must Be Designed In
+
+Three separate projects experienced unexpected cost spikes:
+
+**The GPU Surprise:** A team left a g4dn.xlarge GPU instance running for 3 weeks after a PoC ended. Cost: $400/month for nothing.
+
+**The Embedding Explosion:** A document pipeline re-embedded all 3,000 documents nightly instead of detecting changes. Cost: $200/day in unnecessary processing.
+
+**The Token Tsunami:** A debug logging mode accidentally shipped to production, logging full prompt and response text for every request. Cost: $500/month in CloudWatch log ingestion before detection.
+
+After these incidents, I established cost controls as non-negotiable architecture requirements:
+- Auto-shutdown for non-production resources
+- Change detection with content hashing before re-processing
+- Log sampling in production (full logging only for errors)
+- Budget alerts at 50%, 80%, and 100% thresholds
+- Cost attribution tags on every resource
+
+### Pattern 5: Security Cannot Be Retrofit
+
+Two of the 20 deployments had security findings during pre-production review. In both cases, security was treated as a "final step" rather than a design constraint:
+
+**Project A (Policy Chatbot):** Missing input sanitization allowed basic prompt injection. An attacker could (theoretically) make the chatbot say anything by crafting the right query.
+
+**Project B (Customer Chatbot):** PII was being logged in plaintext in application logs, violating data protection requirements.
+
+Both fixes required architectural changes — weeks of rework — rather than simple configuration tweaks. From that point forward, I mandated that every AI deployment include the Prompt Security Gate by default, with security review at the architecture phase, not the deployment phase.
+
+## The Common Pitfalls
+
+### Pitfall 1: Optimizing for Demo, Not Production
+
+Too many teams built impressive demos that collapsed under real usage. The demo worked for 10 users with curated data; production needed to handle 500 concurrent users with messy, real-world documents.
+
+### Pitfall 2: Ignoring Evaluation
+
+"You can't improve what you don't measure" is a cliché because it's true. Projects without systematic evaluation frameworks (RAGAS, DeepEval, or even a spreadsheet of test queries) inevitably plateaued. They had no way to know if changes were improvements or regressions.
+
+### Pitfall 3: Model Roulette
+
+Some teams switched LLM providers every few weeks — chasing the latest benchmark scores. This created instability: prompt templates broke, output formats changed, and evaluation results became incomparable. Pick a model, standardize on it, and only change when evaluation data proves a meaningful improvement.
+
+### Pitfall 4: The "AI Will Fix It" Fallacy
+
+The most dangerous phrase I heard: "We'll let the AI handle that." No. AI amplifies good processes; it doesn't replace missing ones. If your document management is chaotic, AI won't fix it — it'll surface the chaos more efficiently.
+
+## What Actually Matters
+
+After 20 deployments, here's what I believe:
+
+1. **Retrieval over generation** — Invest in your data pipeline before your model
+2. **Evaluation over intuition** — Measure everything; trust data, not feelings
+3. **Trust over capability** — A less capable but trustworthy system beats a more capable one that users don't believe
+4. **Security by design** — Build guardrails from day one, not week twelve
+5. **Cost consciousness** — Every architectural decision has a price tag; know it
+6. **Simplicity over sophistication** — The simplest system that meets requirements is always the right choice
+
+Enterprise AI is not a technology problem. It's a systems engineering problem, a trust problem, a cost management problem, and a change management problem — all wrapped in one. The technology is the easy part.

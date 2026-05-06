@@ -1,0 +1,260 @@
+[
+  {
+    "id": "know_1",
+    "role": "Domain Expertise",
+    "title": "Generative AI & LLMs",
+    "subtitle": "Advanced RAG & Orchestration",
+    "color": "#00f3ff",
+    "icon": "fas fa-robot",
+    "topics": [
+      {
+        "name": "Agentic RAG",
+        "icon": "fas fa-project-diagram",
+        "content": "Multi-agent system with self-reasoning, planning, and tool use for dynamic data retrieval.",
+        "article": [
+          "RAG (Retrieval-Augmented Generation) traditionally faces limits with complex queries requiring multi-source synthesis or multi-step reasoning. This is where Agentic RAG shines.",
+          "Agentic RAG architecture integrates Agents with Planning and Tool Use capabilities. Upon receiving a complex query, a Router Agent decomposes it into sub-queries, delegating them to specialized Sub-Agents that search Vector Databases, SQL Databases, or external APIs.",
+          "The breakthrough is the Self-Reflection mechanism. The Agent can re-read its results; if context is insufficient, it automatically generates a new query for further search, making the final answer exceptionally comprehensive and accurate.",
+          "At my company, I applied this architecture to process thousands of complex policy documents, where a single answer often requires cross-referencing multiple regulations, raising accuracy from <20% to >90%."
+        ]
+      },
+      {
+        "name": "GraphRAG",
+        "icon": "fas fa-share-alt",
+        "content": "Combining Knowledge Graphs with Vector Databases to solve complex relationship queries.",
+        "article": [
+          "Enterprise data rarely exists independently. They often have intricate relationships (e.g., Employee A belongs to Department B, Department B handles Project C). Traditional Vector Databases struggle to capture these relational flows.",
+          "GraphRAG is the perfect solution. Using Neo4j or Amazon Neptune to build knowledge graphs, we provide LLMs with a clear mental map of entities and their relationships.",
+          "When a query arrives, the system not only searches for semantically similar text chunks but also traverses graph nodes to retrieve the entire connected context. This is particularly useful for Anti-Money Laundering investigations or corporate structure analysis."
+        ]
+      },
+      {
+        "name": "LLM Orchestration",
+        "icon": "fas fa-cogs",
+        "content": "Managing LLM call flows via LangChain/LlamaIndex. Optimizing Chunking and Prompt Engineering.",
+        "article": [
+          "In-depth knowledge in this domain is being aggregated and compiled. As a System Architect, mastering core platforms is mandatory for ensuring system scalability and security.",
+          "My goal is always to balance modern technology with real business value, optimizing costs and accelerating time-to-market development."
+        ]
+      }
+    ],
+    "tags": [
+      "GenAI",
+      "RAG",
+      "LLMs",
+      "Agentic"
+    ]
+  },
+  {
+    "id": "know_2",
+    "role": "Domain Expertise",
+    "title": "Systems Analysis",
+    "subtitle": "Enterprise Integration",
+    "color": "#bc13fe",
+    "icon": "fas fa-sitemap",
+    "topics": [
+      {
+        "name": "System Design Knowledge",
+        "icon": "fas fa-network-wired",
+        "content": "The art of trade-offs in designing high-load systems, scalability, and availability.",
+        "article": [
+          "System Design is not just about drawing boxes and arrows. It is the art of trade-offs. Do you choose Consistency or Availability? Are you optimized for Read or Write?",
+          "A skilled systems architect must master classic patterns like Microservices, Event-Driven Architecture, CQRS, and Saga. When designing the CAIP platform, I carefully considered using Kafka for message queues to ensure the system does not bottleneck during traffic spikes.",
+          "Database Design is the heart of the system. Understanding when to use Relational DB for ACID compliance, NoSQL for unstructured data, and Vector DB for GenAI applications is key to scaling to millions of users.",
+          "Finally, every system design must include Monitoring and Alerting strategies. Without clear Log Tracing and Metrics, you are blind when incidents occur in Production."
+        ]
+      },
+      {
+        "name": "SRS Documentation",
+        "icon": "fas fa-file-alt",
+        "content": "Drafting standard Software Requirements Specification documents with clearly defined Use Cases.",
+        "article": [
+          "In-depth knowledge in this domain is being aggregated and compiled.",
+          "Contact me directly via LinkedIn for deeper discussions on real-world implementation patterns and strategies."
+        ]
+      },
+      {
+        "name": "API Contract Design",
+        "icon": "fas fa-exchange-alt",
+        "content": "Designing and standardizing RESTful APIs/gRPC ensuring backward compatibility for integrated systems.",
+        "article": [
+          "In-depth knowledge in this domain is being aggregated and compiled."
+        ]
+      }
+    ],
+    "tags": [
+      "UML",
+      "BPMN",
+      "System Design"
+    ]
+  },
+  {
+    "id": "know_3",
+    "role": "Domain Expertise",
+    "title": "Product Management",
+    "subtitle": "Agile Delivery & Strategy",
+    "color": "#ffaa00",
+    "icon": "fas fa-tasks",
+    "topics": [
+      {
+        "name": "How to Write Product Vision",
+        "icon": "fas fa-lightbulb",
+        "content": "Framing Product-Market Fit and establishing roadmaps that deliver real user value.",
+        "article": [
+          "An excellent Product Vision is not a lengthy document nobody reads. It is the North Star guiding the entire development, design, and business team.",
+          "The first secret is answering: Why does this product exist? What core pain point does it solve that current solutions miss? I often use the Elevator Pitch framework to capture this vision in 2-3 sentences.",
+          "Second, the Vision must link directly to Business Metrics. Even a perfect architecture that delivers no revenue or cost savings is a failure. As Product Owner, I ensure every User Story serves this shared vision.",
+          "Finally, communicate the vision continuously — not just once at project start, but in every Sprint Planning and Demo to prevent Scope Creep."
+        ]
+      },
+      {
+        "name": "Agile & Scrum Methodologies",
+        "icon": "fas fa-sync",
+        "content": "Coordinating development teams via Scrum. Managing backlogs, writing User Stories, and Sprint Planning.",
+        "article": [
+          "Agile is more than ceremonies — it is a mindset of continuous delivery and adaptation.",
+          "Effective Scrum Masters and Product Owners create psychological safety where teams raise impediments early and deliver incremental value."
+        ]
+      },
+      {
+        "name": "Stakeholder Management",
+        "icon": "fas fa-users",
+        "content": "Serving as the bridge between business and engineering. Translating business requirements into technical solutions.",
+        "article": [
+          "The most underrated skill in tech: translation. Converting stakeholder needs into system logic without losing nuance.",
+          "Strong stakeholder management means proactive communication, expectation setting, and delivering on promises consistently."
+        ]
+      }
+    ],
+    "tags": [
+      "Agile",
+      "Scrum",
+      "Vision"
+    ]
+  },
+  {
+    "id": "know_4",
+    "role": "Domain Expertise",
+    "title": "Cloud Architecture",
+    "subtitle": "AWS Ecosystem",
+    "color": "#00ff88",
+    "icon": "fas fa-cloud",
+    "topics": [
+      {
+        "name": "Landing Zone & Governance",
+        "icon": "fas fa-plane-arrival",
+        "content": "Setting up secure multi-account AWS environments following security best practices.",
+        "article": [
+          "A well-architected Landing Zone is the foundation of enterprise cloud adoption.",
+          "Using AWS Organizations, SCPs, and a multi-account strategy with proper network segmentation via AWS Transit Gateway ensures security and compliance from day one."
+        ]
+      },
+      {
+        "name": "High Availability & Scaling",
+        "icon": "fas fa-server",
+        "content": "Designing fault-tolerant architectures with Multi-AZ, Load Balancing, and Disaster Recovery.",
+        "article": [
+          "High availability is not a feature — it is an architectural property.",
+          "Auto Scaling Groups, Multi-AZ RDS, ElastiCache replication, and Route 53 failover routing create resilient systems that survive AZ outages."
+        ]
+      },
+      {
+        "name": "Serverless & FinOps",
+        "icon": "fas fa-bolt",
+        "content": "Optimizing architecture with AWS Lambda and API Gateway to minimize operational costs.",
+        "article": [
+          "Serverless shifts the cost model from provisioned capacity to actual usage.",
+          "AWS Lambda, API Gateway, DynamoDB, and S3 enable architectures that scale to zero when idle — crucial for cost-conscious enterprises."
+        ]
+      }
+    ],
+    "tags": [
+      "AWS",
+      "Cloud-Native",
+      "FinOps"
+    ]
+  },
+  {
+    "id": "know_5",
+    "role": "Domain Expertise",
+    "title": "Cybersecurity",
+    "subtitle": "Platform Defense",
+    "color": "#ff0055",
+    "icon": "fas fa-shield-alt",
+    "topics": [
+      {
+        "name": "AI Guardrails & Prompt Security",
+        "icon": "fas fa-lock",
+        "content": "Establishing security filters against Prompt Injection, Jailbreak, and data leakage.",
+        "article": [
+          "GenAI introduces novel attack surfaces: prompt injection, jailbreaking, and training data extraction.",
+          "A Prompt Security Gate acts as middleware — inspecting every prompt and response with regex patterns, semantic classifiers, and rate limiting to block malicious inputs before they reach the LLM."
+        ]
+      },
+      {
+        "name": "Identity & Access Management",
+        "icon": "fas fa-id-card",
+        "content": "Applying least-privilege principles. Managing IAM Roles/Policies with SSO and MFA integration.",
+        "article": [
+          "IAM is the backbone of cloud security.",
+          "The principle of least privilege, combined with IAM Roles, Attribute-Based Access Control, and temporary credentials via STS, minimizes blast radius during incidents."
+        ]
+      },
+      {
+        "name": "Data Protection & Compliance",
+        "icon": "fas fa-key",
+        "content": "Encrypting data at rest and in transit, complying with banking security standards.",
+        "article": [
+          "Data protection requires defense in depth: KMS for encryption keys, TLS 1.3 for transport, VPC endpoints for private communication, and CloudTrail for audit trails."
+        ]
+      }
+    ],
+    "tags": [
+      "Security",
+      "IAM",
+      "Guardrails"
+    ]
+  },
+  {
+    "id": "know_6",
+    "role": "Domain Expertise",
+    "title": "Data Analytics",
+    "subtitle": "Log Tracing & Insights",
+    "color": "#f3f4f6",
+    "icon": "fas fa-chart-pie",
+    "topics": [
+      {
+        "name": "Root Cause Analysis (RCA)",
+        "icon": "fas fa-search",
+        "content": "Tracing distributed error logs and analyzing root causes via SQL/Kibana.",
+        "article": [
+          "When production systems fail, minutes matter. RCA is the systematic process of tracing failures back to their origin.",
+          "Distributed tracing across microservices requires correlation IDs, centralized logging (ELK stack), and structured log formats. The goal is MTTR reduction."
+        ]
+      },
+      {
+        "name": "Data Visualization",
+        "icon": "fas fa-chart-line",
+        "content": "Visualizing data with Tableau and Grafana. Building system health monitoring dashboards.",
+        "article": [
+          "A picture is worth a thousand log lines.",
+          "Grafana dashboards with Prometheus metrics, combined with CloudWatch alarms, provide real-time visibility into system health and performance trends."
+        ]
+      },
+      {
+        "name": "ETL Pipelines",
+        "icon": "fas fa-database",
+        "content": "Understanding and designing extract, transform, and load pipelines for reporting.",
+        "article": [
+          "ETL pipelines are the circulatory system of data-driven organizations.",
+          "AWS Glue, Step Functions, and Athena enable serverless ETL workflows that transform raw data into actionable business insights."
+        ]
+      }
+    ],
+    "tags": [
+      "SQL",
+      "Analytics",
+      "Tracing"
+    ]
+  }
+]

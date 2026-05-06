@@ -1,0 +1,325 @@
+{
+  "projects": [
+    {
+      "id": "ezpolicy",
+      "title": "ezPolicy",
+      "type": "problem-solving",
+      "category": "GenAI",
+      "date": "2024-08",
+      "status": "completed",
+      "featured": true,
+      "summary": "Enterprise GenAI document intelligence system — accuracy leaped from <20% to >90%",
+      "hero": {
+        "problem": "3,000+ bank policies, <20% search accuracy",
+        "outcome": ">90% accuracy, 60% ticket deflection"
+      },
+      "sections": [
+        {
+          "title": "The Business Problem",
+          "icon": "fas fa-briefcase",
+          "content": "At my company, 3,000+ policy documents across Legal, Compliance, HR, Operations, and Technology created a massive knowledge fragmentation problem. Employees spent hours manually searching PDFs. The accuracy rate for complex multi-policy queries was under 20%. Every wrong answer meant compliance risk or operational delay."
+        },
+        {
+          "title": "Research & Discovery",
+          "icon": "fas fa-search",
+          "content": "We evaluated three approaches: (1) Traditional keyword search — too shallow for legal documents where context matters. (2) Simple RAG — improved retrieval but failed on multi-hop queries requiring cross-referencing. (3) Agentic RAG — the winner. An Agent-based system could decompose complex queries, search multiple sources, and self-reflect on answer quality."
+        },
+        {
+          "title": "Technical Architecture",
+          "icon": "fas fa-sitemap",
+          "content": "**Core Pipeline:** LangChain orchestration layer → Router Agent decomposes query → Sub-Agents search OpenSearch (vector) + Neo4j (graph) → Self-Reflection Loop validates completeness → Synthesis Agent produces final answer with citations. **Chunking:** Semantic chunking at 512 tokens with 128-token overlap, preserving section headers for context. **Guardrails:** Prompt Security Gate with regex patterns, semantic classifier, and PII redaction."
+        },
+        {
+          "title": "Implementation Journey",
+          "icon": "fas fa-code",
+          "content": "Managed full SDLC: requirements gathering with Legal/HR stakeholders → UI/UX workshops for the query interface → sprint-based development with bi-weekly demos → handover documentation and training. The key challenge was embedding domain expertise — legal teams needed to validate the system's understanding of complex regulatory language. We built a feedback loop where flagged answers were reviewed and used to fine-tune retrieval."
+        },
+        {
+          "title": "Results & Impact",
+          "icon": "fas fa-chart-line",
+          "content": "**Accuracy:** <20% → >90% on complex multi-policy queries. **Response time:** Hours of manual search → <10 seconds. **Adoption:** 60% HR ticket deflection within 3 months. **Scale:** Supporting 3,000+ documents with sub-second retrieval. Recognized as a bank-wide GenAI success story and referenced in Vietnam Digital Awards 2025."
+        }
+      ],
+      "tech": [
+        "LangChain",
+        "OpenAI",
+        "OpenSearch",
+        "Neo4j",
+        "Python",
+        "FastAPI"
+      ],
+      "links": {
+        "demo": "",
+        "repo": ""
+      }
+    },
+    {
+      "id": "aml-chatbot",
+      "title": "AML Chatbot",
+      "type": "problem-solving",
+      "category": "GenAI",
+      "date": "2024-09",
+      "status": "completed",
+      "featured": true,
+      "summary": "Hallucination-free Legal assistant — 93.15% query relevance, 85 active users in 2 months",
+      "hero": {
+        "problem": "Legal division needed instant, accurate compliance answers",
+        "outcome": "93.15% query relevance, hallucination-free responses"
+      },
+      "sections": [
+        {
+          "title": "The Business Problem",
+          "icon": "fas fa-briefcase",
+          "content": "my company's Legal division handles Anti-Money Laundering compliance — a domain where incorrect information carries severe regulatory consequences. Traditional legal research took hours. A standard LLM solution would risk hallucinations in a zero-tolerance-for-error environment."
+        },
+        {
+          "title": "Technical Architecture",
+          "icon": "fas fa-sitemap",
+          "content": "**Strict RAG architecture** — no generative freedom, only retrieved facts. Grounding: every answer required explicit citation to source documents. Guardrails: tight regex patterns preventing the model from generating content outside retrieved context. Confidence threshold: answers below 85% confidence were flagged for human review instead of being displayed."
+        },
+        {
+          "title": "Results",
+          "icon": "fas fa-chart-line",
+          "content": "93.15% query relevance. 85 active users within 2 months. Zero hallucination incidents in production. Full technical rebuild from a legacy system with improved accuracy and maintainability."
+        }
+      ],
+      "tech": [
+        "Python",
+        "LangChain",
+        "OpenSearch",
+        "FastAPI"
+      ],
+      "links": {
+        "demo": "",
+        "repo": ""
+      }
+    },
+    {
+      "id": "droppii-migration",
+      "title": "Droppii Migration",
+      "type": "migration",
+      "category": "Cloud",
+      "date": "2024-06",
+      "status": "completed",
+      "featured": true,
+      "summary": "Azure to AWS e-commerce platform migration — secured $8K+ MRR",
+      "hero": {
+        "problem": "Scale infrastructure for growing e-commerce platform",
+        "outcome": "$8K+ MRR secured, 27% cost reduction"
+      },
+      "sections": [
+        {
+          "title": "Why Migrate",
+          "icon": "fas fa-question-circle",
+          "content": "Droppii's e-commerce platform on Azure needed to scale while optimizing costs. Azure's pricing model for their workload created unpredictable monthly bills. AWS offered more granular cost controls, better reserved instance pricing, and a broader ecosystem of managed services for their use case."
+        },
+        {
+          "title": "Architecture Design",
+          "icon": "fas fa-sitemap",
+          "content": "**Target Architecture:** AWS Landing Zone with multi-account structure (Management, Security, Log Archive, Workloads). Compute: EC2 with Auto Scaling Groups. Database: RDS Multi-AZ with read replicas. Storage: S3 + CloudFront CDN. Networking: Transit Gateway connecting VPCs. **BOM Calculation:** Detailed bill of materials covering compute, storage, data transfer, and reserved instances — this alone secured $8K+ MRR by giving the client confidence in predictable costs."
+        },
+        {
+          "title": "Execution Plan",
+          "icon": "fas fa-tasks",
+          "content": "**Phase 1 — Discovery:** 2 weeks mapping all Azure resources to AWS equivalents. **Phase 2 — IaC:** 3 weeks building Terraform modules for the Landing Zone. **Phase 3 — Data Migration:** 1 week using AWS DMS for database migration with zero-downtime CDC. **Phase 4 — Cutover:** 1 weekend with DNS switch and validation testing."
+        },
+        {
+          "title": "Lessons Learned",
+          "icon": "fas fa-lightbulb",
+          "content": "DNS propagation delays caused 30 minutes of partial availability — always lower TTL 24 hours before cutover. Connection pool exhaustion on the new RDS instance needed manual intervention. CloudFront cache warming should be scripted, not manual. Log costs from verbose application logging surprised us — enable log level filtering BEFORE migration."
+        }
+      ],
+      "tech": [
+        "AWS",
+        "Terraform",
+        "DMS",
+        "EC2",
+        "RDS",
+        "CloudFront"
+      ],
+      "links": {
+        "demo": "",
+        "repo": ""
+      }
+    },
+    {
+      "id": "prompt-security-gate",
+      "title": "Prompt Security Gate",
+      "type": "problem-solving",
+      "category": "Security",
+      "date": "2024-10",
+      "status": "completed",
+      "featured": true,
+      "summary": "Middleware proxy filtering malicious LLM inputs — 100% security compliance",
+      "hero": {
+        "problem": "Enterprise LLMs exposed to prompt injection and data leakage",
+        "outcome": "100% compliance, zero successful attacks"
+      },
+      "sections": [
+        {
+          "title": "The Business Problem",
+          "icon": "fas fa-briefcase",
+          "content": "When my company deployed LLMs internally, every chatbot became a potential attack surface. Prompt injection could bypass business logic. Sensitive data could leak through clever prompting. Banking regulations required demonstrable security controls — a simple API key wasn't enough."
+        },
+        {
+          "title": "Technical Architecture",
+          "icon": "fas fa-sitemap",
+          "content": "**5-layer defense:** (1) Input Sanitization — strip control characters, normalize Unicode. (2) Pattern Matching — regex rules against known injection patterns and jailbreak attempts. (3) Semantic Analysis — classifier detecting malicious intent regardless of phrasing. (4) PII Detection — identify and redact sensitive data patterns. (5) Policy Decision — allow, block, or flag for human review based on risk score. **Deployment:** Centralized API on ECS Fargate, integrated directly into CAIP chatbot middleware."
+        },
+        {
+          "title": "Results",
+          "icon": "fas fa-chart-line",
+          "content": "100% security compliance for all GenAI endpoints. Zero successful injection attacks in production. ~15 blocked attempts per day. <5ms latency overhead added to each request. Full audit trail of every prompt and response."
+        }
+      ],
+      "tech": [
+        "Python",
+        "FastAPI",
+        "ECS",
+        "DynamoDB",
+        "Regex"
+      ],
+      "links": {
+        "demo": "",
+        "repo": ""
+      }
+    },
+    {
+      "id": "it-young-talents",
+      "title": "IT Young Talents Program",
+      "type": "product-build",
+      "category": "Leadership",
+      "date": "2025-01",
+      "status": "completed",
+      "featured": false,
+      "summary": "4-step technical assessment funnel — 92% retention, 38% promotion rate",
+      "hero": {
+        "problem": "Traditional hiring produced high false-positive rates",
+        "outcome": "False positives dropped from 30% to 8%"
+      },
+      "sections": [
+        {
+          "title": "User Problem",
+          "icon": "fas fa-users",
+          "content": "my company's IT hiring had a 30% false positive rate — one in three hires wasn't performing at the expected level. The existing process relied on resumes and generic interviews that couldn't assess real engineering capability. We needed a systematic way to identify true potential."
+        },
+        {
+          "title": "Solution Design",
+          "icon": "fas fa-sitemap",
+          "content": "**4-Step Funnel:** Gate 1 — Systems Thinking (case study analysis). Gate 2 — Technical Communication (explain a concept to both technical and non-technical audiences). Gate 3 — Practical Debugging (sandbox environment with real bugs). Gate 4 — Architecture Conversation (growth mindset and potential assessment). Each gate had a clear rubric and pass/fail criteria. Mentorship was integrated into official KPIs for senior engineers."
+        },
+        {
+          "title": "Results",
+          "icon": "fas fa-chart-line",
+          "content": "Retention: 65% → 92%. Promotion rate within 2 years: 15% → 38%. False positive rate: 30% → 8%. The framework was adopted as the standard for all technical hiring at my company."
+        }
+      ],
+      "tech": [
+        "Assessment Design",
+        "Rubrics",
+        "Mentorship",
+        "KPI Integration"
+      ],
+      "links": {
+        "demo": "",
+        "repo": ""
+      }
+    },
+    {
+      "id": "arxiv-assistant",
+      "title": "Arxiv Assistant",
+      "type": "research",
+      "category": "GenAI",
+      "date": "2024-11",
+      "status": "in-progress",
+      "featured": true,
+      "summary": "R&D tool helping data scientists digest complex academic papers",
+      "hero": {
+        "problem": "Data scientists spent hours manually reading dense academic papers",
+        "outcome": "Saved dozens of manual reading hours weekly"
+      },
+      "sections": [
+        {
+          "title": "Research Question",
+          "icon": "fas fa-flask",
+          "content": "How can we help data scientists efficiently extract insights from complex academic papers that contain dense mathematical notation, charts, and domain-specific terminology? Traditional RAG struggles with math rendering, chart interpretation, and the hierarchical structure of academic writing."
+        },
+        {
+          "title": "Methodology",
+          "icon": "fas fa-cogs",
+          "content": "**PDF Parsing Pipeline:** Custom parser handling LaTeX math notation, figure/table extraction, and section hierarchy preservation. **Multi-modal RAG:** Combined text embeddings with figure caption embeddings for cross-modal retrieval. **Structured Output:** Responses formatted with sections mirroring the paper's structure (Abstract, Methods, Results, Discussion) so users could drill into specific areas."
+        },
+        {
+          "title": "Findings",
+          "icon": "fas fa-lightbulb",
+          "content": "Math notation parsing remains the hardest problem — LaTeX-to-readable-text conversion loses semantic meaning. Chart interpretation via vision models shows promise but isn't production-ready. The hierarchical paper structure mapping was the most impactful feature — users could ask 'what methodology did this paper use?' and get a targeted, section-specific answer."
+        }
+      ],
+      "tech": [
+        "Python",
+        "LangChain",
+        "PyPDF2",
+        "OpenAI",
+        "FastAPI"
+      ],
+      "links": {
+        "demo": "",
+        "repo": ""
+      }
+    },
+    {
+      "id": "matcha-junkie",
+      "title": "Matcha Junkie",
+      "type": "product-build",
+      "category": "Full-Stack",
+      "date": "2024-12",
+      "status": "completed",
+      "featured": true,
+      "summary": "A full-stack matcha latte e-commerce shop with authentication, CRUD product management, shopping cart, and order logging — built with Flask and deployed on GitHub Pages.",
+      "hero": {
+        "problem": "Small matcha shops need a simple, beautiful online presence with product management",
+        "outcome": "Fully functional e-commerce site with auth, product CRUD, cart, and order history"
+      },
+      "sections": [
+        {
+          "title": "User Problem",
+          "icon": "fas fa-users",
+          "content": "Independent matcha tea shops struggle to establish an online presence. They need a simple, beautiful website where customers can browse products, add to cart, and place orders — without complex e-commerce platforms or high monthly fees. **Matcha Junkie** solves this with a lightweight Flask application that provides all essential e-commerce features in a clean, green-themed interface."
+        },
+        {
+          "title": "Technical Architecture",
+          "icon": "fas fa-sitemap",
+          "content": "**Stack:** Flask (Python web framework) + SQLAlchemy (ORM) + Flask-Login (authentication) + Jinja2 (templates) + SQLite (database). **Auth Flow:** User registers → password hashed with Werkzeug → Flask-Login manages sessions → protected routes for cart/orders. **Data Flow:** Products stored in SQLite via SQLAlchemy models → CRUD operations via Flask routes → Jinja2 renders dynamic HTML → static assets served from /static. **Deployment:** GitHub Pages — static site generation approach with Flask-Frozen or manual build."
+        },
+        {
+          "title": "Key Features",
+          "icon": "fas fa-star",
+          "content": "**Authentication:** Register, login, logout with hashed passwords and session management. **Product Catalog:** Browse matcha products with images, descriptions, and prices. **Shopping Cart:** Add/remove items, update quantities, persistent across sessions. **Checkout:** Order placement with customer details. **Order History:** Logged-in users can view past orders with status. **Admin Features:** Product CRUD (create, read, update, delete) for shop owners."
+        },
+        {
+          "title": "Why Flask?",
+          "icon": "fas fa-question-circle",
+          "content": "Flask was chosen over heavier frameworks for its simplicity and flexibility. Unlike Django (which includes many built-in features we would not use), Flask provides exactly what Matcha Junkie needs: routing, templating, and session management — no more, no less. SQLAlchemy gives us a clean ORM without the overhead of a full Django ORM setup. The result is a codebase under 500 lines that is easy to understand and extend."
+        },
+        {
+          "title": "Lessons Learned",
+          "icon": "fas fa-lightbulb",
+          "content": "**GitHub Pages limitations:** Flask is not natively supported on GitHub Pages (which serves static files only). The solution was to use a build step that renders all pages to static HTML, or deploy to a service that supports Python. **SQLite in production:** SQLite works great for development and low-traffic sites, but for real production use, PostgreSQL would be more appropriate. **Authentication:** Flask-Login is simple but requires careful CSRF protection — always use WTForms CSRF tokens in production forms."
+        }
+      ],
+      "tech": [
+        "Flask",
+        "Python",
+        "SQLAlchemy",
+        "Flask-Login",
+        "Jinja2",
+        "SQLite",
+        "HTML/CSS"
+      ],
+      "links": {
+        "demo": "https://lamhoangcatvy.github.io/matcha-junkie/",
+        "repo": "https://github.com/LamHoangCatVy/matcha-junkie"
+      }
+    }
+  ]
+}

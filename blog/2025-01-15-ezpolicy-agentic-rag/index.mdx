@@ -1,0 +1,143 @@
+---
+slug: ezpolicy-agentic-rag
+title: "Building ezPolicy: An Agentic RAG Journey at my company"
+description: "How we built an enterprise document intelligence system using Agentic RAG, transforming policy search from under 20% to over 90% accuracy at Vietnam's largest private bank."
+authors: [catvy]
+tags: [genai, rag, banking, architecture, enterprise]
+date: 2025-01-15
+image: https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80
+---
+
+import Blog3DScene from '@site/src/components/blog/Blog3DScene';
+
+<Blog3DScene type="network" color="#00f3ff" density={1.2} height="45vh" />
+
+Every large enterprise has a document problem. At my company — Vietnam's largest private bank by assets — that problem was 3,000+ policy documents spread across Legal, Compliance, HR, Operations, and Technology divisions. Employees spent hours manually searching through PDFs, emailing HR for clarifications, and often receiving inconsistent answers to the same question. The accuracy rate for complex multi-policy queries was abysmally low — under 20%.
+
+When I joined as the AI Architect and Product Owner for the ezPolicy project, the mission was clear: build an intelligent system that could answer any policy question accurately, in seconds, with verifiable citations. This is the story of how we did it.
+
+## The Technical Challenge
+
+Enterprise policy Q&A is not a simple retrieval problem. Consider this real query from a my company employee:
+
+> "I'm a Technology division employee with 3 years of tenure. What is my annual leave entitlement, and does it change if I transfer to a subsidiary like FECredit?"
+
+To answer this accurately, the system needs to:
+
+1. Retrieve the **general leave policy** document
+2. Retrieve **Technology division-specific** amendments
+3. Retrieve **subsidiary transfer policies** from FECredit's documentation
+4. **Calculate** tenure from the employee's join date
+5. **Synthesize** a coherent answer that reconciles potentially conflicting clauses
+
+Traditional RAG — embed the query, retrieve top-k chunks, feed to LLM — fails catastrophically here. The vector search might find "leave policy" chunks but miss the subsidiary transfer rules entirely. The LLM might hallucinate the calculation or fail to flag conflicting provisions.
+
+## Why We Chose Agentic RAG
+
+Agentic RAG extends the traditional pipeline with autonomous agents capable of planning, tool use, and self-reflection. Here's our architecture:
+
+```
+User Query → Router Agent → [Planner]
+                │
+     ┌──────────┼──────────┐
+     ▼          ▼          ▼
+  Agent 1    Agent 2    Agent 3
+  (Vector    (SQL:      (Policy
+   Search)   Employee    Graph)
+              Data)
+     │          │          │
+     └──────────┼──────────┘
+                ▼
+         [Self-Reflection]
+                │
+         ┌──────┴──────┐
+         │  Complete?   │
+         └──────┬──────┘
+          Yes   │   No → Generate new sub-query
+                ▼
+           Synthesizer → Final Answer
+```
+
+### The Router Agent
+
+The Router Agent decomposes the user's question into sub-questions. For the leave policy example:
+
+1. *Sub-query 1:* "What is the annual leave entitlement for a 3-year employee?" → Vector Search Agent
+2. *Sub-query 2:* "What is the Technology division's specific leave policy amendment?" → Vector Search Agent
+3. *Sub-query 3:* "Employee ID E12345 — what is their exact join date and current department?" → SQL Agent
+4. *Sub-query 4:* "How does leave entitlement change when transferring to FECredit subsidiary?" → Policy Graph Agent
+
+### The Self-Reflection Loop
+
+This was our secret weapon. After retrieving context, the agent evaluates: "Do I have enough to answer?" If not, it generates follow-up queries autonomously:
+
+```python
+def self_reflect(context: str, original_query: str) -> bool:
+    """Agent evaluates if retrieved context is sufficient."""
+    prompt = f"""
+    Query: {original_query}
+    Retrieved context: {context}
+
+    Can you fully answer the query using only this context?
+    If no, what specific information is still missing?
+    Respond with JSON: {{"sufficient": bool, "missing": str}}
+    """
+    response = llm.invoke(prompt)
+    return json.loads(response)["sufficient"]
+```
+
+This meant the system could recover from incomplete initial retrievals without any human intervention. An employee asks a question → the agent retrieves → realizes it needs more → retrieves again → synthesizes → delivers a complete, accurate answer.
+
+## The Vector Database Architecture
+
+We built on OpenSearch with the k-NN plugin for vector similarity search, plus a Neo4j graph database for policy relationship traversal. The embedding model was `text-embedding-3-large` via Azure OpenAI, generating 3072-dimensional vectors.
+
+Our chunking strategy evolved through experimentation:
+
+| Chunk Size | Overlap | Recall@10 | Notes |
+|-----------|---------|-----------|-------|
+| 256 tokens | 64 | 0.72 | Good precision, missed context |
+| 512 tokens | 128 | 0.89 | Best balance |
+| 1024 tokens | 256 | 0.91 | Better recall but slower, more irrelevant context |
+
+We settled on **512 tokens with 128-token overlap**, using document-structure-aware splitting that respected legal article and clause boundaries.
+
+## The Results
+
+After six months of development and iteration:
+
+| Metric | Before ezPolicy | After ezPolicy |
+|--------|----------------|----------------|
+| **Accuracy (complex queries)** | `&lt;20%` | `>90%` |
+| **Response time** | Hours to days (manual) | `&lt;10` seconds |
+| **Policy coverage** | ~200 documents (manually referenced) | 3,000+ documents |
+| **User satisfaction** | Low (inconsistent answers) | High (verified citations) |
+| **HR ticket deflection** | Baseline | ~60% reduction in policy-related tickets |
+
+## Key Lessons Learned
+
+### 1. Evaluation is Everything
+
+We invested heavily in an evaluation framework using RAGAS (Retrieval Augmented Generation Assessment). Every change to chunking, embedding, or retrieval was measured against 200+ hand-labeled test queries. Without this, we would have been flying blind.
+
+### 2. Start Simple, Add Complexity Incrementally
+
+We didn't build Agentic RAG on day one. We started with simple RAG, measured accuracy, identified failure modes, and only added agent capabilities where the evaluation showed they were needed. The self-reflection loop, for instance, was added in month 4 after we identified that 35% of complex queries had insufficient initial retrieval.
+
+### 3. The Graph Database Was Worth It
+
+Adding Neo4j for policy relationship traversal seemed like overengineering at first. But it solved a class of queries that vector search alone could never handle: "Which policies does this policy supersede?" and "What are the subsidiary-specific amendments to this regulation?" The graph paid for itself within weeks.
+
+### 4. Human-in-the-Loop for Edge Cases
+
+Even at >90% accuracy, we maintained a feedback mechanism. Users could flag incorrect answers, which went into a review queue. These flagged cases became our most valuable training data — each one revealed a blind spot in our retrieval or synthesis logic.
+
+## What's Next
+
+The ezPolicy foundation now supports multiple GenAI products across the bank. We're exploring:
+
+- **Multilingual support** — Vietnamese-language queries (the primary language for many employees)
+- **Proactive policy alerts** — Notifying employees when policies that affect them change
+- **Cross-bank federation** — Extending the system to subsidiaries (FECredit, my company Securities)
+
+Building ezPolicy taught me that enterprise GenAI is not about the model — it's about the retrieval architecture, the evaluation framework, and the relentless focus on accuracy over flashiness. If your RAG system isn't measured, it isn't ready for production.
