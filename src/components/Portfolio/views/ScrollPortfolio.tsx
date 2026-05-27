@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMouseGradient } from '../hooks/useMouseGradient';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useParallax } from '../hooks/useParallax';
@@ -30,12 +30,71 @@ const PROJECT_COLORS: Record<string, { color: string; icon: string }> = {
   proj_7: { color: '#00f3ff', icon: 'fas fa-flask' },
 };
 
+function FloatingParticles() {
+  const particles = useRef<HTMLDivElement[]>([]);
+
+  useEffect(() => {
+    const container = document.getElementById('hero-particles');
+    if (!container) return;
+    const colors = ['#00f3ff', '#bc13fe', '#ffaa00', '#00ff88'];
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('div');
+      p.className = 'hero-particle';
+      p.style.left = `${Math.random() * 100}%`;
+      p.style.width = p.style.height = `${Math.random() * 4 + 2}px`;
+      p.style.background = colors[Math.floor(Math.random() * colors.length)];
+      p.style.animationDuration = `${Math.random() * 10 + 8}s`;
+      p.style.animationDelay = `${Math.random() * 8}s`;
+      container.appendChild(p);
+      particles.current.push(p);
+    }
+    return () => {
+      particles.current.forEach((p) => p.remove());
+    };
+  }, []);
+
+  return <div id="hero-particles" className="hero-particles" />;
+}
+
+function TypingText({ text }: { text: string }) {
+  const [displayed, setDisplayed] = useState('');
+  const [cursor, setCursor] = useState(true);
+
+  useEffect(() => {
+    let i = 0;
+    setDisplayed('');
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed(text.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 60);
+    return () => clearInterval(interval);
+  }, [text]);
+
+  useEffect(() => {
+    if (displayed.length < text.length) return;
+    const blink = setInterval(() => setCursor((c) => !c), 530);
+    return () => clearInterval(blink);
+  }, [displayed, text]);
+
+  return (
+    <span>
+      {displayed}
+      <span style={{ opacity: cursor ? 1 : 0, color: 'var(--accent-primary)', fontWeight: 300 }}>|</span>
+    </span>
+  );
+}
+
 function HeroSection() {
   const gradientRef = useMouseGradient();
   const titleRef = useParallax(0.08);
 
   return (
     <section className="hero-section hero-gradient" ref={gradientRef} id="section-hero">
+      <FloatingParticles />
       <div className="hero-bg" />
       <div className="hero-content">
         <h1 className="hero-name">
@@ -43,11 +102,30 @@ function HeroSection() {
           <span className="hero-name-line">CAT VY.</span>
         </h1>
         <p className="hero-title" ref={titleRef}>
-          Senior AI Systems Architect
+          <TypingText text="Senior AI Systems Architect" />
         </p>
+        <div className="quick-stats">
+          <div className="quick-stat">
+            <div className="quick-stat-number">5+</div>
+            <div className="quick-stat-label">Years Exp</div>
+          </div>
+          <div className="quick-stat">
+            <div className="quick-stat-number">20</div>
+            <div className="quick-stat-label">Projects</div>
+          </div>
+          <div className="quick-stat">
+            <div className="quick-stat-number">8</div>
+            <div className="quick-stat-label">Certifications</div>
+          </div>
+          <div className="quick-stat">
+            <div className="quick-stat-number">100+</div>
+            <div className="quick-stat-label">AI Use Cases</div>
+          </div>
+        </div>
         <div className="flex justify-center gap-4 mt-10">
           <SocialLink href="https://linkedin.com/in/lam-hoang-cat-vy" icon="fab fa-linkedin-in" />
           <SocialLink href="mailto:catvyisstudying@gmail.com" icon="fas fa-envelope" />
+          <SocialLink href="https://github.com/LamHoangCatVy" icon="fab fa-github" />
         </div>
       </div>
       <div className="hero-scroll-indicator">
@@ -93,12 +171,12 @@ function DesignerToArchitectSection() {
               systems thinking. Now, as an AI Architect, I translate business ambition into systems that actually work.
             </p>
             <p>
-              The thread connecting every role: <strong className="text-[#00f3ff]">translation</strong>.
+              The thread connecting every role: <strong style={{ color: 'var(--accent-primary)' }}>translation</strong>.
               Converting vision to logic. Requirements to architecture. Ideas to infrastructure.
             </p>
           </div>
         </div>
-        <div className="split-visual reveal-right">
+        <div className="split-visual reveal-right" style={{ background: 'var(--bg-surface)' }}>
           <div className="split-visual-bg" />
           <div className="split-visual-content">
             <i className="fas fa-route" />
@@ -190,12 +268,16 @@ function CompetencySection() {
     return () => observer.disconnect();
   }, []);
 
-  function initChart() {
+  const initChart = useCallback(() => {
     const ctx = chartRef.current;
     if (!ctx || !window.Chart) return;
     const ChartJS = window.Chart;
     const existing = ChartJS.getChart('skillsRadar');
     if (existing) existing.destroy();
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+    const labelColor = isDark ? '#888' : '#666';
 
     new ChartJS(ctx, {
       type: 'radar',
@@ -217,20 +299,28 @@ function CompetencySection() {
         scales: {
           r: {
             min: 0, max: 100,
-            angleLines: { color: 'rgba(255,255,255,0.06)' },
-            grid: { color: 'rgba(255,255,255,0.04)' },
-            pointLabels: { color: '#888', font: { family: 'JetBrains Mono', size: 10 } },
+            angleLines: { color: gridColor },
+            grid: { color: gridColor },
+            pointLabels: { color: labelColor, font: { family: 'JetBrains Mono', size: 10 } },
             ticks: { display: false },
           },
         },
         plugins: { legend: { display: false } },
       },
     });
-  }
+  }, []);
 
-  const skills = [
-    'Agentic RAG', 'LangChain', 'AWS Ecosystem', 'Kubernetes', 'Terraform',
-    'System Design', 'Prompt Engineering', 'LLM Evaluation', 'Stakeholder Mgmt', 'Agile Delivery',
+  const skills: { name: string; level: string }[] = [
+    { name: 'Agentic RAG', level: 'Expert' },
+    { name: 'LangChain', level: 'Advanced' },
+    { name: 'AWS Ecosystem', level: 'Advanced' },
+    { name: 'Kubernetes', level: 'Intermediate' },
+    { name: 'Terraform', level: 'Intermediate' },
+    { name: 'System Design', level: 'Expert' },
+    { name: 'Prompt Engineering', level: 'Expert' },
+    { name: 'LLM Evaluation', level: 'Advanced' },
+    { name: 'Stakeholder Mgmt', level: 'Expert' },
+    { name: 'Agile Delivery', level: 'Advanced' },
   ];
 
   return (
@@ -247,7 +337,10 @@ function CompetencySection() {
 
         <div className="tags-cloud reveal-up" style={{ transitionDelay: '0.3s' }}>
           {skills.map((skill) => (
-            <span key={skill} className="tag-pill">{skill}</span>
+            <div key={skill.name} className="tag-pill-wrapper">
+              <span className="tag-pill">{skill.name}</span>
+              <span className="tag-pill-tooltip">{skill.level}</span>
+            </div>
           ))}
         </div>
       </div>
@@ -452,17 +545,24 @@ export default function ScrollPortfolio() {
     return () => observer.disconnect();
   }, []);
 
+  const handleDotClick = (id: string) => {
+    const el = document.getElementById(`section-${id}`);
+    el?.scrollIntoView({ behavior: 'smooth' });
+    if (id === 'hero') {
+      window.history.replaceState(null, '', '/');
+    } else {
+      window.history.replaceState(null, '', `#${id}`);
+    }
+  };
+
   return (
-    <div id="portfolio-scroll" className="absolute inset-0 z-20 overflow-y-auto overflow-x-hidden" style={{ scrollSnapType: 'y proximity', scrollBehavior: 'smooth', paddingTop: 60 }}>
-      {/* Dot navigation */}
+    <div id="portfolio-scroll" className="relative z-20 w-full" style={{ scrollSnapType: 'y proximity', scrollBehavior: 'smooth', height: 'calc(100vh - 60px)', overflowY: 'auto', overflowX: 'hidden', marginTop: 0 }}>
       <div className="section-dots">
         {sections.map((s, i) => (
           <button
             key={s.id}
             className={`section-dot ${i === activeSection ? 'active' : ''}`}
-            onClick={() => {
-              document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={() => handleDotClick(s.id)}
             aria-label={s.label}
           >
             <span className="section-dot-tooltip">{s.label}</span>
@@ -470,7 +570,6 @@ export default function ScrollPortfolio() {
         ))}
       </div>
 
-      {/* Chapter label */}
       <div className={`chapter-label ${activeSection > 0 ? 'visible' : ''}`}>
         {activeSection > 0 ? `Chapter ${activeSection} · ${sections[activeSection]?.label}` : ''}
       </div>

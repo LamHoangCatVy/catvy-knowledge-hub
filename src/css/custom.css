@@ -17,17 +17,13 @@
 }
 
 /* ---------- Portfolio scope — only active when .portfolio-page is on <html> ---------- */
-html.portfolio-page,
-html.portfolio-page body,
-html.portfolio-page #__docusaurus {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  height: 100dvh;
-  height: 100vh;
+html.portfolio-page {
+  scroll-behavior: smooth;
 }
 html.portfolio-page .navbar {
   z-index: 500;
+  position: sticky;
+  top: 0;
 }
 
 /* ---------- Global dark theme (site-wide consistency) ---------- */
@@ -162,7 +158,7 @@ html.portfolio-page .navbar {
   transition: color 0.2s;
 }
 .navbar__link--active {
-  color: #00f3ff !important;
+  color: var(--accent-primary) !important;
 }
 .navbar__link--active::after {
   content: '';
@@ -171,7 +167,7 @@ html.portfolio-page .navbar {
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, #00f3ff, #bc13fe);
+  background: var(--gradient-accent);
   border-radius: 2px;
   transform: scaleX(1);
   transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -183,7 +179,7 @@ html.portfolio-page .navbar {
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, #00f3ff, #bc13fe);
+  background: var(--gradient-accent);
   border-radius: 2px;
   transform: scaleX(0);
   transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -192,7 +188,7 @@ html.portfolio-page .navbar {
   transform: scaleX(1);
 }
 .navbar__link:hover {
-  color: #fff !important;
+  color: var(--text-primary) !important;
 }
 
 /* ---------- Code block enhancements ---------- */
@@ -208,4 +204,248 @@ html.portfolio-page .navbar {
 /* ---------- Blog post page layout ---------- */
 .blog-post-page {
   padding: 80px 0 40px;
+}
+
+/* ---------- Pulse animation (status badges) ---------- */
+@keyframes pulse-status {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ---------- Typewriter animation ---------- */
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes blink-caret {
+  0%, 100% { border-color: transparent; }
+  50% { border-color: var(--accent-primary); }
+}
+.typewriter-text {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--accent-primary);
+  animation: typewriter 2s steps(30) 1s forwards, blink-caret 0.75s step-end infinite;
+  display: inline-block;
+  max-width: fit-content;
+}
+
+/* ---------- Floating particles ---------- */
+.hero-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: float-up linear infinite;
+  opacity: 0.3;
+}
+@keyframes float-up {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+}
+
+/* ---------- Quick Stats Bar ---------- */
+.quick-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.quick-stat {
+  text-align: center;
+}
+.quick-stat-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.quick-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ---------- Skeleton loader ---------- */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ---------- Page transition ---------- */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: page-enter 0.35s ease-out;
+}
+
+/* ---------- Global back-to-top ---------- */
+.back-to-top {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 400;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+}
+.back-to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.back-to-top:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  box-shadow: 0 0 16px rgba(0, 243, 255, 0.2);
+}
+
+/* ---------- Keyboard shortcuts hint ---------- */
+.kb-shortcuts {
+  position: fixed;
+  bottom: 32px;
+  left: 32px;
+  z-index: 400;
+  display: flex;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.4;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.kb-shortcuts kbd {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+.kb-shortcuts:hover { opacity: 1; }
+
+/* ---------- Scrollbar (global dark) ---------- */
+html[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+html[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+html[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+html[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+html[data-theme='vy'] ::-webkit-scrollbar-thumb {
+  background: rgba(83, 91, 246, 0.2);
+}
+html[data-theme='vy'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(83, 91, 246, 0.35);
+}
+
+/* ---------- Tooltip for skill tags ---------- */
+.tag-pill-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.tag-pill-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #fff;
+  background: rgba(10, 12, 18, 0.95);
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+.tag-pill-wrapper:hover .tag-pill-tooltip {
+  opacity: 1;
+}
+
+/* ---------- Mobile nav improvements ---------- */
+@media (max-width: 996px) {
+  .navbar__toggle {
+    color: var(--text-secondary);
+  }
+  .navbar-sidebar {
+    background: var(--bg-surface) !important;
+  }
+  .navbar-sidebar__brand {
+    background: var(--bg-primary) !important;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .navbar-sidebar__items {
+    padding-top: 16px;
+  }
+  .navbar-sidebar .menu__link {
+    color: var(--text-secondary);
+    padding: 10px 20px;
+    border-radius: 0;
+  }
+  .navbar-sidebar .menu__link--active {
+    color: var(--accent-primary);
+    background: var(--bg-card);
+  }
+}
+
+/* ---------- Reading progress bar (global) ---------- */
+.reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: var(--gradient-accent);
+  z-index: 1000;
+  transition: width 0.1s linear;
+}
+
+/* ---------- Tiled noise (optimized) ---------- */
+.noise-tiled {
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  background-size: 200px 200px;
 }

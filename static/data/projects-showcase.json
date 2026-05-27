@@ -48,10 +48,15 @@
         "Python",
         "FastAPI"
       ],
-      "links": {
-        "demo": "",
-        "repo": ""
-      }
+      "demo": {
+        "type": "blog",
+        "iframeUrl": "",
+        "videoUrl": "",
+        "videoThumbnail": "",
+        "blogContent": "## ezPolicy: Building an Enterprise GenAI Document Intelligence System\n\n### The Challenge\n\nBanks handle massive amounts of policy documentation — Legal, Compliance, HR, Operations, Technology — each with their own formats, terminology, and update cycles. When I joined my company, employees spent hours manually searching through 3,000+ PDFs to answer compliance questions. The accuracy for multi-policy queries was under 20%.\n\n### Why Traditional Search Fails\n\nKeyword search doesn't understand context. A query about \"customer data retention for credit card applications\" needs to combine information from:\n- The Data Privacy Policy\n- Credit Card Terms of Service\n- Regulatory Compliance Guidelines\n\nA simple keyword match returns too many irrelevant results. A basic RAG system improves relevance but struggles with multi-hop reasoning.\n\n### The Agentic RAG Approach\n\nWe built a multi-agent system:\n1. **Router Agent** — Analyzes the query and determines which document domains to search\n2. **Sub-Agents** — Each searches a specific domain (Legal, Compliance, HR, etc.) \n3. **Reflection Loop** — Validates answer completeness, cross-references sources\n4. **Synthesis Agent** — Compiles the final answer with citations\n\nThe key insight: Agents can self-reflect. If the answer lacks information, they go back and search more.\n\n### Technical Implementation\n\n- **Orchestration:** LangChain for agent coordination\n- **Vector Search:** OpenSearch with semantic chunking (512 tokens, 128 overlap)\n- **Graph Relations:** Neo4j for cross-document relationship mapping\n- **Guardrails:** Prompt Security Gate with regex + semantic classification + PII redaction\n- **API Layer:** FastAPI serving the agent pipeline\n\n### Results\n\n- **Accuracy:** <20% → >90%\n- **Response Time:** Hours → <10 seconds\n- **Adoption:** 60% HR ticket deflection\n- **Recognition:** Vietnam Digital Awards 2025 reference case\n\n### Key Lessons\n\n1. **Domain expertise matters.** Legal teams needed to validate outputs repeatedly during training\n2. **Feedback loops are essential.** Flagged answers should inform model improvements\n3. **Guardrails aren't optional.** In regulated industries, every output needs traceable citations\n4. **Start with one domain.** We launched with HR policies before expanding to Legal and Compliance",
+        "gallery": []
+      },
+      "repoUrl": ""
     },
     {
       "id": "aml-chatbot",
@@ -89,10 +94,15 @@
         "OpenSearch",
         "FastAPI"
       ],
-      "links": {
-        "demo": "",
-        "repo": ""
-      }
+      "demo": {
+        "type": "none",
+        "iframeUrl": "",
+        "videoUrl": "",
+        "videoThumbnail": "",
+        "blogContent": "",
+        "gallery": []
+      },
+      "repoUrl": ""
     },
     {
       "id": "droppii-migration",
@@ -137,10 +147,19 @@
         "RDS",
         "CloudFront"
       ],
-      "links": {
-        "demo": "",
-        "repo": ""
-      }
+      "demo": {
+        "type": "gallery",
+        "iframeUrl": "",
+        "videoUrl": "",
+        "videoThumbnail": "",
+        "blogContent": "",
+        "gallery": [
+          "https://placehold.co/800x500/0a0c12/00f3ff?text=AWS+Landing+Zone+Architecture&font=montserrat",
+          "https://placehold.co/800x500/0a0c12/00ff88?text=Migration+Phases&font=montserrat",
+          "https://placehold.co/800x500/0a0c12/bc13fe?text=Cost+Optimization+BOM&font=montserrat"
+        ]
+      },
+      "repoUrl": ""
     },
     {
       "id": "prompt-security-gate",
@@ -179,10 +198,15 @@
         "DynamoDB",
         "Regex"
       ],
-      "links": {
-        "demo": "",
-        "repo": ""
-      }
+      "demo": {
+        "type": "video",
+        "iframeUrl": "",
+        "videoUrl": "",
+        "videoThumbnail": "",
+        "blogContent": "",
+        "gallery": []
+      },
+      "repoUrl": ""
     },
     {
       "id": "it-young-talents",
@@ -220,10 +244,15 @@
         "Mentorship",
         "KPI Integration"
       ],
-      "links": {
-        "demo": "",
-        "repo": ""
-      }
+      "demo": {
+        "type": "blog",
+        "iframeUrl": "",
+        "videoUrl": "",
+        "videoThumbnail": "",
+        "blogContent": "## Building a 4-Step Technical Assessment Funnel\n\n### The Problem with Traditional Hiring\n\nFor years, my company relied on resume screening and generic interviews. The result? A 30% false positive rate — one in three hires underperformed. Resumes overstate qualifications. Interviews favor confident speakers over deep thinkers. We needed a better way to evaluate real engineering capability.\n\n### Designing the Assessment Framework\n\nAfter studying assessment methodologies from Google, Amazon, and Stripe, I designed a 4-gate funnel tailored to our engineering culture:\n\n**Gate 1: Systems Thinking** — Present a complex business scenario (e.g., \"Design a notification system for 10M users\"). Evaluate their ability to break down the problem, identify trade-offs, and structure their thinking. No code required — pure analytical reasoning.\n\n**Gate 2: Technical Communication** — Ask candidates to explain a technical concept (e.g., \"How does HTTPS work?\") to two audiences: a junior developer and a non-technical stakeholder. This tests their depth of understanding and empathy.\n\n**Gate 3: Practical Debugging** — Provide a sandbox environment with intentionally buggy code. Watch how they approach debugging: Do they read error messages? Write tests? Use a debugger? This reveals their actual problem-solving habits.\n\n**Gate 4: Architecture Conversation** — Open-ended discussion about past projects, technical decisions, and growth aspirations. The goal: assess growth mindset and cultural fit, not memorized trivia.\n\n### Rubric Design\n\nEach gate uses a clear 1-4 rubric:\n- 1: Struggles with fundamentals\n- 2: Can solve with guidance\n- 3: Independent and competent\n- 4: Teaches or extends the solution\n\nThis removes subjective bias and creates a consistent evaluation standard.\n\n### Integrating Mentorship into KPIs\n\nThe key insight: Senior engineers must be incentivized to mentor. We integrated mentorship hours, technical interview participation, and knowledge-sharing sessions into official performance KPIs. This created a virtuous cycle — experienced engineers grew from teaching, juniors grew from learning.\n\n### Results (After 2 Years)\n\n- **Retention:** 65% → 92%\n- **Promotion rate (within 2 years):** 15% → 38%\n- **False positive rate:** 30% → 8%\n- **Adoption:** Framework became the bank-wide standard for technical hiring",
+        "gallery": []
+      },
+      "repoUrl": ""
     },
     {
       "id": "arxiv-assistant",
@@ -262,10 +291,15 @@
         "OpenAI",
         "FastAPI"
       ],
-      "links": {
-        "demo": "",
-        "repo": ""
-      }
+      "demo": {
+        "type": "none",
+        "iframeUrl": "",
+        "videoUrl": "",
+        "videoThumbnail": "",
+        "blogContent": "",
+        "gallery": []
+      },
+      "repoUrl": ""
     },
     {
       "id": "matcha-junkie",
@@ -316,10 +350,15 @@
         "SQLite",
         "HTML/CSS"
       ],
-      "links": {
-        "demo": "https://lamhoangcatvy.github.io/matcha-junkie/",
-        "repo": "https://github.com/LamHoangCatVy/matcha-junkie"
-      }
+      "demo": {
+        "type": "iframe",
+        "iframeUrl": "https://lamhoangcatvy.github.io/matcha-junkie/",
+        "videoUrl": "",
+        "videoThumbnail": "",
+        "blogContent": "",
+        "gallery": []
+      },
+      "repoUrl": "https://github.com/LamHoangCatVy/matcha-junkie"
     }
   ]
 }

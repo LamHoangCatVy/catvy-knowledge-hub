@@ -8,11 +8,9 @@ export default function PortfolioApp() {
   useEffect(() => {
     const html = document.documentElement;
     html.classList.add('portfolio-page');
-    document.body.style.overflow = 'hidden';
     const timer = setTimeout(() => setLoading(false), 800);
     return () => {
       html.classList.remove('portfolio-page');
-      document.body.style.overflow = '';
       clearTimeout(timer);
     };
   }, []);
