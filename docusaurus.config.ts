@@ -29,7 +29,7 @@ const config: Config = {
     {
       tagName: 'script',
       attributes: {},
-      innerHTML: `(function(){var themes=['dark','light','vy'];var saved=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',saved);document.addEventListener('DOMContentLoaded',function(){var nav=document.querySelector('.navbar__items--right');if(!nav)return;var container=document.createElement('div');container.className='theme-switcher';themes.forEach(function(t){var btn=document.createElement('button');btn.className='theme-btn theme-btn-'+t+(saved===t?' active':'');btn.title=t.charAt(0).toUpperCase()+t.slice(1)+' mode';btn.onclick=function(){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);document.querySelectorAll('.theme-btn').forEach(function(b){b.classList.remove('active')});btn.classList.add('active')};container.appendChild(btn)});nav.appendChild(container)})})();`,
+      innerHTML: `!function(){var t=["dark","light","vy"],e=localStorage.getItem("theme")||"dark";document.documentElement.setAttribute("data-theme",e);function n(){var r=document.querySelector(".navbar__items--right");if(!r||r.querySelector(".theme-switcher"))return;var o=document.createElement("div");o.className="theme-switcher",t.forEach(function(t){var n=document.createElement("button");n.className="theme-btn theme-btn-"+t+(e===t?" active":"");n.title=t.charAt(0).toUpperCase()+t.slice(1)+" mode";n.onclick=function(){document.documentElement.setAttribute("data-theme",t),localStorage.setItem("theme",t),document.querySelectorAll(".theme-btn").forEach(function(t){t.classList.remove("active")}),n.classList.add("active")};o.appendChild(n)}),r.appendChild(o)}"loading"===document.readyState||"interactive"===document.readyState?setTimeout(n,600):document.addEventListener("DOMContentLoaded",function(){setTimeout(n,600)});var r;try{(r=new MutationObserver(function(t){for(var e=0;e<t.length;e++)for(var r=0;r<t[e].addedNodes.length;r++){var o=t[e].addedNodes[r];if(o.nodeType===1&&(o.classList.contains("navbar__items--right")||o.querySelector(".navbar__items--right"))){n();return}}})).observe(document.body,{childList:!0,subtree:!0})}catch(o){}}();`,
     },
     {
       tagName: 'meta',
@@ -102,7 +102,7 @@ const config: Config = {
         alumniOf: 'IU International University of Applied Sciences',
         worksFor: {
           '@type': 'Organization',
-          name: 'VPBank',
+          name: 'Bank',
         },
       }),
     },
@@ -148,14 +148,14 @@ const config: Config = {
     ],
     colorMode: {
       defaultMode: 'dark',
-      disableSwitch: false,
+      disableSwitch: true,
       respectPrefersColorScheme: false,
     },
     navbar: {
       title: 'Cat Vy',
       logo: {
         alt: 'Cat Vy Logo',
-        src: 'img/logo.svg',
+        src: 'img/vylhc-avatar.png',
       },
       items: [
         { to: '/', label: 'Portfolio', position: 'left' },

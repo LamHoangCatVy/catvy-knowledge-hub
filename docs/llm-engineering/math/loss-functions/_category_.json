@@ -1,1 +1,1 @@
-{"label": "Loss Functions", "position": 3}
+{"label": "Loss Functions", "position": 3, "description": "Cross-entropy, contrastive loss, RLHF reward modeling, and training objectives"}

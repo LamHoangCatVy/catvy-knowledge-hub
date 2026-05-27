@@ -1,1 +1,1 @@
-{"label": "Inference Optimization", "position": 1}
+{"label": "Inference Optimization", "position": 1, "description": "Quantization, pruning, KV-cache optimization, and latency reduction techniques"}

@@ -652,7 +652,6 @@ pre.reveal-item.revealed {
   overflow: hidden;
   border-radius: 16px;
   margin-bottom: 40px;
-  margin-top: -20px;
   position: relative;
   z-index: 0;
 }

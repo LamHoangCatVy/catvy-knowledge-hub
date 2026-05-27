@@ -1,1 +1,1 @@
-{"label": "Output Filtering", "position": 3}
+{"label": "Output Filtering", "position": 3, "description": "Output validation, content safety filters, PII redaction, and hallucination detection"}

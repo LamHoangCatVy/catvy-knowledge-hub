@@ -1,1 +1,1 @@
-{"label": "Message Queues", "position": 2}
+{"label": "Message Queues", "position": 2, "description": "RabbitMQ, SQS, dead letter queues, and reliable message delivery patterns"}

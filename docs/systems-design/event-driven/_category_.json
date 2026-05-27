@@ -1,1 +1,1 @@
-{"label": "Event-Driven Architecture", "position": 3}
+{"label": "Event-Driven Architecture", "position": 3, "description": "Kafka streaming, message queue patterns, saga orchestration, and event sourcing"}

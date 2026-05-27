@@ -1,1 +1,1 @@
-{"label": "GraphQL", "position": 3}
+{"label": "GraphQL", "position": 3, "description": "Schema design, resolvers, federated GraphQL, and N+1 problem solutions"}

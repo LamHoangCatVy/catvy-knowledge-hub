@@ -72,6 +72,10 @@ function discoverSubdirs(dir: string): string[] {
   });
 }
 
+function hasIndexPage(dir: string): boolean {
+  return fs.existsSync(path.join(dir, 'index.mdx')) || fs.existsSync(path.join(dir, 'index.md'));
+}
+
 function buildCategoryItems(
   dir: string,
   idPrefix: string,
@@ -103,13 +107,21 @@ function buildCategoryItems(
     const subItems = buildCategoryItems(subPath, subIdPrefix, undefined, undefined);
 
     if (subItems.length > 0) {
-      items.push({
+      // Category with child items — render as expandable with link to index page
+      const catItem: any = {
         type: 'category',
         label,
         collapsible: true,
         collapsed: true,
         items: subItems,
-      });
+      };
+      if (hasIndexPage(subPath)) {
+        catItem.link = { type: 'doc', id: `${subIdPrefix}/index` };
+      }
+      items.push(catItem);
+    } else if (hasIndexPage(subPath)) {
+      // Leaf category — render as a direct link to its index page
+      items.push(`${subIdPrefix}/index`);
     }
   }
 

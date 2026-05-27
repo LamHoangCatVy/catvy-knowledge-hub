@@ -1,1 +1,1 @@
-{"label": "Serving Infrastructure", "position": 2}
+{"label": "Serving Infrastructure", "position": 2, "description": "vLLM, TGI, model serving frameworks, and GPU cluster orchestration"}

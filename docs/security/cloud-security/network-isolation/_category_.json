@@ -1,1 +1,1 @@
-{"label": "Network Isolation", "position": 2}
+{"label": "Network Isolation", "position": 2, "description": "VPC design, security groups, NACLs, and private connectivity patterns"}

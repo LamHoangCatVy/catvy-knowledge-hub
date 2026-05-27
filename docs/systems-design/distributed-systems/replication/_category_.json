@@ -1,1 +1,1 @@
-{"label": "Replication Strategies", "position": 2}
+{"label": "Replication Strategies", "position": 2, "description": "Leader-follower, multi-leader, quorum-based replication, and consistency models"}

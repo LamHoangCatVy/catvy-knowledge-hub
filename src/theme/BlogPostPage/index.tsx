@@ -41,74 +41,7 @@ function ScrollToTop() {
   );
 }
 
-function FloatingTOC() {
-  const [items, setItems] = React.useState<{ id: string; text: string; level: number }[]>([]);
-  const [activeId, setActiveId] = React.useState('');
-  const [open, setOpen] = React.useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const hs = document.querySelectorAll<HTMLHeadingElement>('article h2, article h3');
-      const toc: { id: string; text: string; level: number }[] = [];
-      hs.forEach((h) => {
-        if (!h.id) h.id = (h.textContent || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        toc.push({ id: h.id, text: h.textContent || '', level: h.tagName === 'H2' ? 2 : 3 });
-      });
-      setItems(toc);
-      if (!toc.length) return;
-      const obs = new IntersectionObserver(
-        (es) => es.forEach((e) => { if (e.isIntersecting) setActiveId(e.target.id); }),
-        { rootMargin: '-80px 0px -80% 0px', threshold: 0 }
-      );
-      hs.forEach((h) => obs.observe(h));
-      return () => obs.disconnect();
-    }, 600);
-    return () => clearTimeout(t);
-  }, []);
-
-  if (!items.length) return null;
-
-  return (
-    <div className={`floating-toc ${open ? 'toc-open' : ''}`}>
-      <button className="toc-toggle" onClick={() => setOpen(!open)} aria-label="Table of contents">
-        <span className="toc-toggle-label">On this page</span>
-        <svg className={`toc-chevron ${open ? 'rotate-180' : ''}`} width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      </button>
-      <nav className={`toc-list ${open ? 'block' : 'hidden'}`}>
-        {items.map((i) => (
-          <a key={i.id} href={`#${i.id}`} className={`toc-link toc-level-${i.level} ${activeId === i.id ? 'toc-active' : ''}`}
-            onClick={(e) => { e.preventDefault(); document.getElementById(i.id)?.scrollIntoView({ behavior: 'smooth' }); }}>
-            {i.text}
-          </a>
-        ))}
-      </nav>
-    </div>
-  );
-}
-
-function ScrollRevealEffect() {
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const article = document.querySelector('article');
-      if (!article) return;
-      const els = article.querySelectorAll('p, pre, blockquote, h2, h3, h4, ul, ol, img');
-      els.forEach((el, i) => {
-        (el as HTMLElement).classList.add('reveal-item');
-        (el as HTMLElement).style.transitionDelay = `${i * 0.05}s`;
-      });
-      const obs = new IntersectionObserver(
-        (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('revealed'); obs.unobserve(e.target); } }),
-        { threshold: 0.08, rootMargin: '0px 0px -30px 0px' }
-      );
-      els.forEach((el) => obs.observe(el));
-      return () => obs.disconnect();
-    }, 400);
-    return () => clearTimeout(t);
-  }, []);
-  return null;
-}
 
 function ReadingRing() {
   const [progress, setProgress] = React.useState(0);
@@ -140,24 +73,6 @@ function ReadingRing() {
         </defs>
       </svg>
       <span className="reading-ring-text">{Math.round(progress)}%</span>
-    </div>
-  );
-}
-
-function BlogHeroImage() {
-  const [img, setImg] = React.useState('');
-  useEffect(() => {
-    const metaImg = document.querySelector('meta[property="og:image"]');
-    if (!metaImg) return;
-    const src = metaImg.getAttribute('content') || '';
-    if (src && !src.includes('docusaurus-social-card') && !src.includes('undraw')) {
-      setImg(src);
-    }
-  }, []);
-  if (!img) return null;
-  return (
-    <div className="blog-hero-image">
-      <img src={img} alt="" className="blog-hero-img" />
     </div>
   );
 }
@@ -220,9 +135,6 @@ export default function BlogPostPageWrapper(props: Props): ReactNode {
     <div className="blog-post-enter">
       <ReadingProgress />
       <ReadingRing />
-      <FloatingTOC />
-      <ScrollRevealEffect />
-      <BlogHeroImage />
       <BlogPostPage {...props} />
       <AuthorSection />
       <ScrollToTop />

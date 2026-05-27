@@ -1,1 +1,1 @@
-{"label": "Apache Kafka", "position": 1}
+{"label": "Apache Kafka", "position": 1, "description": "Topic design, consumer groups, exactly-once semantics, and Kafka Streams"}

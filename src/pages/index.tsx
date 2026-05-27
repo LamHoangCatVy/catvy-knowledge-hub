@@ -16,8 +16,13 @@ function PortfolioEntry() {
 
   if (!Component) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-[#030305] flex flex-col items-center justify-center text-[#e0e0e0] font-mono">
-        <div className="w-16 h-16 border-2 border-[#bc13fe]/20 border-t-[#00f3ff] rounded-full animate-spin mb-4" />
+      <div style={{
+        position: 'fixed', top: 'var(--ifm-navbar-height, 60px)', left: 0, right: 0, bottom: 0,
+        zIndex: 100, background: '#030305', display: 'flex',
+        flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        color: '#e0e0e0', fontFamily: 'JetBrains Mono, monospace',
+      }}>
+        <div className="mb-4 w-16 h-16 border-2 border-[#bc13fe]/20 border-t-[#00f3ff] rounded-full animate-spin" />
         <div className="text-xs text-gray-500 tracking-widest uppercase">Fetching Core Modules...</div>
       </div>
     );
