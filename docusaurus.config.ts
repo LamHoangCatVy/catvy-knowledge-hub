@@ -138,11 +138,20 @@ const config: Config = {
     ],
   ],
 
+  themes: ['@docusaurus/theme-mermaid'],
+
+  markdown: {
+    mermaid: true,
+  },
+
   plugins: [
     './src/plugins/project-pages.js',
   ],
 
   themeConfig: {
+    mermaid: {
+      theme: { light: 'neutral', dark: 'dark' },
+    },
     metadata: [
       { name: 'author', content: 'Lam Hoang Cat Vy' },
       { name: 'keywords', content: 'AI architect, Agentic RAG, GenAI, AWS, cloud architecture, systems analysis, portfolio' },

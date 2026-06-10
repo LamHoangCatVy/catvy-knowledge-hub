@@ -50,7 +50,8 @@
       "subcategories": [
         { "id": "prompt-security", "label": "Prompt Security", "visible": true },
         { "id": "cloud-security", "label": "Cloud Security", "visible": true },
-        { "id": "ai-threats", "label": "AI Threats", "visible": true }
+        { "id": "ai-threats", "label": "AI Threats", "visible": true },
+        { "id": "sso", "label": "Single Sign-On", "visible": true }
       ],
       "pages": [{ "slug": "index", "visible": true }]
     }

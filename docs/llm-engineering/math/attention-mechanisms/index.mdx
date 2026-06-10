@@ -16,7 +16,7 @@ What does "it" refer to? The cat or the mat? A human reader uses context to reso
 Self-attention lets each token in a sequence look at every other token to compute a context-aware representation. Here's how it works, step by step:
 
 ### Step 1: Create Query, Key, and Value Vectors
-For each token, the model creates three vectors by multiplying the token's embedding by learned weight matrices W<sub>Q</sub>, W<sub>K</sub>, and W<sub>V</sub>:
+For each token, the model creates three vectors by multiplying the token's embedding by learned weight matrices `W_Q`, `W_K`, and `W_V`:
 
 - **Query (Q)**: "What am I looking for?" — represents what this token wants to know about other tokens.
 - **Key (K)**: "What do I have?" — represents what information this token can provide to others.
@@ -25,21 +25,21 @@ For each token, the model creates three vectors by multiplying the token's embed
 For a sequence of length n with embedding dimension d, Q, K, and V are each n × d matrices.
 
 ### Step 2: Compute Attention Scores
-Attention scores = Q × K<sup>T</sup> (matrix multiplication)
+Attention scores = Q × K^T (matrix multiplication)
 
 This produces an n × n matrix where entry (i, j) represents how much token i should attend to token j. Higher scores mean more relevance.
 
 ### Step 3: Scale and Normalize
-Scale the scores by √d<sub>k</sub> (where d<sub>k</sub> is the key dimension) to prevent the dot products from growing too large and pushing the softmax into regions of extremely small gradients.
+Scale the scores by `√d_k` (where `d_k` is the key dimension) to prevent the dot products from growing too large and pushing the softmax into regions of extremely small gradients.
 
-Then apply **softmax** along each row — converting raw scores into a probability distribution over all tokens: attention_weights = softmax(QK<sup>T</sup> / √d<sub>k</sub>)
+Then apply **softmax** along each row — converting raw scores into a probability distribution over all tokens: attention_weights = softmax(QK^T / √d_k)
 
 ### Step 4: Weighted Sum
 Multiply attention weights by the value matrix V. The result: each token's new representation is a weighted sum of all tokens' values, where weights represent relevance: output = attention_weights × V
 
 ## Multi-Head Attention
 
-Single-head attention captures one type of relationship. Multi-head attention runs multiple attention operations in parallel, each with its own W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> matrices, learning different types of relationships:
+Single-head attention captures one type of relationship. Multi-head attention runs multiple attention operations in parallel, each with its own `W_Q`, `W_K`, `W_V` matrices, learning different types of relationships:
 
 - One head might learn syntactic relationships (subject-verb agreement).
 - Another might learn semantic relationships (synonyms, antonyms).

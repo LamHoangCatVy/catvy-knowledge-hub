@@ -10,7 +10,7 @@ A language model's behavior is entirely determined by what it's rewarded for dur
 At its core, every autoregressive LLM is trained to maximize the probability of the next token given the previous context:
 
 ```
-P(token_t | token_1, token_2, ..., token_{t-1})
+P(token_t | token_1, token_2, ..., token_(t-1))
 ```
 
 The model outputs a probability distribution over its entire vocabulary for each position. The training objective: make the correct next token as probable as possible.
@@ -53,7 +53,7 @@ Common applications in LLM systems:
 - **Retrieval training** — Training embedding models that power RAG (Retrieval-Augmented Generation). Given a query and a set of documents, the model learns to rank the relevant one highest.
 - **Representation learning** — Training sentence embeddings for semantic similarity, clustering, and classification.
 
-The typical formulation is InfoNCE loss (a generalization of softmax cross-entropy to the contrastive setting). For a query q and a set of candidates {k₁, k₂, ..., k_n} where one k is the positive match:
+The typical formulation is InfoNCE loss (a generalization of softmax cross-entropy to the contrastive setting). For a query q and a set of candidates `k₁, k₂, ..., k_n` where one k is the positive match:
 
 ```
 Loss = -log[ exp(sim(q, k_pos) / τ) / Σᵢ exp(sim(q, kᵢ) / τ) ]
