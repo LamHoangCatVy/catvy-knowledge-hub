@@ -1,0 +1,32 @@
+---
+sidebar_position: 1
+---
+# Security Monitoring and SIEM
+
+Security Information and Event Management is the methodology and technology for collecting, analyzing, and correlating security data from across the organization. In cloud environments, where resources come and go in minutes and the attack surface changes continuously, SIEM is not a luxury — it is a fundamental requirement for maintaining security observability.
+
+## Data Collection
+
+Log sources include: audit logs from cloud providers (every API call), network traffic logs (every connection), operating system logs (syslog, event log), application logs (authentication, authorization, errors), and logs from security tools (IDS/IPS, WAF, endpoint protection).
+
+The main challenge is volume: an average organization generates terabytes of logs per day. Not all logs are useful for security — filtering and prioritization are essential. Stream processing enables filtering, transforming, and enriching logs before storage, reducing volume and improving quality.
+
+Logs should be centralized in a separate security account, isolated from workload accounts. This ensures that even if a workload account is compromised, attackers cannot delete or modify security logs.
+
+## Analysis and Detection
+
+Rule-based detection uses predefined rules to detect known patterns: multiple failed login attempts from the same IP, access to sensitive resources outside business hours, or security configuration changes. This is the traditional detection method, effective against known threats but ineffective against new attacks.
+
+Anomaly detection uses machine learning to detect unusual behavior: an instance starts communicating with an IP in a previously unseen country, a user suddenly downloads an abnormally large amount of data, or an API key is used from two different geographic locations within the same minute. Anomaly detection complements rule-based detection by detecting unknown threats.
+
+Threat intelligence integrates data from external sources — malicious IP lists, phishing domains, known attack patterns — to enrich analysis. A connection to an IP on a malicious list is far more suspicious than a connection to an unknown IP.
+
+## Response and Remediation
+
+Detection has no value without response. When a threat is detected, SIEM should trigger automated response when possible: isolate the compromised instance from the network, revoke suspected credentials, block malicious IPs. Automated response reduces the time from detection to containment from hours (human) to seconds (automated).
+
+When automated response is not appropriate — due to false positive risk or situation complexity — SIEM should generate an alert with full context for the on-call engineer: what happened, what evidence supports the detection, and recommended remediation steps.
+
+## Design Principles
+
+Security monitoring relies on three principles. First, log everything — you cannot detect what you do not record. Second, centralize logs in a separate security account — logs should not be affected by incidents in workload accounts. Third, automate response — every second between detection and containment is every second attackers can cause damage.

@@ -1,0 +1,26 @@
+---
+sidebar_position: 1
+---
+# Distributed Locking in Distributed Systems
+
+In a distributed system, multiple processes may need exclusive access to a shared resource — such as a file, a database record, or a business operation. A distributed lock provides a mechanism to ensure that only one process at a time can access that resource. This is a fundamental problem in distributed systems, and although it may seem simple, implementing it correctly requires a deep understanding of distributed failure modes.
+
+## Requirements of a Distributed Lock
+
+A correct distributed lock must satisfy three properties. Safety: at any point in time, only one process can hold the lock. If two processes both believe they hold the lock, data can be corrupted. Liveness: if the process holding the lock fails or stalls, the lock must be released so that other processes can proceed. Fault tolerance: the locking system must continue operating even if some nodes in the lock cluster fail.
+
+The core problem with distributed locks is the coupling between the lock and the operations protected by the lock. Suppose process A acquires the lock, then gets paused — garbage collection, network delay, or OS scheduling. While A is paused, the lock expires. Process B acquires the lock and begins modifying the resource. When A resumes, it believes it still holds the lock and continues modifying the resource. Data is corrupted.
+
+The solution is fencing tokens: every time a lock is granted, it comes with a monotonically increasing token. When a process writes to the protected resource, it sends the token along with the request. The storage system rejects any request with a token lower than the one previously seen. If A sends a request with an old token after B has written with a new token, A's request is rejected.
+
+## Implementation Mechanisms
+
+A key-value store with TTL is the simplest mechanism. A process attempts to create a key with a unique name — if the key does not exist, the lock is granted. The key has a TTL to automatically release if the process fails. The process releases the lock by deleting the key. This mechanism works well for systems that do not require high reliability, but TTL-based locks do not provide fencing tokens.
+
+A database with atomic compare-and-swap provides a stronger mechanism. A process attempts to update a lock record with a condition — only if the current lock is null or has expired. The atomic update ensures that two processes cannot both successfully update. A version token stored in the lock record acts as a fencing token.
+
+Consensus systems like etcd or ZooKeeper provide the strongest locking mechanism. Locks are implemented via ephemeral nodes — nodes that exist for the duration of a process's session and are automatically deleted when the session ends. This handles both lock release on process failure and fencing through transaction versions.
+
+## Design Principles
+
+Distributed locking is based on three principles. First, locks are never permanent — every lock must have an expiration time. Second, fencing tokens are mandatory — without a mechanism to protect against paused processes, the lock is not safe. Third, minimize the work protected by the lock — the shorter the lock hold time, the lower the risk of failure while holding the lock.

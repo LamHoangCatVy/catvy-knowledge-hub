@@ -1,0 +1,32 @@
+---
+sidebar_position: 1
+---
+# Gossip Protocols in Distributed Systems
+
+A gossip protocol is a family of distributed communication protocols in which information spreads through a network the way rumors spread in a community: each node shares the information it knows with a random set of other nodes, which in turn share with others, and so on until all nodes know the information. Gossip protocols provide exceptional scalability and fault tolerance — they work even when nodes fail, networks partition, and topologies change continuously.
+
+## How It Works
+
+In a typical gossip round, each node maintains a membership list — a list of other nodes it knows about. In each round, a node randomly selects a subset from its membership list and sends them the latest information it has. Receiving nodes merge the received information with their own — keeping the newer version — and in the next round, propagate the updated information.
+
+There are three main types of gossip. Dissemination gossip spreads information — such as node state, configuration updates, or new data. Anti-entropy gossip compares and synchronizes entire state between nodes to repair inconsistencies. Aggregation gossip computes distributed aggregate functions — such as sum, average, or maximum value — across all nodes.
+
+## Properties of Gossip Protocols
+
+Scalability is the most prominent property. Each node communicates with only a fixed number of other nodes per round — typically logarithmic in the total number of nodes. This means the per-node load does not increase as the cluster size grows. A 10-node cluster and a 10,000-node cluster generate the same per-node load — only the number of rounds required for information to spread across the cluster increases.
+
+Fault tolerance is the second property. There is no central coordinator node, no single point of failure. If a node fails, other nodes continue communicating with each other. If a message is lost, a node will receive the information from another node in the next round. Gossip protocols degrade gracefully — performance degrades gradually as the failure rate increases, rather than failing abruptly at a threshold.
+
+Eventual convergence is the third property. Gossip does not provide time guarantees — information will reach all nodes, but there is no upper bound on the time required. In practice, convergence typically occurs in O(log N) rounds, where N is the number of nodes. For most applications — membership detection, state propagation, configuration synchronization — logarithmic convergence is fast enough.
+
+## Applications in Real-World Systems
+
+Membership detection is the most common application. Each node periodically gossips its state — "I am alive, here is my version" — to a random set of other nodes. A node that has not received gossip from a node within a certain interval marks that node as dead. This enables distributed membership detection without a central registry.
+
+State propagation is the second application. Configuration updates, schema changes, or notifications are propagated via gossip. This ensures that all nodes eventually have the same configuration without needing a centralized distribution system.
+
+Distributed aggregate computation is the third application. Instead of collecting data from all nodes into a central location, each node computes locally and gossips the result. Over multiple rounds, the global value emerges. This is useful for computing total request counts, average latency, or maximum memory usage across the entire cluster.
+
+## Design Principles
+
+Gossip protocols are based on three principles. First, no node is special — every node is equal, and the protocol operates without a leader or coordinator. Second, randomness is your friend — randomly selecting nodes to communicate with distributes load evenly and ensures information spreads rapidly. Third, eventual convergence, not strong consistency — gossip trades off instantaneous consistency for scalability and fault tolerance.

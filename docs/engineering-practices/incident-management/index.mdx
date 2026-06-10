@@ -1,0 +1,30 @@
+---
+sidebar_position: 1
+---
+# Incident Management and Blameless Culture
+
+Production incidents are inevitable. Complex software operates in complex environments — networks fail, hardware degrades, human errors happen, and unforeseen interactions between systems create new failure modes. How an organization responds to incidents — both during the emergency and after remediation — determines whether the incident becomes a learning opportunity or a source of blame and fear.
+
+## Incident Response
+
+When an incident occurs, the sole priority is to restore service. Not to find the cause, not to determine who is responsible, not to write a report. Restore service. Everything else can wait.
+
+Roles in incident response should be clearly defined. The Incident Commander coordinates the entire response effort — they are the final decision maker, not the technical executor. The Operations Lead executes technical actions to restore service. The Communications Lead manages communication with stakeholders — status updates, customer notifications, coordination with other teams. These roles should be rotated among team members so that everyone gains experience.
+
+The response process should be documented in a runbook — a document describing specific steps for common incident types. A runbook does not assume the reader is a system expert — it enables an on-call engineer with general system knowledge to perform initial diagnostic and remediation steps.
+
+## Blameless Postmortem
+
+After service is restored, the postmortem analyzes the incident to understand what happened and how to prevent it from recurring. The blameless postmortem is the foundation of a learning culture — it assumes that everyone acted with the best intentions based on the information they had at the time, and that incidents are the result of systemic gaps, not individual fault.
+
+An effective postmortem answers five questions. What happened — a detailed timeline from when the incident began to when it was resolved. Why it happened — root cause analysis, not stopping at the direct cause but continuing to ask "why" until reaching systemic causes. How we detected it — whether monitoring worked or failed, and whether it could have been detected sooner. How we remediated it — the actions taken to restore service. How we prevent it from recurring — specific, actionable items with responsible individuals and deadlines.
+
+## Learning from Incidents
+
+A postmortem has no value if the action items are not implemented. Each action item must be tracked as a bug or task in the work management system, with a clear responsible person and deadline. Periodically review action items from previous postmortems to ensure they are progressing.
+
+Share postmortems widely within the organization. A postmortem from Team A may contain lessons applicable to Team B. Making incidents transparent — not hiding them — builds trust and spreads knowledge.
+
+## Design Principles
+
+Incident management is based on three principles. First, restore service first, analyze later — any activity not directly contributing to service restoration should be deferred until service is operational again. Second, assume good intent — everyone involved in the incident acted with the best intentions. Searching for individual fault destroys psychological safety and discourages future incident reporting. Third, focus on system improvement — the question is not "who caused this" but "how did the system allow this to happen and how do we prevent it from recurring."

@@ -1,0 +1,28 @@
+---
+sidebar_position: 1
+---
+# AI Supply Chain Security
+
+The supply chain for artificial intelligence systems encompasses every component involved in building and deploying models: training data, foundation models, machine learning libraries, training pipelines, and deployment platforms. Each component is a potential point of failure — a vulnerability in any component can become a vulnerability in the AI system. AI supply chain security is the discipline of systematically managing these risks.
+
+## AI-Specific Threats
+
+Compromised foundation models represent the most serious threat. An attacker publishes a model that appears to perform well on standard benchmarks but contains a backdoor — hidden behavior triggered by a specific activation. When an organization downloads this model and deploys it, the backdoor enters production. This threat is particularly dangerous because most organizations do not verify the integrity of foundation models — they trust benchmark scores and the publisher's reputation.
+
+Poisoned training data is the second threat. If an attacker can inject malicious data into the training or fine-tuning dataset, the model will learn hidden behaviors from that data. This can occur at any stage: data collection, labeling, preprocessing, or storage.
+
+Compromised libraries and dependencies represent the third threat. The machine learning ecosystem depends on hundreds of open-source libraries — and their dependencies. A vulnerability or backdoor in any library can affect every model built on top of it.
+
+## Defensive Measures
+
+Model provenance — verifying the origin of every model used within the organization. Who trained this model? On what dataset? With what source code? What transformations has it undergone? Model cards — documents describing the model's origin, capabilities, and limitations — should be a mandatory requirement for every deployed model.
+
+Dataset integrity — ensuring the integrity of training data. Checksums or hashes of the dataset are recorded and verified before use. Data is stored in access-controlled repositories with audit trails for every modification.
+
+Dependency scanning — scanning all dependencies — Python libraries, container images, system packages — for known vulnerabilities. This scanning should be integrated into the CI/CD pipeline and run periodically on deployed models.
+
+Model signing — signing models after training and verifying signatures before deployment. This ensures that the model has not been modified between training and deployment — not replaced by a malicious version.
+
+## Core Principles
+
+AI supply chain security rests on three principles. First, trust nothing by default — every external component must be verified before use. Second, provenance is mandatory — you must know where everything in your AI system came from. Third, defense-in-depth — multiple verification layers (provenance, integrity, vulnerability scanning) create a stronger defense system than any single layer alone.

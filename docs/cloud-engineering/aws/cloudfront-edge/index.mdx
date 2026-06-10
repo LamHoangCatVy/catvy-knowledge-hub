@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# CDN and Edge Computing
+
+A Content Delivery Network is a globally distributed network of points of presence that store cached copies of content close to end users. When a user requests content, the CDN serves it from the nearest point of presence — reducing latency, offloading the origin server, and improving resilience. Edge computing extends this concept from static content delivery to executing application logic at the edge.
+
+## CDN Architecture
+
+The origin server is the source of truth for content — typically an object storage bucket or an application server. Edge locations are points of presence where content is cached and served. When a user requests content, the CDN checks the nearest edge location. If the content is in cache (cache hit), it is served directly. If not (cache miss), the CDN fetches the content from the origin, caches it, and serves it to the user.
+
+Cache behaviors control how the CDN handles different types of content. Images and CSS can be cached for long durations — days or weeks — because they rarely change. Dynamic HTML pages can be cached for short durations — seconds to minutes. API responses may not be cached, or may be cached with a short TTL. Each path pattern can have its own cache behavior.
+
+Invalidation is the mechanism for removing content from cache before the TTL expires. When content changes — such as deploying a new version of an application — you need to invalidate old content so users receive the new version. Invalidation can target specific files or entire paths.
+
+## Edge Computing
+
+Edge computing moves application logic from centralized servers to the network edge — close to users. This reduces latency for lightweight operations that can be performed at the edge without calling back to the origin.
+
+Common use cases include: request/response manipulation (adding or modifying headers, URL redirects, path rewrites), authentication and authorization (verifying JWT at the edge, rejecting invalid requests before they reach the origin), A/B testing (routing a percentage of users to an experimental version), and basic personalization (serving different content based on geographic location or device).
+
+Edge functions have limits on execution time, memory, and capabilities — they are designed for fast, lightweight, stateless operations. Complex logic or database access should remain at the origin.
+
+## Security at the Edge
+
+WAF integrated at the edge inspects traffic before it reaches the origin — blocking SQL injection, XSS, and common attacks at the CDN layer. This protects the origin from malicious traffic without consuming server resources.
+
+DDoS protection: the CDN absorbs distributed denial-of-service attacks by distributing traffic across the global network. An attack generating 100 Gbps of traffic is distributed across hundreds of points of presence, each receiving only a small fraction.
+
+TLS termination at the edge: the CDN handles the TLS handshake, offloading the computational cost from the origin. The CDN maintains certificates and automatically renews them.
+
+## Design Principles
+
+CDN and edge computing rest on three principles. First, cache as close to the user as possible — every millisecond of latency matters. Second, TTL should reflect content change frequency — static content has long TTLs, dynamic content has short TTLs. Third, edge logic should be lightweight and stateless — complex logic belongs at the origin.

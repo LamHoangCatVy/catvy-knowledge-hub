@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# Encryption and Key Management Systems
+
+Encryption is the foundation of data protection — it ensures that even if data is accessed without authorization, the content remains unreadable without the decryption key. In cloud environments, encryption key management becomes an operational challenge: keys must be generated, stored, rotated, and revoked securely, while remaining available to the services that need them. A centralized key management system addresses these challenges.
+
+## Key Hierarchy Systems
+
+A typical encryption architecture uses envelope encryption — a technique where a data key is used to encrypt the actual data, and that data key is then encrypted with a master key. This creates a hierarchy: the master key protects the data key, and the data key protects the data.
+
+The benefits of envelope encryption are performance and security. The master key never leaves the key management system — it is only used to encrypt and decrypt data keys. Data keys are used for bulk encryption operations, where performance is critical. If a data key is compromised, only data encrypted with that key is affected — the master key and other data keys remain secure.
+
+Each record or object should have its own data key — never use the same data key for all data. This limits the blast radius if a data key is compromised.
+
+## Key Rotation
+
+Key rotation is the practice of periodically changing encryption keys. It limits the amount of data encrypted with the same key and mitigates damage if a key is compromised without detection.
+
+Automatic rotation is supported by key management systems: a new key is generated, new data is encrypted with the new key, and the old key remains available to decrypt data that was previously encrypted with it. This means rotation does not require re-encrypting all data — an expensive and risky operation.
+
+For master keys, annual rotation is standard practice. For data keys, rotation frequency depends on data sensitivity and volume — ranging from daily to quarterly.
+
+## Key Access Control
+
+The key management system integrates with identity and access management systems. Key policies define who can manage keys (create, rotate, delete) and who can use keys (encrypt, decrypt). These are two different sets of permissions and should be assigned to different roles.
+
+Security administrators manage keys — create, rotate, revoke. Applications use keys — encrypt and decrypt data. No one should have both permissions. This separation of duties is a fundamental security principle.
+
+All operations with keys — creation, rotation, use, deletion — must be logged. Audit trails enable detection of unauthorized use and incident investigation.
+
+## Design Principles
+
+Encryption key management relies on three principles. First, keys are never in plaintext outside the key management system — they are generated, stored, and used within a secure boundary. Second, separate key management from key usage — no one has both permissions. Third, automate rotation — keys should be rotated periodically without manual intervention.

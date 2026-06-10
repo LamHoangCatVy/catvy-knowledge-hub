@@ -1,0 +1,36 @@
+---
+sidebar_position: 1
+---
+# GPU Infrastructure for Training and Inference
+
+Training and inference of large machine learning models require specialized computational resources far beyond the capabilities of conventional CPUs. GPUs have become the computational foundation for deep learning due to their massively parallel processing capability — a matrix multiplication that takes a CPU thousands of cycles to complete, a GPU performs in a single pass. Managing GPU infrastructure effectively is one of the most critical skills in MLOps.
+
+## GPU Architecture
+
+GPUs differ fundamentally from CPUs in design philosophy. CPUs are optimized for low latency on sequential tasks — a few powerful cores running at high frequencies. GPUs are optimized for high throughput on parallel tasks — thousands of simpler cores running simultaneously. The fundamental operations of deep learning — matrix multiplication, convolution, activation functions — map naturally onto this parallel architecture.
+
+GPU memory is the most critical resource. VRAM capacity determines the maximum model size that can be trained or served on a single GPU. Memory bandwidth determines how fast data can be read and written during computation — and for autoregressive inference, memory bandwidth is often the primary bottleneck, not computational power.
+
+## GPU Partitioning and Sharing
+
+Multi-Instance GPU is a technology that allows partitioning one physical GPU into multiple independent instances, each with its own memory, bandwidth, and cache. This is useful for serving multiple small models on the same GPU, or providing isolation for different tenants in multi-tenant environments.
+
+Multi-Process Service allows multiple CPU processes to share the same GPU by virtualizing the CUDA context. This improves utilization for small workloads that cannot saturate a GPU alone, but does not provide memory isolation like MIG.
+
+Time-slicing shares GPUs among workloads by allocating time slices — each workload receives a time slice on the GPU. This is the simplest solution but provides no memory isolation and can lead to fragmentation if workloads have different memory requirements.
+
+## GPU Orchestration on Container Platforms
+
+Container orchestration platforms need GPU awareness to schedule workloads effectively. GPU operators detect and register GPU resources with the orchestration platform. Workloads declare GPU requirements in their definitions — GPU count, GPU type, memory capacity — and the orchestration platform finds nodes with matching resources.
+
+Autoscaling for GPU workloads is more complex than for CPU workloads because GPUs are scarce and expensive resources. GPU nodes take longer to boot, and loading models into VRAM can take several minutes. The cluster autoscaler must predict demand and maintain buffer capacity to avoid long wait times.
+
+## GPU Cost Optimization
+
+GPUs are expensive — inefficient usage can lead to thousands of dollars in waste per month. Optimization strategies include: spot instances for training workloads that can tolerate interruptions, reserved capacity for inference workloads requiring high availability, multi-model serving to share a GPU across multiple models, and scheduled shutdown of non-production GPU clusters outside working hours.
+
+GPU utilization monitoring is essential: if average GPU utilization is below 50 percent, resources are being wasted. Either workloads can be consolidated onto fewer GPUs, or models can be quantized to reduce memory requirements and allow more models on the same GPU.
+
+## Design Principles
+
+GPU infrastructure management is built on three principles. First, memory is the binding constraint — before optimizing computation, ensure the model fits in VRAM. Second, utilization is the most important metric — an idle GPU is a direct financial waste. Third, workload scheduling must be GPU-aware — the same scheduling strategy used for CPU workloads cannot be applied to GPU workloads.

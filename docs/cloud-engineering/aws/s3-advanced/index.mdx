@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# Advanced Object Storage Patterns
+
+Cloud object storage services have evolved far beyond their original function of "storing files on the internet." With features like lifecycle policies, versioning, replication, event notifications, and access points, object storage has become the foundation for data lakes, backup storage, static content delivery, and many other architectures. Understanding advanced patterns is essential to fully leverage the capabilities of this service.
+
+## Lifecycle Policies
+
+Lifecycle policies automate the transition of objects between storage tiers based on age or other criteria. Newly created objects are typically stored in the frequent access tier — the highest storage cost but the lowest access cost. As objects age and are accessed less frequently, lifecycle policies automatically transition them to cheaper storage tiers — Infrequent Access, Archive, or Deep Archive — with much lower storage costs but higher access costs.
+
+Designing effective lifecycle policies requires understanding data access patterns. Logs are accessed frequently in the first 7 days, occasionally in the next 30 days, and almost never after 90 days. Lifecycle policies reflect this: keep in standard tier for 7 days, transition to Infrequent Access after 7 days, transition to Archive after 37 days, and delete after 90 days.
+
+## Versioning and Data Protection
+
+Versioning preserves all versions of an object — even when the object is overwritten or deleted. This protects against accidental deletion or overwrite — a common operation that can cause irreversible data loss. With versioning enabled, "deleting" an object actually creates a delete marker — the original object persists and can be restored by deleting the delete marker.
+
+Object Lock prevents the deletion or overwrite of an object for a defined period. This is useful for compliance requirements — such as WORM (Write Once Read Many) — or protection against ransomware. In Governance mode, users with special permissions can override the lock. In Compliance mode, no one — including account administrators — can override the lock until it expires.
+
+## Replication and Synchronization
+
+Cross-Region Replication automatically copies objects to another region as soon as they are created. This provides disaster recovery — if one region experiences an outage, data remains available in another region — and data sovereignty compliance — data can be stored in specific geographic locations.
+
+Same-Region Replication copies objects within the same region — typically to a different account — for purposes such as data sharing between accounts, creating copies for processing without affecting the original, or meeting compliance requirements for storing data in separate accounts.
+
+## Access Points and Access Control
+
+Access Points are named network endpoints, attached to a bucket, each with its own access policy. Instead of managing a complex bucket policy with dozens of rules for different use cases, you create an access point for each use case — one for read-write applications, one for read-only reporting, one for external partners — each with its own policy.
+
+Pre-signed URLs provide temporary access to a specific object without granting access to the entire bucket. The URL is signed with the creator's credentials and has an expiration time. This is useful for secure file sharing — create a URL with a 15-minute expiration, send it to the user, and the URL automatically expires.
+
+## Design Principles
+
+Advanced object storage is based on three principles. First, data has a lifecycle — move data to cheaper storage tiers as it ages and is accessed less frequently. Second, protect against accidental deletion — versioning and object lock should be enabled for critical data. Third, the principle of least privilege — use access points and pre-signed URLs to grant the minimum necessary access.

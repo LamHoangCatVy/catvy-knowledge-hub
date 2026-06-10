@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# Cloud Networking Deep Dive Design
+
+Networking in the cloud environment is software-defined networking — and if misconfigured, it can be exposed to the entire internet. Unlike traditional networks where hardware — routers, switches, firewalls — defines the topology, cloud networks are built from virtual components that can be configured in seconds. This flexibility comes with responsibility: every connectivity decision is a security decision.
+
+## Core Network Components
+
+Virtual Private Cloud is a logically isolated virtual network from all other tenants. Within a VPC, you control the IP address range, subnets, route tables, and gateways. The choice of CIDR block for the VPC is a critical decision — it determines the number of available IP addresses and the ability to connect to other networks. The CIDR block must not overlap with any network the VPC will connect to — on-premise, other VPCs, or partner networks.
+
+Subnets divide the VPC into smaller segments, each located in an Availability Zone. Public subnets have a route to the Internet Gateway and can communicate with the internet. Private subnets have no route to the Internet Gateway and can only communicate within the VPC or through a NAT gateway for outbound traffic. Design principle: place resources in private subnets by default. Only components that truly need direct internet connectivity — such as load balancers — should be placed in public subnets.
+
+Route tables control traffic flow within the VPC. Each subnet is associated with a route table that defines where traffic is forwarded: local (within the VPC), Internet Gateway (internet), NAT Gateway (internet for private subnets), Virtual Private Gateway (VPN), or VPC Peering (other VPCs).
+
+## Private Connectivity
+
+VPC Endpoints enable connectivity to cloud services without going through the public internet. Gateway Endpoints — free, supporting object storage services and NoSQL databases — add a route in the route table. Interface Endpoints — using PrivateLink technology — create a virtual network interface in your subnet with a private IP address. Traffic never leaves the cloud provider's network.
+
+Transit Gateway is the connectivity hub for hub-and-spoke architectures. Instead of setting up VPC peering between every pair of VPCs — a quadratic complexity problem — all VPCs connect to Transit Gateway, and Transit Gateway routes traffic between them. Route tables within Transit Gateway control which VPCs can communicate with which VPCs, enabling network segmentation at scale.
+
+PrivateLink allows you to expose a service in your VPC to other VPCs — within the same account, different accounts, or even different organizations — without exposing it to the internet. The consumer creates an interface endpoint; the provider creates an endpoint service. All traffic travels within the cloud provider's network, using private IP addresses.
+
+## Defense in Depth Networking
+
+Security Groups act as stateful firewalls at the instance level. They track connection state: if you allow outbound traffic, response traffic is automatically allowed inbound. Security Groups only have allow rules — anything not explicitly allowed is denied. They can reference other Security Groups as sources, enabling role-based rule definitions rather than IP-based ones.
+
+Network ACLs act as stateless firewalls at the subnet level. They do not track state: inbound and outbound rules are evaluated independently. NACLs support both allow and deny rules, and are evaluated in numerical order. They are useful for blocking malicious IP ranges or adding an additional layer of defense.
+
+Flow Logs capture every network connection — source IP, destination IP, port, protocol, byte count, and accept/reject decision. Flow logs should be enabled for every VPC and ingested into a SIEM system for anomaly detection.
+
+## Design Principles
+
+Cloud network design is based on three principles. First, private by default — every resource starts in a private subnet, and is only moved to public when there is a justified reason. Second, defense in depth — Security Groups, NACLs, and Flow Logs form three independent layers of protection. Third, internal traffic should not traverse the internet — use VPC Endpoints and PrivateLink for all inter-service communication.

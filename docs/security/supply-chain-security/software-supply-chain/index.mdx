@@ -1,0 +1,40 @@
+---
+sidebar_position: 1
+---
+# Software Supply Chain Security
+
+The software supply chain encompasses every component, library, tool, and process involved in building and distributing software. When an organization uses hundreds of open-source dependencies, each dependency is a potential point of failure — a vulnerability in any dependency can become a vulnerability in the organization's product. Supply chain security is the discipline of managing this risk systematically.
+
+## Threats
+
+Malicious dependencies are the most common threat. Attackers publish a package with a name similar to a popular package — typosquatting — or compromise a legitimate maintainer's account and release a malicious version. When a developer installs this package, the malicious code executes in their environment — stealing credentials, installing backdoors, or encrypting data.
+
+Vulnerabilities in dependencies are the second threat. A popular library contains a security vulnerability — like Log4Shell in 2021 — and every application using that library becomes vulnerable. The challenge is not knowing that the vulnerability exists, but knowing that your application uses the vulnerable version of that library.
+
+Build pipeline compromise is the third threat. Attackers infiltrate the CI/CD system and modify the build process to inject malicious code into the final artifact. The source code in the repository is clean, but the distributed artifact contains a backdoor.
+
+## Defensive Measures
+
+### Software Bill of Materials
+
+An SBOM is a comprehensive list of the components that make up a software product — like the ingredient list on food packaging. When a vulnerability is disclosed, the SBOM allows the organization to determine within minutes — rather than days — whether they are using the affected component.
+
+The SBOM should be generated automatically as part of the build pipeline, not as a manual document prone to becoming outdated. Standard formats like SPDX and CycloneDX enable SBOM exchange between tools and organizations.
+
+### Dependency Scanning
+
+Automated scanning of all dependencies — direct and transitive — to detect known vulnerabilities. Vulnerability databases such as CVE and GitHub Advisory Database provide information about disclosed vulnerabilities. Scanning should run in the CI/CD pipeline and periodically on deployed applications — because new vulnerabilities are discovered every day.
+
+Vulnerability remediation policy should be clearly defined: critical vulnerabilities (CVSS 9.0+) require patching within 24 hours; high vulnerabilities (7.0-8.9) within 7 days; medium vulnerabilities (4.0-6.9) within 30 days.
+
+### Integrity Verification
+
+Cryptographic signatures ensure that an artifact has not been modified since it was built. Every artifact — container image, library package, binary — should be signed in the build pipeline and the signature verified before deployment. This prevents attackers from replacing a legitimate artifact with a malicious version.
+
+### Build Environment Isolation
+
+The CI/CD pipeline should run in an isolated, ephemeral environment, freshly created for each run. This prevents the persistent presence of malicious code between runs and limits the blast radius if the build environment is compromised.
+
+## Design Principles
+
+Supply chain security rests on three principles. First, know what you are using — SBOM is a basic requirement, not an advanced feature. Second, trust but verify — every external component must be scanned for vulnerabilities and its integrity verified before use. Third, automation is mandatory — manual scanning does not scale and cannot keep pace with the rate of new vulnerability discoveries.

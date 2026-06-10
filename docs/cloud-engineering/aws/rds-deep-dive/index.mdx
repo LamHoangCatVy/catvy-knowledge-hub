@@ -1,0 +1,38 @@
+---
+sidebar_position: 1
+---
+# Relational Databases in the Cloud: Performance and Reliability
+
+Managed relational databases in the cloud eliminate the burden of database administration — installation, patching, backups, scaling — but introduce new considerations around performance, cost, and reliability. Understanding configuration options, scaling strategies, and high availability mechanisms is essential for operating relational databases efficiently in cloud environments.
+
+## High Availability Architecture
+
+Multi-AZ Deployment maintains a synchronous replica of the database in a different Availability Zone. All writes are synchronized to the replica before being acknowledged to the client. If the primary instance fails — due to hardware failure, maintenance, or AZ outage — the system automatically fails over to the replica. Failover time is typically under 60 seconds.
+
+Read Replica maintains an asynchronous copy of the database for read workloads. Applications can redirect read queries to the replica, offloading the primary instance. Replicas can be in the same region or cross-region. Note: replication is asynchronous, so replicas may have replication lag — typically under a second but can be higher under heavy load.
+
+Combining Multi-AZ and Read Replica: a primary instance with Multi-AZ standby for high availability, plus one or more Read Replicas for read workloads. This is the standard production architecture for most applications.
+
+## Connection Pooling and Proxy
+
+Database connections are expensive resources — each connection consumes memory on the database server and takes time to establish. In serverless or container architectures, where the number of application instances can change rapidly, connection management becomes a challenge.
+
+A database proxy sits between the application and the database, managing connection pools and handling failover. When the primary instance fails and failover occurs, the proxy automatically redirects connections to the new instance — the application does not need to know about the change.
+
+Connection pooling — maintaining a pool of open connections and reusing them across multiple requests — reduces connection establishment overhead. However, an excessively large pool can overload the database. The maximum number of connections should be capped based on the database instance's capacity.
+
+## Performance Optimization
+
+Query optimization starts with understanding the execution plan. Use EXPLAIN to see how the database executes queries — which indexes are used, which joins are performed, and where time is being spent. Index strategically — not every column needs an index, and unused indexes still consume write resources.
+
+Performance Insights provides observability into database performance without external tooling: which queries consume the most resources, which waits are blocking processes, and performance trends over time. This enables rapid identification of performance bottlenecks.
+
+## Backup and Recovery
+
+Automated backup automatically backs up the database daily and stores transaction logs for point-in-time recovery. Backup retention should be configured based on the Recovery Point Objective — the maximum amount of time data can be lost. A 5-minute RPO means you need point-in-time recovery within 5 minutes.
+
+Manual snapshots provide a point-in-time backup, useful before performing major changes — such as version upgrades or schema migrations. Snapshots can be copied to another region for disaster recovery.
+
+## Design Principles
+
+Relational databases in the cloud rest on three principles. First, high availability is the default — Multi-AZ should be enabled for every production database. Second, connections are resources — use connection pooling to manage them efficiently. Third, backups are insurance — automate backups and test recovery periodically.

@@ -54,6 +54,24 @@
         { "id": "sso", "label": "Single Sign-On", "visible": true }
       ],
       "pages": [{ "slug": "index", "visible": true }]
+    },
+    {
+      "id": "mlops-ai-infrastructure",
+      "label": "MLOps & AI Infrastructure",
+      "icon": "fas fa-microchip",
+      "color": "#ffaa00",
+      "visible": true,
+      "subcategories": [],
+      "pages": [{ "slug": "index", "visible": true }]
+    },
+    {
+      "id": "engineering-practices",
+      "label": "Engineering Practices",
+      "icon": "fas fa-pen-ruler",
+      "color": "#00ccaa",
+      "visible": true,
+      "subcategories": [],
+      "pages": [{ "slug": "index", "visible": true }]
     }
   ]
 }

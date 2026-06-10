@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# MLOps on Container Orchestration Platforms
+
+Container orchestration platforms have become the standard for deploying and managing machine learning workloads in production environments. Their capabilities for flexible scheduling, autoscaling, resource management, and integration with the tooling ecosystem make them a natural choice for MLOps. However, machine learning workloads have specific requirements — GPU scheduling, distributed training, large data storage — that demand specialized configuration and optimization.
+
+## GPU Scheduling
+
+GPU scheduling on container platforms requires a device plugin to detect and advertise GPU resources to the scheduler. Workloads declare their GPU requirements through resource requests and limits — number of GPUs, GPU type, and GPU memory options.
+
+Node affinity and taints/tolerations enable fine-grained control over which workloads run on which nodes. Training workloads can request powerful GPU nodes with large memory, while inference workloads can run on more cost-efficient GPU nodes. This prevents inference workloads from occupying valuable resources reserved for training.
+
+GPU sharing — allowing multiple workloads to share the same GPU — is supported at various levels: time-slicing (temporal allocation), MIG (physical partitioning), and MPS (CUDA context sharing). The choice of sharing method depends on isolation and performance requirements.
+
+## Distributed Training
+
+Distributed training across multiple GPUs or multiple nodes requires mechanisms for gradient and parameter synchronization. Data parallelism — each GPU has a full copy of the model and processes a portion of the data batch, after which gradients are synchronized — is the most common strategy for distributed training.
+
+Communication libraries such as NCCL and MPI are optimized for inter-GPU communication within the same node and across nodes. Network configuration — high bandwidth, low latency — is a critical factor for distributed training performance.
+
+Fault tolerance in distributed training: if one node fails, the entire training job fails. Periodic checkpointing enables recovery from the nearest point instead of restarting from scratch.
+
+## Automated Pipelines
+
+Kubeflow Pipelines provides a platform to define, schedule, and track machine learning pipelines on container platforms. Each step in the pipeline runs in a separate container, with artifacts passed between steps through storage systems.
+
+Pipelines are defined as code — Python DSL or YAML — enabling versioning, reuse, and sharing. Pipelines can be triggered automatically by events: new data, source code commits, or recurring schedules.
+
+KServe provides a platform for model inference on container platforms, with support for multiple frameworks, autoscaling (including scale-to-zero), canary deployments, and explainability.
+
+## Design Principles
+
+MLOps on container platforms is based on three principles. First, machine learning workloads are first-class citizens — the platform must be aware of the specific needs for GPU, large memory, and inter-process communication. Second, pipelines are code — every pipeline must be defined as versionable, testable, and reusable code. Third, resources are expensive — GPUs should be shared when possible, and utilization should be continuously monitored.

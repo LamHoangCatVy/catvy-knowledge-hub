@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# Zero-Downtime Database Migration Strategies
+
+Changing database schema in production without causing downtime is one of the most common and riskiest operational challenges. A seemingly simple schema change — adding a column, renaming a table — can lock an entire table for minutes or hours if not done properly. Zero-downtime migration strategies are based on a fundamental principle: expand first, contract later, and never make backward-incompatible changes in a single step.
+
+## The Expand-Contract Pattern
+
+Expand-Contract is the fundamental pattern for zero-downtime schema migration. It breaks every change into three distinct phases, each deployed and verified independently.
+
+The Expand phase adds new components — new columns, new tables, new fields — while keeping all old components intact. The application starts writing to both old and new structures, but still reads from the old structure. This ensures that new data is available in both formats, but nothing depends on the new structure.
+
+The Migrate phase transitions all consumers — applications, services, reports — from reading the old structure to reading the new structure. During this phase, both old and new structures are maintained, but consumers have switched to using the new structure. This phase can be lengthy — lasting until all consumers have been updated.
+
+The Contract phase removes the old components after confirming that no consumers depend on them anymore. This is the final and irreversible phase — once the old column is dropped, the data in it is permanently lost.
+
+## Types of Schema Changes
+
+Backward-compatible changes — adding new columns with default values, adding new tables, adding new indexes — are safe to perform directly. They do not break existing applications because the applications are unaware of the new components.
+
+Backward-incompatible changes — dropping columns, renaming columns, changing data types — require the Expand-Contract pattern. Never perform these changes directly on a production database.
+
+Changes requiring data rewriting — changing the data format in a column, migrating data between tables — are the most complex type. They require gradual data migration: write to both old and new formats in the expand phase, migrate historical data in batches during the migrate phase, and only remove the old format when all data has been migrated.
+
+## Tools and Techniques
+
+Online Schema Change tools perform schema changes without locking tables. They work by creating a new table with the desired schema, copying data from the old table to the new table in batches, using triggers to synchronize changes during the copy process, and finally atomically swapping the old and new tables. The application is not disrupted throughout the process.
+
+Batch migration for large data: instead of migrating all data in a single transaction — which would lock the table and could fail — migrate data in small batches. Each batch processes a range of primary keys, commits the transaction, and continues with the next batch. If a batch fails, it can be retried without affecting already-completed batches.
+
+## Design Principles
+
+Zero-downtime database migration is based on three principles. First, expand before you contract — always add before you remove. Second, each phase is independently reversible — if the expand phase causes problems, you can roll back without data loss because the old data still exists. Third, migrate large data in batches — never attempt to migrate an entire table in a single transaction.

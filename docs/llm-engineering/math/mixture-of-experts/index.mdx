@@ -1,0 +1,38 @@
+---
+sidebar_position: 1
+---
+# Mixture of Experts in Language Models
+
+Mixture of Experts is a neural network architecture where only a subset of parameters is activated for each input, instead of the entire model. For large language models, MoE enables significantly increasing the total parameter count without proportionally increasing per-token compute cost — because each token only activates a small fraction of the model. This is the architecture behind many of today's most advanced models.
+
+## How It Works
+
+MoE replaces the traditional feed-forward layers in the transformer architecture with a collection of experts — each expert is an independent feed-forward network — and a gating network that decides which experts process each token.
+
+When a token arrives, the gating network computes scores for each expert based on the token's representation. The softmax function is applied to convert scores into a probability distribution. The K experts with the highest probability are selected to process the token — typically K=2, meaning each token is processed by two experts. Outputs from the selected experts are combined through a weighted sum, with weights from the gating network.
+
+The computational efficiency comes from the fact that each token only activates K experts out of N available experts. With N=8 and K=2, only 25 percent of feed-forward parameters are activated per token. This allows the model to have a much larger total parameter count than a dense model with equivalent compute cost.
+
+## Load Balancing
+
+Without a balancing mechanism, the gating network tends to collapse into a regime where most tokens are routed to the same few experts, while other experts go unused. This negates the benefits of MoE and creates computational bottlenecks.
+
+Load balancing loss is an auxiliary loss term added during training to encourage even distribution of tokens across experts. It penalizes the gating network when token distribution deviates too far from uniform. The weight of this loss term is a hyperparameter — too high and it interferes with model quality; too low and load balancing fails.
+
+Expert capacity limits the maximum number of tokens each expert can process in a batch. If an expert reaches its capacity, additional tokens are routed to other experts — or dropped entirely (token dropping). Capacity limits ensure that no expert becomes a computational bottleneck, but at the cost that some tokens may not receive optimal processing.
+
+## Expert Specialization
+
+During training, experts naturally specialize in different types of knowledge or skills. Some experts may focus on factual knowledge, others on mathematical reasoning, and others on creative text generation. This specialization is emergent — it is not explicitly designed but arises from the training process.
+
+The gating network learns to recognize which type of token or context suits which expert. A token in a mathematical context might be routed to the math expert. A token in a creative writing context might be routed to the creative expert. This specialization allows each expert to become highly proficient in its domain.
+
+## Inference Implications
+
+MoE has important implications for inference. Although the total parameter count is large, only a small fraction is activated per token, making inference speed faster than a dense model with the same total parameter count. However, the entire model — all experts — must be loaded into memory, increasing VRAM requirements.
+
+This creates a trade-off: MoE enables larger models at the same compute cost, but requires more memory. For inference deployment, this means you need GPUs with large VRAM or must distribute the model across multiple GPUs via expert parallelism.
+
+## Design Principles
+
+MoE is based on three principles. First, not every token needs every parameter — specialization enables larger models without proportionally increasing compute cost. Second, load balancing is critical — without a balancing mechanism, the benefits of MoE are lost. Third, specialization is emergent — experts naturally learn different skills during training.

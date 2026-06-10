@@ -1,0 +1,36 @@
+---
+sidebar_position: 1
+---
+# Writing Architecture Decision Records
+
+An Architecture Decision Record is a concise document that captures an important architectural decision, the context in which it was made, and its consequences. An ADR is not a comprehensive design document — it is a record of a specific decision, written at the time the decision was made, by the very people who made it. The collection of ADRs over time forms the project's decision log — an invaluable asset for onboarding new members, re-evaluating past decisions, and understanding why the system was built the way it is.
+
+## Structure of an ADR
+
+An ADR should have a consistent structure so that readers can quickly find the information they need. The recommended structure consists of five sections.
+
+The title describes the decision as a concise sentence, using present tense and active language. For example: "Use a document database for storing user content" rather than "Regarding the choice of database."
+
+Context describes the situation leading to the decision: the problem being solved, the constraints in effect, and the forces at play. This section should be neutral — describing the situation without advocating for any particular solution.
+
+The decision states the decision that was made, using assertive language and present tense. "We will use..." not "We decided to use..." This section should be brief — a few sentences are sufficient.
+
+Alternatives considered lists the alternative solutions that were considered and the reasons they were rejected. This is the most important section of an ADR — it shows the decision was made after deliberation, not by default. Each alternative should have a brief description of its advantages and the reason for rejection.
+
+Consequences describe what becomes easier and what becomes more difficult after this decision. Every decision has trade-offs — this section acknowledges them explicitly. Positive, negative, and neutral consequences should all be recorded.
+
+## When to Write an ADR
+
+Not every decision needs an ADR. The threshold for an ADR is: the decision has a significant impact on the architecture, the decision involves non-obvious trade-offs, or the decision sets a precedent for future decisions. A decision about folder structure within a module does not need an ADR. A decision about adopting an event-driven architecture for the entire system does.
+
+ADRs should be written at the time the decision is made, not after. The value of an ADR lies in capturing the context and reasoning while they are still fresh. ADRs written later are often affected by hindsight bias — the tendency to believe that an outcome was predictable after already knowing it.
+
+## Managing ADRs
+
+ADRs should be stored in the source code repository, alongside the source code they describe. This ensures that ADRs are versioned alongside the code, can be reviewed in pull requests, and are not separated from the system they describe.
+
+ADRs have four states: proposed (proposed but not yet accepted), accepted (accepted and in effect), deprecated (no longer recommended but still potentially in use), and superseded (replaced by a new ADR). ADRs are never deleted — even when superseded, they retain historical value.
+
+## Writing Principles
+
+Effective ADR writing is based on three principles. First, write for the future reader — someone who may not have context about the project, may not know the discussions that took place, and needs to understand why the decision was made. Second, focus on the why, not the what — ADRs explain why, not what. System descriptions belong in design documents. Third, be concise and focused — an ADR should be at most two pages long. If more is needed, the decision is likely trying to cover too much and should be split into smaller ADRs.

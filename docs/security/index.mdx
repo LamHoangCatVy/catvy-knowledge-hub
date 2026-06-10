@@ -1,33 +1,52 @@
 ---
 sidebar_position: 1
 ---
-# Security
+# System Security and Artificial Intelligence
 
-Traditional application security is a mature discipline. We know how to prevent SQL injection, how to manage TLS certificates, how to design least-privilege IAM policies. GenAI security is the wild west — entirely new attack surfaces, threat models still being catalogued, and defense techniques that are months behind the attacks they're meant to stop. This section covers both: the well-established cloud security patterns that keep your infrastructure secure, and the bleeding-edge AI-specific threats that keep security researchers up at night.
+Traditional application security is a mature discipline. We know how to prevent SQL injection, how to manage TLS certificates, how to design least-privilege access policies. Security for artificial intelligence systems is uncharted territory — with entirely new attack surfaces, threat models still being catalogued, and defensive techniques lagging behind the attacks they are designed to prevent.
 
-## What Makes AI Security Different
+## The Essence of Security in the AI Era
 
-LLMs introduce attack vectors that have no equivalent in traditional software:
+Large language models introduce attack vectors unprecedented in software history. The model itself is the attack surface — you cannot place a firewall in front of a prompt. The model processes untrusted input by design, and that input can manipulate model behavior in ways traditional input validation cannot detect. Non-determinism is a security risk — the same prompt can produce different outputs across invocations, making it impossible to guarantee that a safety filter works 100 percent of the time. The boundary between data and code blurs — a prompt is a hybrid of data and instructions, and attackers exploit this ambiguity to make the model treat attacker-controlled text as system-level commands.
 
-- **The model is the attack surface** — You can't firewall a prompt. The model processes untrusted input by design, and that input can manipulate model behavior in ways that traditional input validation can't detect.
-- **Nondeterminism is a security risk** — The same prompt can produce different outputs on different invocations. This variability makes it hard to guarantee that a security filter works 100% of the time.
-- **The boundary between data and code blurs** — Prompts are a hybrid of data and instructions. A malicious prompt blurs this line intentionally, tricking the model into treating attacker-controlled text as system-level instructions.
-- **Model outputs are untrusted** — Generated text can contain hidden instructions, encoded malicious payloads, or factual errors that downstream systems treat as authoritative.
-
-## Key Domains
+## Core Knowledge Pillars
 
 ### Prompt Security
-Defending the LLM input/output boundary. Injection attacks that trick the model into ignoring its system prompt. Jailbreak techniques that bypass safety guardrails. Output filtering pipelines that catch harmful, toxic, or inappropriate model responses before they reach users.
 
-### Cloud Security
-The infrastructure layer beneath your AI applications. IAM best practices for least-privilege access to models and data. Network isolation patterns that keep training data and inference endpoints off the public internet. Compliance frameworks (SOC 2, ISO 27001, GDPR) applied to AI workloads with novel data governance challenges.
+The prompt is the sole interface between the application and the language model — and the primary attack surface. Prompt injection occurs when untrusted user input is misinterpreted by the model as system instructions, overriding developer-defined behavior. Jailbreaking is a variant that targets the model's own safety training, persuading it to do what it was explicitly trained to refuse. Defense-in-depth — combining multiple protective layers from input filtering, structural separation, semantic analysis to output filtering — is the core principle because no single technique stops all attacks.
+
+```mermaid
+flowchart LR
+    A[User] --> B[Layer 1: Input Filtering]
+    B --> C[Layer 2: Structural Separation]
+    C --> D[Layer 3: Semantic Analysis]
+    D --> E[Language Model]
+    E --> F[Layer 4: Output Filtering]
+    F --> G[Layer 5: Output Validation]
+    G --> H[Response to User]
+    
+    B -.->|Reject| I[Block & Log]
+    D -.->|Suspicious| I
+    F -.->|Harmful| I
+    G -.->|Inconsistent| I
+```
 
 ### AI Threats
-Adversaries don't need to steal your model — they can extract its training data through carefully crafted queries. They can poison your fine-tuning dataset so the model behaves maliciously in specific scenarios. They can craft inputs that are imperceptibly different to humans but completely change the model's output. Understanding these threats is the first step to defending against them.
 
-### Single Sign-On
-Centralized authentication for the modern enterprise. JWT architecture, session management, and cloud identity federation. The backbone of secure access to AI systems and the infrastructure they run on.
+Threats targeting AI systems exploit the very process of machine learning — training data, inference behavior, and the information encoded in model parameters. Adversarial attacks use inputs finely tuned to cause models to misclassify or produce harmful outputs, while appearing completely normal to humans. Data poisoning injects malicious data into the training pipeline, causing the model to learn hidden behaviors triggered only by specific activations. Model inversion reconstructs sensitive training data from model outputs — the model intended to protect data becomes the mechanism that leaks it. Membership inference determines whether a specific record was in the training set, which itself is sensitive information in many contexts.
 
-## The Security Mindset for AI Systems
+### Cloud Infrastructure Security
 
-The most dangerous assumption in AI security: "the model will behave reasonably." It won't — not reliably, not under adversarial pressure, not at scale. Every LLM interaction must be treated as potentially hostile input going into a potentially compromised system. The defense patterns in this section start from that assumption and build outward.
+The infrastructure layer beneath AI applications requires traditional security measures applied systematically. Identity and access management following the principle of least privilege ensures each service has only the minimum necessary permissions. Network isolation keeps resources in private subnets inaccessible from the internet. Encryption at rest and in transit protects data at every point in the pipeline. Continuous monitoring — through audit logs, machine learning-based threat detection, and automated compliance evaluation — detects anomalies before they become incidents.
+
+### Compliance and Governance
+
+Regulatory compliance frameworks — such as SOC 2, ISO 27001, PCI-DSS, GDPR, and HIPAA — impose requirements for security controls, data privacy, and auditability. In cloud environments, compliance can be automated: evidence is continuously collected, controls are validated in real time, and audit readiness is a property of the architecture, not a quarterly fire drill. Policy-as-code tools enable defining compliance rules as source code and enforcing them in CI/CD pipelines, preventing violating changes before they reach production.
+
+### Authentication and Authorization
+
+Centralized authentication through Single Sign-On enables users to prove their identity once and access all authorized resources. The SAML, OAuth 2.0, and OpenID Connect protocols form the backbone of modern authentication systems. JSON Web Tokens provide a mechanism for carrying claims between parties without querying a database for each request. Session management — from creation to maintenance to revocation — is where most security vulnerabilities reside, and techniques such as refresh token rotation, session hijacking detection, and concurrent session control are essential defenses.
+
+## Core Principles
+
+Security in the AI era rests on three foundational principles. First, defense-in-depth — no single mechanism is sufficient, and each layer must be designed with the assumption that previous layers have failed. Second, assume breach — design every system as if the attacker is already inside. Encrypt everything. Log everything. Segment everything. There is no trusted internal network. Third, safety is an architectural property, not a feature — it must be designed from the start, through clear boundaries, predictable failure modes, and blast radii small enough that a single incident does not escalate into a system-wide catastrophe.

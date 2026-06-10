@@ -1,0 +1,36 @@
+---
+sidebar_position: 1
+---
+# Experiment Tracking and Reproducibility
+
+In machine learning research and development, the number of experiments often far exceeds human memory capacity. A researcher may run hundreds of experiments — varying hyperparameters, model architectures, data preprocessing strategies — and needs the ability to compare results, identify improvement directions, and reproduce successful experiments. Experiment tracking is the methodology and tooling for managing this process systematically.
+
+## Information to Track
+
+Each experiment run should record at minimum the following information: a unique run identifier, start and end time, status (running, success, failure), and the person who executed it. This is the basic metadata that enables searching and filtering runs.
+
+Hyperparameters — all parameters controlling the training process: learning rate, batch size, number of epochs, regularization coefficients, model architecture. Complete hyperparameter recording is a prerequisite for reproducibility.
+
+Metrics — all evaluation indicators computed during training and evaluation: loss, accuracy, precision, recall, F1, and any custom metrics. Metrics should be recorded over time (per epoch or per step) so learning curves can be plotted and overfitting or underfitting can be detected.
+
+Artifacts — all generated files: model weights, charts, configuration files, logs. Artifacts should be stored alongside the run so they can be downloaded and used later.
+
+Environment — library versions, GPU driver versions, environment variables. Environment differences are one of the most common causes of results being non-reproducible.
+
+## Comparison and Visualization
+
+Side-by-side comparison of multiple runs is the most important feature of experiment tracking. Select two or more runs and display their metrics, hyperparameters, and artifacts side by side. This enables answering the question: "Does increasing the learning rate improve accuracy, and at what cost?"
+
+Visualizing metrics over time — loss curves, accuracy curves — enables detecting training issues: loss not decreasing (learning rate too low), loss fluctuating wildly (learning rate too high), validation loss increasing while training loss decreases (overfitting).
+
+Parallel coordinates plots enable visualizing the relationship between hyperparameters and metrics across multiple runs, helping identify promising hyperparameter regions for subsequent experiments.
+
+## Organization and Collaboration
+
+Experiments should be organized by project, objective, or model type. Tags and labels enable flexible classification: "CNN", "image-classification", "production-candidate". Free-text notes allow researchers to record ideas, observations, and hypotheses — qualitative information that supplements quantitative data.
+
+Collaboration is supported through shared workspaces where multiple team members can view, compare, and discuss experiments. This is especially important in research environments where knowledge is distributed among team members.
+
+## Design Principles
+
+Experiment tracking is built on three principles. First, record everything — the data you don't record today is the question you can't answer tomorrow. Second, automate recording — integrate tracking into training code so recording happens automatically, not as a manual step easily skipped. Third, organize for search — when the number of experiments reaches hundreds or thousands, searchability and filtering become more important than recording capability.

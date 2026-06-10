@@ -1,0 +1,30 @@
+---
+sidebar_position: 1
+---
+# Technical Documentation in Software Organizations
+
+Technical documentation is not a byproduct of the development process — it is part of the product. A system without documentation is a system that cannot be maintained, cannot be scaled, and cannot be handed off. When engineers leave, their knowledge leaves with them — unless it has been recorded. Effective technical documentation transforms tacit knowledge into explicit, searchable, and reusable knowledge.
+
+## Types of Technical Documentation
+
+Design documentation describes the architecture and design decisions of a system. It answers the "what" and "why" questions — not the "how" (that is the source code). Design documentation should include: architecture overview (component and data flow diagrams), key design decisions and their rationale, constraints and assumptions, and known risks.
+
+Operational runbooks describe standard procedures for common and emergency situations. Each runbook should include: symptoms (how to recognize the problem), diagnosis (how to confirm and isolate), remediation (specific steps to resolve), and escalation (when and how to escalate). Runbooks do not assume the reader is an expert — they enable a generally competent engineer to handle the situation.
+
+API documentation describes the service interface for consumers. It includes: endpoint descriptions, parameters, request and response formats, error codes, usage examples, and the underlying data model. API documentation should be generated automatically from schema definitions — OpenAPI, GraphQL schemas, or Protocol Buffer definitions — to ensure consistency between documentation and implementation.
+
+Architecture Decision Records capture significant architectural decisions: context, decision, alternatives considered, and consequences. The collection of ADRs over time forms a decision journal — invaluable for onboarding and reevaluation.
+
+## Documentation Writing Principles
+
+Write for the future reader — someone who may lack context, may be a new team member, or may be you in six months. Explain acronyms and abbreviations. Provide context before diving into details.
+
+Documentation should live alongside the source code — in the same repository, versioned with the source code, reviewed in pull requests. Documentation separated from source code quickly becomes outdated.
+
+Documentation should be tested — if a runbook describes incident remediation steps, actually perform those steps in a staging environment to verify they work. If API documentation describes an endpoint, test that endpoint with the examples in the documentation.
+
+Documentation should be kept current — every source code change that affects behavior described in the documentation must come with documentation updates. This is the responsibility of the person making the change, not of a "documentation writer."
+
+## Core Principles
+
+Technical documentation rests on three principles. First, documentation is a product — it demands the same level of care and discipline as source code. Second, outdated documentation is worse than no documentation — it creates false confidence. If you cannot maintain documentation current, delete it. Third, write for the reader, not for yourself — documentation exists to convey knowledge to others, not to serve as personal notes.

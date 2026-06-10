@@ -1,0 +1,40 @@
+---
+sidebar_position: 1
+---
+# WAF and Web Application Protection
+
+A Web Application Firewall is a protection layer operating at the application layer, inspecting HTTP/HTTPS traffic and blocking malicious requests before they reach the application. Unlike traditional network firewalls — which operate at layer 3/4 and make decisions based on IP and port — a WAF understands the structure of HTTP requests and can detect attack patterns in URLs, headers, body, and query strings.
+
+## Attack Types WAF Protects Against
+
+SQL Injection attempts to inject SQL code into application inputs to manipulate the database. The WAF detects typical SQL injection patterns — such as `' OR 1=1 --` or `UNION SELECT` — and blocks the request before it reaches the application.
+
+Cross-Site Scripting attempts to inject JavaScript code into web pages to steal cookies, session tokens, or other sensitive information. The WAF detects script tags, event handlers, and other XSS patterns in input.
+
+Cross-Site Request Forgery tricks users into performing unwanted actions on an application where they are already logged in. The WAF can inspect the Origin and Referer headers to detect requests from untrusted sources.
+
+Bots and scraping — the WAF can distinguish between real user traffic and automated bots based on behavioral patterns, JavaScript challenges, and CAPTCHA.
+
+## Rules and Policies
+
+Managed rule groups provide out-of-the-box protection for common vulnerabilities — OWASP Top 10, known CVEs, bot control. These rule groups are maintained by the provider and updated as new threats emerge.
+
+Custom rules allow defining protection logic specific to your application. For example: block requests from specific countries, rate-limit specific API endpoints, or block URL patterns matching your application logic.
+
+Rate-based rules block traffic from IP addresses that send too many requests within a time window. This protects against brute force, credential stuffing, and application-layer DDoS.
+
+## Operation Modes
+
+Count mode logs requests matching rules but does not block them. This is a useful mode for testing new rules without affecting real users — you can see what a rule would block before actually enabling it.
+
+Block mode blocks requests matching rules and returns an HTTP status code — typically 403 Forbidden. This is the normal operating mode for a WAF in production.
+
+## False Positive Management
+
+False positives — legitimate requests being blocked — are the biggest operational challenge with WAF. Every WAF rule has the potential to generate false positives, and blocking legitimate users causes direct business impact.
+
+False positive management strategy: start with count mode to observe the impact of new rules, use exception rules to exempt specific patterns (such as certain URLs or parameters) from specific rules, and maintain a rapid response process when users report being blocked.
+
+## Design Principles
+
+WAF rests on three principles. First, defense in depth — WAF is one layer in a multi-layer security strategy, not the only layer. Second, rules must be tested before blocking — always start with count mode when deploying new rules. Third, false positive management is continuous — every application change can generate new false positives, and the WAF must be tuned accordingly.

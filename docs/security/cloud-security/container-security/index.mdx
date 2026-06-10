@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# Container and Kubernetes Security
+
+Containers have become the standard deployment unit for modern applications, and container orchestration platforms are the most common infrastructure layer for managing them. With this prevalence comes security responsibility: containers and their orchestration platforms have distinct attack surfaces, and traditional security measures — such as network firewalls and server access controls — are insufficient to protect them.
+
+## Container Image Security
+
+The container image is the fundamental artifact — and the starting point for most container security vulnerabilities. Each image is built from a sequence of layers, starting from a base image and adding dependencies, configurations, and application source code. Each layer is a potential attack surface.
+
+Image scanning is the first line of defense. Scan all images — during build, before deployment, and periodically after deployment — to detect known vulnerabilities in operating system packages and application dependencies. Vulnerability databases are continuously updated, so an image that is secure today may become vulnerable tomorrow. Periodic scanning is mandatory.
+
+Minimal base images are a critical design principle. Use the smallest possible base image — such as distroless or alpine — to minimize the attack surface. Every additional package in the image is a potential vulnerability. If the application does not need a shell, do not include a shell. If the application does not need curl, do not include curl.
+
+Image signing and verification ensure that images have not been modified after building. Sign images in the CI/CD pipeline and verify signatures before deployment — reject running any image without a valid signature.
+
+## Runtime Security
+
+Pod Security Standards define three security levels for pods. Privileged — no restrictions, equivalent to root access on the node. Baseline — prevents known privilege escalations such as running containers as root or using host network. Restricted — applies the strongest hardening practices such as enforcing non-root user execution, using seccomp profiles, and denying all privilege escalation. Start with Restricted and only relax when there is a valid reason.
+
+Network Policies control communication between pods. By default, all pods in the cluster can communicate with each other. Network policies allow you to define rules: pod A can only talk to pod B on port C, and nothing else. Combined with the default-deny principle — all traffic is blocked unless explicitly allowed — this creates a robust network security model.
+
+RBAC in the orchestration platform controls what users and service accounts can do. Apply least privilege: each service account has only the minimum permissions needed. Do not use cluster-admin for applications. Create specific roles and role bindings for each application.
+
+## Supply Chain Security
+
+The CI/CD pipeline for container images should run in an isolated environment, with restricted access to production systems. Every step in the pipeline — source code checkout, dependency installation, image building, vulnerability scanning, image signing — should be audited and reproducible.
+
+The Software Bill of Materials for container images lists all components — operating system packages, application libraries, dependencies — enabling rapid identification when a new vulnerability is disclosed.
+
+## Design Principles
+
+Container security relies on three principles. First, images are immutable — never modify a running image, always build new images from source code. Second, least privilege at every layer — container, pod, service account, network policy. Third, continuous scanning — new vulnerabilities are discovered every day, and one-time scanning at deployment is insufficient.

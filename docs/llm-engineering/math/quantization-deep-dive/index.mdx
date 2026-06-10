@@ -1,0 +1,38 @@
+---
+sidebar_position: 1
+---
+# Model Quantization Deep Dive
+
+Quantization is the technique of reducing the numerical precision of model weights and activations — typically from 16-bit or 32-bit floating point down to 8-bit or 4-bit integer. For inference deployment, quantization is the most critical optimization tool: it reduces memory footprint by two to four times and significantly increases computation speed, at the cost of a small degradation in accuracy. For large language models, where memory bandwidth is often the primary bottleneck, quantization can nearly double inference throughput.
+
+## Types of Quantization
+
+### Post-Training Quantization
+
+Post-Training Quantization applies quantization to a fully trained model without retraining. This is the simplest and fastest method, but can lead to significant accuracy degradation if not done carefully.
+
+Dynamic quantization computes scale factors and zero points for each activation at inference time, based on the actual distribution of input data. This provides better accuracy than static quantization — where scale factors are pre-computed on a calibration dataset — but at the cost of additional computation at inference time.
+
+Weight-only quantization quantizes only the model weights, leaving activations at full precision. This reduces memory footprint — since weights typically account for the majority of model size — while maintaining activation accuracy. For language model inference, weight-only quantization is often the optimal configuration because memory bandwidth for weights is the primary bottleneck.
+
+### GPTQ and AWQ
+
+GPTQ (GPT Post-Training Quantization) is a weight-only quantization algorithm that uses layer-wise optimization to find optimal quantization coefficients. It processes each layer of the model sequentially, quantizing weights and then adjusting the remaining weights to compensate for quantization error. This process is slow — it can take several hours for large models — but produces significantly higher quality than naive quantization.
+
+AWQ (Activation-Aware Weight Quantization) improves upon GPTQ by accounting for activation-based channel importance. Instead of quantizing all weights with the same precision, AWQ identifies the most important weight channels — those corresponding to large activations — and protects them from quantization loss by applying scaling before quantization. This improves quality, especially at low bit-widths like INT4.
+
+### GGUF and CPU Formats
+
+GGUF is a file format designed for storing quantized models for CPU inference. It supports multiple quantization levels — from Q8_0 (8-bit) to Q2_K (2-bit with quality-protection techniques). The main advantage of GGUF is the ability to run large language models on consumer hardware — laptops, desktops — without a GPU.
+
+The GGUF format uses block-wise quantization, where weights are divided into small blocks and each block is quantized independently with its own scale factor. This provides better accuracy than global quantization at the same bit-width.
+
+## Quality Trade-offs
+
+The impact of quantization on quality depends on the quantization level and model size. Larger models tolerate quantization better — a 70B parameter model at INT4 can have quality equivalent to or better than a 13B model at FP16.
+
+INT8 (8-bit) typically causes negligible quality degradation for most tasks — under 0.5 percent. INT4 (4-bit) can cause 1-3 percent degradation on complex reasoning tasks, but is still acceptable for most applications. Below INT4, quality degradation becomes significant and protection techniques like AWQ become necessary.
+
+## Design Principles
+
+Model quantization is based on three principles. First, memory bandwidth is the bottleneck — for autoregressive inference, reducing model size in memory is often more effective than increasing compute power. Second, not all weights are equally important — protecting critical channels from quantization loss significantly improves quality. Third, the quantization level should be chosen based on empirical evaluation on the specific task — no single level is best for all situations.

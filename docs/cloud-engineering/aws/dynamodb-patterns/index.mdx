@@ -1,0 +1,34 @@
+---
+sidebar_position: 1
+---
+# NoSQL Database Design Patterns
+
+Managed NoSQL databases offer near-unlimited scalability, single-digit millisecond latency, and pay-per-usage pricing — but only when the data model is designed correctly. Designing for NoSQL databases differs fundamentally from designing for relational databases: instead of normalizing data into multiple tables and using JOINs, you design the schema based on access patterns — how the data will be read and written.
+
+## Single-Table Design Principles
+
+In relational databases, you create a table for each entity: a Users table, an Orders table, a Products table. In key-value NoSQL databases, you should design a single table containing all entities, using composite primary keys and secondary indexes to support multiple different access patterns from the same table.
+
+The rationale for single-table design is performance and cost: each additional table requires its own capacity, and JOINs do not exist in NoSQL — you must retrieve related data in the same query. By placing related entities next to each other in the same table — using smart key prefixes — you can retrieve all data needed for a use case in a single query.
+
+The primary key consists of a partition key and an optional sort key. The partition key determines the physical partition where data is stored — all items with the same partition key are stored together. The sort key determines the order of items within the partition and enables range queries. Key design is the most critical decision in NoSQL: it determines which access patterns can be efficiently supported.
+
+## Secondary Indexes and Access Patterns
+
+Global Secondary Indexes enable querying data using a different key from the table's primary key. You can create a GSI with a different partition key and sort key, enabling alternative access patterns. For example: the main table is organized by user_id, but you also need to query by email — create a GSI with email as the partition key.
+
+GSIs are automatically maintained — when you write to the main table, data is asynchronously replicated to the GSI. This means GSIs have eventual consistency: there may be a short delay between writing to the main table and when data appears in the GSI.
+
+A Sparse Index is a GSI that only contains items with a specific attribute. If you create a GSI with a partition key that is an optional attribute, only items with that attribute appear in the index. This is useful for filtering — for example, indexing only orders in a "pending" state by using a sparse index on a status attribute.
+
+## Common Access Patterns
+
+Adjacency list pattern: store many-to-many relationships using composite sort keys. For example: an organization has many users. The partition key is organization_id, the sort key begins with the prefix "USER#" followed by user_id. You can query all users in an organization by querying with the partition key and sort key prefix.
+
+Time-series pattern: store time-series data using a timestamp as the sort key. The partition key can be an identifier — such as sensor_id or user_id — and the sort key is a timestamp. This enables querying data within a time range for a specific entity.
+
+Materialized aggregation pattern: instead of computing aggregations — such as total orders or average revenue — each time they are needed, maintain pre-computed aggregate values updated in real time through stream processing. When a new order is created, a stream processing function updates the counter and total revenue in the same transaction.
+
+## Design Principles
+
+NoSQL design is based on three principles. First, design from access patterns — understand how data will be queried before designing the schema. Second, denormalization is a strategy, not an anti-pattern — storing redundant data to avoid JOINs is acceptable and often necessary. Third, the partition key must distribute load evenly — hot partitions are the enemy of NoSQL performance.

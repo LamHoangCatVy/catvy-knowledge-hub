@@ -1,0 +1,36 @@
+---
+sidebar_position: 1
+---
+# Technical Debt Management
+
+Technical debt is the accumulated consequence of technical decisions that prioritize speed over long-term quality. Like financial debt, technical debt is not inherently bad — sometimes, taking on technical debt to meet a critical deadline or validate a product hypothesis is the right business decision. But like financial debt, technical debt must be acknowledged, tracked, and repaid — otherwise, the compounding interest of complexity will cripple development velocity.
+
+## Classifying Technical Debt
+
+Deliberate technical debt is debt created consciously — the team decides to accept a suboptimal solution to achieve a short-term goal, with a plan to address it later. This is the healthiest type of debt because it is documented and has a repayment plan.
+
+Accidental technical debt is debt created without a conscious decision — often due to lack of knowledge, lack of time, or lack of standards. Code written without tests because "we'll add them later," but "later" never comes. This is the most dangerous type of debt because it is invisible and accumulates silently.
+
+Environmental technical debt is debt that arises from changes in the external environment — outdated library versions, architectural patterns that are no longer suitable, or changed business requirements that make the original design suboptimal. This is an unavoidable type of debt — every system accumulates environmental debt over time.
+
+## The Technical Debt Register
+
+A technical debt register is a living document that lists all known debts, their impact, and the repayment plan. Each debt is classified by severity along two dimensions: impact on development velocity and risk of causing a production incident.
+
+Debt that hinders daily development — such as excessively long build times, lack of tests on critical paths, or inconsistent APIs — should be addressed immediately. Debt that slows down certain types of changes — such as a poorly designed module that makes adding new features difficult — can be scheduled in upcoming development cycles. Debt that only affects rare scenarios — such as an edge case in error handling logic — can be documented and addressed when the opportunity arises.
+
+## Repayment Strategies
+
+The 20 percent rule: allocate 20 percent of capacity each development cycle to paying down technical debt. This is not "free" time — it is intentionally allocated time to address debts in the register, prioritized by impact.
+
+The Boy Scout Rule: every time you work on a module, leave it a little cleaner than you found it. Add a test, improve a variable name, remove a piece of dead code. Small, continuously accumulated improvements prevent technical debt from growing.
+
+Technical Debt Sprint: periodically — every quarter or every half year — dedicate an entire sprint to focusing on paying down technical debt. No new features, no product improvements — just debt repayment. This is effective for addressing large debts that require sustained focus.
+
+## Preventing New Debt
+
+Prevention is more effective than cure. Practices for preventing technical debt include: defining code standards and automatically enforcing them through linting, requiring tests for every new feature, mandatory code reviews with quality checklists, and continuous refactoring as part of the normal development process — not as a separate activity.
+
+## Management Principles
+
+Technical debt management is based on three principles. First, debt must be documented — invisible debt cannot be managed. Every known debt must be in the register. Second, debt repayment is an investment, not a cost — it accelerates future development velocity and reduces incident risk. Third, a culture of collective ownership — every engineer is responsible for maintaining code quality, not just a separate "cleanup" team.

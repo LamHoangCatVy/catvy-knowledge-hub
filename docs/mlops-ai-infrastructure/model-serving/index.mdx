@@ -1,0 +1,44 @@
+---
+sidebar_position: 1
+---
+# Model Serving Patterns for Inference
+
+Deploying machine learning models for inference serving in production poses different requirements compared to development environments. In development, the primary concern is accuracy. In production, latency, throughput, cost, and reliability are equally important. Choosing the right deployment pattern depends on the characteristics of the inference workload: request frequency, latency requirements, payload size, and load volatility.
+
+## Deployment Patterns
+
+### Real-Time Inference
+
+The model is loaded into memory and ready to serve requests with low latency — typically under 100ms. Each request is processed individually and the response is returned immediately. This pattern is suitable for interactive applications: product recommendations, transaction fraud detection, or chatbots.
+
+Infrastructure requirements: the model must be persistently loaded in memory, requiring dedicated GPU or CPU resources. Autoscaling based on request count or latency to handle load fluctuations. Continuous health checks to detect and replace unhealthy instances.
+
+### Batch Inference
+
+The model processes a large volume of data in a single run, typically on a recurring schedule. The input is a large dataset, and the output is predictions for the entire set. This pattern is suitable for applications that do not require immediate responses: nightly credit scoring, batch image classification, or periodic report generation.
+
+The primary advantage of batch inference is efficiency: processing data in batches allows maximum hardware utilization through vectorization and batching. The cost per prediction is significantly lower than real-time inference. The disadvantage is high latency — results become available after minutes to hours, not milliseconds.
+
+### Streaming Inference
+
+The model processes a continuous data stream, with input arriving from a message queue or event stream. Each event is processed as it arrives, with low latency but without requiring synchronous responses. This is an intermediate pattern between real-time and batch: lower latency than batch, lower cost than real-time.
+
+Streaming inference is suitable for event-processing applications: anomaly detection in log streams, sentiment analysis on tweet streams, or predictions on IoT sensor data.
+
+### Multi-Model Serving
+
+Multiple models are served from the same infrastructure, sharing GPU or CPU resources. This improves utilization and reduces costs compared to dedicating hardware to each model.
+
+The primary challenge is memory management: each model requires a certain amount of VRAM. If total demand exceeds available capacity, the system must swap models in and out of memory — causing latency similar to cold starts. Memory management strategies — such as keeping the most popular models in memory and only swapping out infrequently used models — are essential.
+
+## Inference Optimization
+
+Quantization reduces the precision of model weights — from FP32 to FP16, INT8, or even INT4 — to reduce memory footprint and increase computational speed. The trade-off is quality: overly aggressive quantization can degrade accuracy, especially for tasks requiring complex reasoning.
+
+Batching groups multiple incoming requests together and processes them simultaneously, leveraging GPU parallelism. Continuous batching allows adding new requests to an in-progress batch as older requests complete, maintaining high utilization while still serving requests with acceptable latency.
+
+Model compilation optimizes the model's computational graph for specific hardware, eliminating redundant operations and fusing kernels. The result is faster inference time without changing the model architecture or weights.
+
+## Design Principles
+
+Model serving for inference is based on three principles. First, choose the deployment pattern based on workload characteristics — no single pattern is best for all situations. Second, optimize utilization — idle GPU is a direct financial waste. Third, monitor degradation — models degrade over time, and only continuous monitoring can detect it before users are impacted.

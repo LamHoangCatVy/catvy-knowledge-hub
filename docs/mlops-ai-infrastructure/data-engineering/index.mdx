@@ -1,0 +1,32 @@
+---
+sidebar_position: 1
+---
+# Data Engineering for AI Systems
+
+Data quality sets the upper bound on the quality of any AI system. No training algorithm can compensate for poor-quality input data — missing values, noise, bias, or lack of representativeness. Data engineering for AI is the discipline of building reliable, scalable, and monitorable data pipelines to supply high-quality data for model training and inference.
+
+## Data Pipelines for AI
+
+Data pipelines for AI differ from traditional ETL pipelines in three respects. First, data must be labeled — whether through manual, semi-automated, or automated processes — and label quality directly impacts model quality. Second, data must be versioned — alongside code and models — to ensure reproducibility. Third, pipelines must serve both modes: batch for training (high throughput, latency not critical) and real-time for inference (low latency, throughput can be lower).
+
+Data collection from multiple heterogeneous sources — transactional databases, event streams, log files, external APIs — and consolidation into a standardized format. Data quality must be checked at the point of collection: is data arriving on time, is it complete, is it in the correct format.
+
+Data cleaning addresses common issues: missing values (which may be dropped, filled with defaults, or predicted from other features), outliers (which may be errors or important signals), and inconsistencies (the same entity represented differently across different sources).
+
+## Data Labeling
+
+Labeling is the process of assigning labels or annotations to data to create supervised training sets. This is often the most expensive step in terms of time and cost in the AI data pipeline.
+
+Manual labeling — humans review each data point and assign labels — provides the highest quality but cannot scale. Semi-automated labeling — models suggest labels and humans confirm or correct — increases speed while maintaining quality. Automated labeling — using heuristics, rules, or existing models — is fast and cheap but can produce noisy labels.
+
+Labeling quality control includes: multiple annotators labeling the same data point to measure inter-annotator agreement, gold standard examples to evaluate annotator quality, and active learning to prioritize labeling the data points the model is most uncertain about.
+
+## Data Quality Monitoring
+
+Data changes over time — this is the phenomenon of data drift. The distribution of input features changes, or the relationship between features and labels changes. Continuous data quality monitoring detects these changes and alerts before they degrade model performance.
+
+Monitoring metrics include: missing value rate, statistical distribution of each feature (compared to baseline), outlier rate, and the appearance of new values never seen in the training set.
+
+## Design Principles
+
+Data engineering for AI is built on three principles. First, data is the most important asset — investing in data quality yields higher returns than investing in complex algorithms. Second, data pipelines must be versioned and reproducible — with the same level of discipline as source code. Third, quality monitoring is continuous — data changes, and you must know when it changes.
