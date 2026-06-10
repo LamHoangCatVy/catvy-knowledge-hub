@@ -1,0 +1,108 @@
+---
+slug: prompt-engineering-patterns
+title: "Prompt Engineering Patterns Beyond 'You Are a Helpful Assistant'"
+description: "Every prompt starts with 'You are a helpful assistant.' But the prompts that actually work in production use structural patterns most engineers never learn. Here are the ones I rely on."
+tags: [genai, prompt-engineering, llm, ai]
+authors: [catvy]
+date: 2026-01-12
+image: https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=1200&q=80
+---
+
+The gap between a prompt that works in the playground and a prompt that works in production is the gap between "tell me about X" and the carefully structured instruction set that handles edge cases, constrains output formats, and resists prompt injection. After shipping five LLM-powered features to production, here are the prompt engineering patterns that actually matter.
+
+{/* truncate */}
+
+## Pattern 1: The Persona + Constraint Sandwich
+
+The most common production prompt pattern. Three layers:
+
+```
+You are a {persona} with {expertise}.
+{constraints on behavior}
+
+{input}
+```
+
+The persona establishes authority and tone. The constraints define boundaries. The input comes last — structurally separating instructions from user data.
+
+**Example that works**: "You are a senior backend engineer reviewing code for security vulnerabilities. Focus on OWASP Top 10 issues. Flag anything that could expose sensitive data. If the code is safe, respond 'No security issues found.'"
+
+**Example that doesn't**: "You are a helpful assistant. Review this code." The model is too unconstrained. It might suggest stylistic changes, rewrite the entire function, or miss critical vulnerabilities because "helpful" didn't specify what kind of help.
+
+## Pattern 2: The Chain-of-Thought Gate
+
+Force reasoning before answering. The model must show its work before producing the final output.
+
+```
+First, identify the key entities in this query.
+Second, determine which entities are relevant to the user's question.
+Third, evaluate whether the available context is sufficient to answer.
+Fourth, if sufficient, provide the answer. If insufficient, state what's missing.
+```
+
+This pattern reduces hallucinations by making the reasoning process visible. If the model's chain of thought is wrong, you catch it before the answer reaches the user. In production, evaluate the CoT output programmatically — if it contains phrases like "I don't have enough information" or "the context doesn't mention," route to a fallback.
+
+## Pattern 3: Structured Output with Examples
+
+Tell the model _how_ to respond, not just _what_ to respond with. Provide examples of the exact format.
+
+```
+Respond in JSON format with these fields:
+- intent (string): one of "question", "complaint", "request"
+- sentiment (string): "positive", "neutral", "negative"
+- summary (string): one-sentence summary, max 100 characters
+
+Example: {"intent": "question", "sentiment": "neutral", "summary": "User asks about return policy time window"}
+```
+
+The example is crucial. Without it, the model infers the format from your description — and inference is error-prone. With one example, accuracy on structured output tasks improves dramatically. With three diverse examples, it approaches production reliability.
+
+## Pattern 4: Few-Shot with Counterexamples
+
+Show the model what _not_ to do, not just what to do.
+
+```
+Classify the following customer messages:
+
+Example 1: "My order hasn't arrived" → "shipping_issue"
+Example 2: "I love this product!" → "positive_feedback"  
+Example 3: "I need to change my shipping address" → WRONG: "general_inquiry" RIGHT: "shipping_issue"
+
+Classify: "Can you send it to a different address?"
+```
+
+Counterexamples teach the model about boundary cases. Without them, the model learns the easy cases and guesses on the hard ones. With them, the model learns your judgment about edge cases — and judgment is what separates good prompts from great ones.
+
+## Pattern 5: The Uncertainty Evasion Trigger
+
+Teach the model to express uncertainty instead of confabulating.
+
+```
+If you are more than 80% confident in your answer, provide it directly.
+If you are 50-80% confident, provide the answer but include: "(I'm somewhat uncertain about this)"
+If you are below 50% confident, respond: "I don't have enough information to answer this confidently. Here's what I do know: [relevant context]"
+```
+
+This pattern reduces dangerous hallucinations — the ones where the model is completely wrong but sounds completely confident. In production, flag responses with the uncertainty marker for human review or automated verification.
+
+## The Patterns I Don't Use
+
+Some popular prompt engineering advice I've found counterproductive in production:
+
+- **"You are an expert in..."** without defining what expertise means. The model doesn't have a career path. Define the _behaviors_ you want, not the _identity_ you want the model to assume.
+- **Overly long system prompts.** Every token in the system prompt is a token that pushes relevant context further from the model's attention. Audit your system prompt. Delete every sentence that doesn't measurably change behavior.
+- **"Think step by step" as a single instruction.** It works in research papers. In production, unstructured chain-of-thought is unpredictable. Structure the steps explicitly — what to think about, in what order, with what criteria.
+- **Role-playing with fictional characters.** "You are Sherlock Holmes investigating a bug." Cute, memorable, unreliable. The model might adopt Holmes's deductive style but also his tendency toward dramatic conclusions without evidence.
+
+## Prompt Testing I Wish I'd Started Sooner
+
+The biggest mistake I made with prompts: treating them as code but not testing them like code. A prompt is a program written in natural language, executed by a stochastic processor. It needs tests.
+
+My prompt testing framework now:
+1. **Golden dataset** — 50-100 real user queries with expected outputs. Updated monthly.
+2. **Regression tests** — Does the new prompt version produce the correct output for each golden query?
+3. **Adversarial tests** — 20 queries specifically designed to break the prompt. Injection attempts, edge cases, boundary conditions.
+4. **Output validation** — Does the response match the expected schema, tone, length, and content policy?
+5. **Diff review** — When the prompt changes, review every output that changed. Not just the ones that broke — the ones that got better too. Understand _why_ the change affected each case.
+
+Prompt engineering isn't magic. It's careful, systematic engineering applied to natural language. The patterns that work are the ones that reduce ambiguity, constrain behavior, and make the model's reasoning visible and verifiable. Everything else is vibes.

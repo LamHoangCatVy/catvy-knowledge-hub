@@ -1,0 +1,131 @@
+---
+slug: terraform-production
+title: "Terraform in Production: Patterns from 3 Years of IaC"
+description: "After three years of managing cloud infrastructure with Terraform across multiple AWS accounts, here are the patterns, anti-patterns, and painful lessons that only production experience teaches."
+tags: [aws, cloud, architecture, terraform, devops]
+authors: [catvy]
+date: 2026-01-17
+image: https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80
+---
+
+Three years ago, I wrote my first Terraform module. It was a single `main.tf` file that created an EC2 instance, a security group, and an S3 bucket. It worked. I felt clever. Six months later, I had 47 `.tf` files across 4 environments, a state file that took 90 seconds to refresh, and a deployment that accidentally destroyed the production database because someone ran `terraform apply` in the wrong directory.
+
+Terraform is easy to start and hard to master. Here's what production taught me.
+
+{/* truncate */}
+
+## The Repository Structure That Scales
+
+After trying monorepos and polyrepos, I've settled on a hybrid:
+
+```
+infrastructure/
+├── modules/           # Reusable, versioned Terraform modules
+│   ├── vpc/
+│   ├── ecs-service/
+│   ├── rds-postgres/
+│   └── lambda-function/
+├── accounts/          # Per-account configurations
+│   ├── dev/
+│   │   ├── main.tf
+│   │   ├── terraform.tfvars
+│   │   └── backend.tf
+│   ├── staging/
+│   └── prod/
+├── global/            # Global resources (Route53, IAM, Organizations)
+└── Makefile           # Standardized commands across environments
+```
+
+**Modules are versioned** via Git tags. `source = "git::https://github.com/org/infra.git//modules/vpc?ref=v2.1.0"`. This means a change to the VPC module doesn't impact production until you bump the version. It also means you can test module changes in dev before rolling to production.
+
+**Accounts are separate state files.** Dev, staging, and production each have their own state. A `terraform destroy` in dev doesn't touch production. The `terraform plan` for dev is fast (few resources). This is the single most important architectural decision for Terraform at scale.
+
+**Global resources are isolated.** Route53 hosted zones, IAM roles for cross-account access, Organization SCPs — these span accounts and need their own state. Keep them separate from account-specific resources.
+
+## State Management: The Silent Killer
+
+Terraform state is a single point of failure. Lose it, and Terraform loses track of what it manages. The next `terraform apply` recreates resources that already exist — or worse, applies changes that assume resources don't exist when they do.
+
+**State must be remote.** S3 backend with DynamoDB locking. Always.
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "mycompany-terraform-state"
+    key            = "prod/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "terraform-locks"
+    encrypt        = true
+  }
+}
+```
+
+**State must be versioned.** Enable S3 bucket versioning. When someone corrupts the state file (and they will), you can restore the previous version.
+
+**State must be encrypted.** Customer-managed KMS key. The state file contains every resource attribute, including secrets if you're not careful. Encrypt it at rest and restrict access to the KMS key.
+
+**Never edit state manually.** `terraform state rm` and `terraform import` exist. Use them. The temptation to edit the JSON directly is strong and wrong.
+
+## Modules: The Right Level of Abstraction
+
+Module design is the hardest part of Terraform. Too little abstraction (duplicated code everywhere) and too much (a single module that configures everything) both cause pain.
+
+**Good module**: Creates a VPC with public/private subnets, NAT gateways, and flow logs. Exposes subnet IDs, VPC ID, and route table IDs as outputs. You configure CIDR ranges and availability zones. The module handles the boilerplate.
+
+**Bad module**: A "web application" module that creates VPC, ECS cluster, ALB, RDS, ElastiCache, and Route53 records. Inflexible, impossible to reuse across different application patterns, and every change risks breaking something unrelated.
+
+**The litmus test for module boundaries**: Can I describe what this module does in one sentence? "Creates a VPC with standard networking" — good. "Creates a VPC and also by the way configures the database and the load balancer depending on some variables" — bad.
+
+## Variables: The Interface Design Problem
+
+Terraform variables are your module's API. Design them like any API:
+
+**Use descriptive names with consistent conventions.** `vpc_cidr`, not `c`. `enable_flow_logs`, not `flow`. A developer using your module shouldn't need to read the source to understand the variables.
+
+**Provide sensible defaults.** If 90% of users want `instance_type = "t3.medium"`, make it the default. Let the 10% override it. Don't force everyone to copy-paste the same configuration.
+
+**Validate aggressively.** Use `validation` blocks in variable definitions:
+
+```hcl
+variable "environment" {
+  type    = string
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be dev, staging, or prod."
+  }
+}
+```
+
+Catch errors at `terraform plan` time, not after deployment.
+
+## The CI/CD Pipeline
+
+Don't run Terraform from your laptop. It works for prototyping. It fails for production.
+
+```
+Git Push → PR → terraform plan (automatic comment on PR) → Review → Merge → terraform apply (automatic)
+```
+
+**Plan on every PR.** GitHub Actions or GitLab CI runs `terraform plan` and posts the output as a PR comment. Reviewers see exactly what will change. A plan that shows resource destruction when you expected modification is caught before merge.
+
+**Apply on merge to main.** The pipeline runs `terraform apply -auto-approve` only on the main branch. Nobody runs apply manually. The pipeline has the IAM role; humans don't need production IAM access.
+
+**Separate plans for separate concerns.** A PR that changes networking shouldn't trigger a plan for the entire environment. Use `terraform plan -target` or separate state files per component.
+
+## The Mistakes That Cost Me Sleep
+
+**`terraform destroy` in the wrong workspace.** Now I use S3 backend workspaces (or separate state files per environment) and require `terraform workspace show` in every CI step. The pipeline fails if the workspace doesn't match the branch.
+
+**Drift between state and reality.** Someone changed a security group in the console. Terraform didn't know. The next apply overwrote the manual change — and broke the application that depended on it. Now we run `terraform plan` on a schedule (every 6 hours) and alert if drift is detected. Manual changes are either imported into Terraform or reverted.
+
+**State file lock contention.** With 20 developers, DynamoDB lock contention was a bottleneck. We moved to per-component state files. A VPC change doesn't block an ECS deployment. The trade-off is more state files to manage. Worth it.
+
+## What I'd Do Differently
+
+**Start with remote state and CI/CD on day one.** The longer you run Terraform from a laptop, the harder the migration to proper infrastructure management.
+
+**Invest in module testing earlier.** `terratest` (Go-based testing for Terraform) lets you spin up real infrastructure, validate it, and tear it down. A module test that creates a VPC, validates that the subnet IDs are returned, and destroys everything takes 90 seconds and catches regressions before they hit production.
+
+**Use `terraform import` for existing resources instead of recreating.** Moving existing infrastructure under Terraform management is painful. Import is the right answer. Plan for it.
+
+Terraform is infrastructure's compiler. It turns declarative configuration into real resources. Like any compiler, the quality of the output depends on the quality of the input — and on the engineering practices around how that input is written, reviewed, and deployed.

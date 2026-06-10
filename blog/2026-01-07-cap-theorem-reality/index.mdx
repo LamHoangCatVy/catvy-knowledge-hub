@@ -1,0 +1,82 @@
+---
+slug: cap-theorem-reality
+title: "The CAP Theorem Is Not What You Think"
+description: "Every engineer learns CAP as 'choose 2 of 3' — consistency, availability, partition tolerance. That framing is wrong, misleading, and leads to bad architectural decisions. Here's what CAP actually means in practice."
+tags: [architecture, distributed-systems, databases, lessons]
+authors: [catvy]
+date: 2026-01-07
+image: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80
+---
+
+Show me an engineer who says "we chose AP over CP for this system" and I'll show you an engineer who learned CAP from a blog post and never read the proof. The CAP theorem is the most misunderstood concept in distributed systems — and the misunderstanding leads to real architectural mistakes.
+
+{/* truncate */}
+
+## What CAP Actually Says
+
+Eric Brewer's CAP theorem (formally proven by Gilbert and Lynch) states: in a distributed system experiencing a **network partition**, you must choose between **consistency** and **availability**. You cannot have both. You must have partition tolerance — because network partitions are a physical reality, not a design choice.
+
+The critical insight that most summaries miss: **CAP is about what happens during a partition, not during normal operation.** When the network is healthy, you can have both consistency and availability. The trade-off only activates when a partition occurs.
+
+## Why "Pick 2 of 3" Is Wrong
+
+The "pick 2 of 3" framing implies you're choosing properties for your system's design:
+
+- "We chose CP" → The system prioritizes consistency during a partition. When the network splits, the system becomes unavailable rather than return inconsistent data.
+- "We chose AP" → The system prioritizes availability during a partition. It continues accepting writes, accepting that different partitions may diverge.
+- "We chose CA" → **This doesn't exist.** If the network partitions, you cannot have both consistency and availability. There is no "CA" distributed system.
+
+The framing also implies a binary choice between consistency and availability. In practice, both exist on spectrums:
+
+- **Consistency models range from strong to eventual**: linearizable, sequential, causal, read-your-writes, monotonic reads, eventual. You don't "choose consistency" — you choose _which_ consistency model.
+- **Availability isn't binary**: a system can be partially available (serving reads but not writes, serving stale data, serving a subset of operations). "Available" means something specific in the CAP proof — every request to a non-failing node must result in a response — and real systems relax this definition.
+
+## What This Means in Practice
+
+### PostgreSQL with Streaming Replication
+
+PostgreSQL's default replication is asynchronous. The primary accepts writes, confirms to the client, and replicates to standbys in the background.
+
+During a network partition: the primary continues accepting writes (available), but the standby falls behind (inconsistent with the primary). If the primary fails during the partition, committed writes are lost. This is an **AP** choice — you prioritized availability over consistency, and the consequence is potential data loss on failover.
+
+Switch to synchronous replication, and PostgreSQL waits for the standby to acknowledge writes before confirming. During a partition: if the synchronous standby is unreachable, writes stall. The system is unavailable for writes. This is a **CP** choice — consistency over availability.
+
+But here's the nuance: synchronous replication with one synchronous standby means the system is unavailable for writes only if both the primary AND the synchronous standby are on the wrong side of the partition. If the synchronous standby is reachable, writes proceed normally. CAP binary thinking misses this.
+
+### DynamoDB with Adjustable Consistency
+
+DynamoDB lets you choose consistency per-request:
+- **Strongly consistent reads** — The read reflects all writes acknowledged before the read. Requires quorum. Higher latency, higher cost.
+- **Eventually consistent reads** — The read may return stale data. Faster, cheaper.
+
+DynamoDB doesn't "choose AP or CP." It lets the application decide per-operation, and the system handles the details. This is the practical reality of distributed systems: they're not CP or AP. They're tools that give you knobs to turn based on the specific requirements of each operation.
+
+## When "AP" Is the Right Choice
+
+Use eventually consistent reads when:
+- **The data is rapidly changing** and stale reads are acceptable (social media feeds, view counts, "trending" pages).
+- **Availability is more important than accuracy** (catalog browsing — showing slightly outdated inventory is better than showing nothing).
+- **The user can refresh** to get updated data. A stale read is annoying; a timeout is broken.
+
+## When "CP" Is the Right Choice
+
+Use strong consistency when:
+- **The data is a source of truth** (financial balances, inventory levels for checkout, user authentication state).
+- **Stale data has real consequences** (showing a medical record from last week when the patient's medication changed yesterday).
+- **The system can tolerate unavailability** during a partition better than it can tolerate inconsistency.
+
+## The Real Lesson of CAP
+
+The CAP theorem isn't a system design guide. It's a precise mathematical statement about what happens during network partitions. The practical takeaways:
+
+1. **Network partitions will happen.** Design for them. Test your system under partition conditions. Know what happens when half your cluster can't reach the other half.
+
+2. **Consistency and availability are spectrums, not binary choices.** Your system likely offers fine-grained control — use it. Choose strong consistency for financial transactions and eventual consistency for product recommendations, within the same application, on the same database.
+
+3. **"CA" systems don't exist in distributed settings.** If your system spans multiple machines, it is partition-tolerant by necessity. The question is what it sacrifices during a partition.
+
+4. **Most systems don't need linearizability everywhere.** Eventual consistency with read-your-writes (you always see your own updates) is sufficient for the vast majority of user-facing features. Reserve strong consistency for the operations where inconsistency is genuinely dangerous.
+
+5. **Test your assumptions.** Many teams "choose CP" by configuring synchronous replication and then discover that their system grinds to a halt during routine network blips that asynchronous replication would have weathered silently. The practical reliability of an AP system with good reconciliation logic often exceeds that of a CP system with strict consistency requirements.
+
+The CAP theorem is elegant. The real world is messy. Design for the mess.

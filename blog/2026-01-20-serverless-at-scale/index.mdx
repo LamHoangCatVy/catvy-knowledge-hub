@@ -1,0 +1,79 @@
+---
+slug: serverless-at-scale
+title: "Serverless at Scale: What Breaks First"
+description: "Serverless is magical at small scale and terrifying at large scale. After running Lambda-based systems processing millions of requests daily, here's what actually breaks — and how to prepare for it."
+tags: [aws, cloud, architecture, serverless, lessons]
+authors: [catvy]
+date: 2026-01-20
+image: https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80
+---
+
+Serverless sold us a dream: write functions, not servers. The cloud handles scaling automatically. You pay only for what you use. The dream is real — until your Lambda function handles 10,000 concurrent requests, your API Gateway throttles users, and your DynamoDB bill exceeds your EC2 budget from last year. Here's what actually breaks when serverless meets scale.
+
+{/* truncate */}
+
+## What Breaks First: Cold Starts
+
+The most famous serverless problem is still the one that bites hardest at scale. A cold start happens when AWS provisions a new Lambda execution environment — downloading your code, initializing the runtime, running your init logic. It adds 200ms to 2 seconds to the first request.
+
+At low scale (10 concurrent users), cold starts are occasional. At high scale (10,000 concurrent), every new concurrent invocation potentially triggers a cold start. The 99th percentile latency spikes dramatically — some users get sub-100ms responses, others wait 2 seconds.
+
+**What works**: Provisioned Concurrency. You pay for a minimum number of warm execution environments. For latency-sensitive APIs, provision enough concurrency to handle your base load. Let the standard scaling handle spikes. Yes, it costs more. Yes, it's worth it.
+
+**What also works**: Lambda SnapStart (for Java runtimes). SnapStart takes a snapshot of the initialized execution environment and resumes it for new invocations. Cold starts drop from seconds to milliseconds. The limitation: SnapStart is Java-only, and not all frameworks are compatible.
+
+**What doesn't work**: Trying to optimize the init function. You can shave 100ms off initialization. At scale, the variance from cold starts (when they happen vs. when they don't) matters more than the absolute cold start duration. Consistent latency beats slightly-faster maximum latency.
+
+## What Breaks Second: API Gateway Throttling
+
+API Gateway has a default throttle of 10,000 requests per second per region. Hit that limit, and users get 429 (Too Many Requests) errors. The throttling is sudden — there's no gradual degradation. One second everything is fine, the next second users are blocked.
+
+**What works**: Request throttling at multiple levels. Set usage plans per API key. Set method-level throttling per endpoint. The goal: prevent one heavy client from consuming all capacity. A runaway script from a single customer shouldn't degrade the API for everyone else.
+
+**What also works**: Burst capacity. API Gateway supports burst limits above the steady-state rate. For traffic spikes (launch events, marketing campaigns), the burst capacity absorbs the spike without throttling — assuming the spike is temporary. If it's sustained, you need to increase the account-level quota via AWS Support.
+
+**What doesn't work**: Assuming "serverless automatically scales" includes API Gateway. Lambda scales. API Gateway throttles. They're different services with different scaling models. The integration between them is your responsibility.
+
+## What Breaks Third: DynamoDB Hot Partitions
+
+DynamoDB's scalability promise — "single-digit millisecond latency at any scale" — has a fine print: your workload must be evenly distributed across partitions. If a single partition key receives disproportionate traffic, it becomes a hot partition. Latency spikes. Throttling occurs. The rest of the table is healthy; one partition is melting.
+
+**What works**: Good partition key design. Choose keys with high cardinality and uniform access patterns. `user_id` is great (many users, evenly distributed traffic). `date` is often bad (today's partition gets all the writes). `status` is terrible (most records are "active", creating a massive hot partition).
+
+**What also works**: DynamoDB's adaptive capacity. If you're using on-demand capacity, DynamoDB automatically redistributes throughput to handle imbalanced workloads. But adaptive capacity takes time to react — up to 30 minutes. During that window, your hot partition is still hot.
+
+**What doesn't work**: Adding a random suffix to spread load (write sharding). It distributes writes evenly but makes reads impossible — you don't know which shard holds the data unless you query all shards. Write sharding works for write-heavy workloads with few reads. For general-purpose workloads, fix the key design.
+
+## What Breaks Fourth: Cost at Scale
+
+The serverless pricing model — pay per invocation — is beautiful at low scale. At high scale, it can exceed the cost of provisioned infrastructure.
+
+**Example**: A Lambda function handling 10M invocations per day with 1GB memory and 500ms average duration costs roughly $20 per million invocations. That's $200/day, $6,000/month. The same workload on a pair of t3.medium EC2 instances (reserved, 3-year) costs ~$100/month.
+
+Serverless costs scale linearly with usage. Reserved instances scale sub-linearly. There's a crossover point where provisioned infrastructure becomes cheaper. The crossover depends on your workload characteristics — compute intensity, memory requirements, traffic predictability.
+
+**What works**: Run the numbers before you commit. Model your costs at 1x, 10x, and 100x current traffic. Know the crossover point. Serverless might be right at your current scale and wrong at 10x. Plan for that.
+
+**What also works**: Mixed architecture. Latency-sensitive, variable-workload services run on Lambda. Steady-state, high-throughput services run on ECS or EC2. Use the right compute model for each workload.
+
+## What Doesn't Break (But Everyone Worries About)
+
+**Lambda concurrency limits.** The default account limit is 1,000 concurrent executions. You can request increases. At my company, we run at 10,000 concurrent Lambda executions without issues. The limit is a safety mechanism, not a scalability ceiling.
+
+**Function timeout.** Lambda's 15-minute max execution time is a feature, not a bug. It forces you to design for short-lived, stateless computations. If your function runs for 15 minutes, you're not building serverless — you're building a server application with a hard timeout. Use Step Functions for long-running workflows, not Lambda.
+
+**Vendor lock-in.** You're locked into AWS regardless of whether you use Lambda or EC2. The lock-in is at the cloud provider level, not the service level. Lambda-specific lock-in (event source mappings, IAM roles, CloudWatch integration) is real but manageable. The portability concern is overstated relative to the operational benefits.
+
+## The Serverless Scale Checklist
+
+Before scaling a serverless application past prototype:
+
+1. **Model costs at 100x.** Know when provisioned infrastructure becomes cheaper.
+2. **Configure reserved concurrency per function.** Prevent one function from consuming all account-level concurrency.
+3. **Set API Gateway throttling per method, per API key.** Prevent one client from degrading the API.
+4. **Audit DynamoDB partition keys.** Find hot partitions before they find you in production.
+5. **Implement circuit breakers and retry budgets.** Serverless services fail differently than servers. Your error handling should too.
+6. **Monitor p99 latency, not average.** Average latency hides cold starts. p99 reveals them.
+7. **Have a fallback compute model.** If Lambda limits block your scaling, can you deploy to ECS in hours, not weeks?
+
+Serverless at scale isn't a dream or a nightmare. It's an architectural choice with specific failure modes and specific mitigations. Know the failure modes. Implement the mitigations. Serverless works at scale — but only if you design for it.

@@ -1,0 +1,76 @@
+---
+slug: architecture-philosophy
+title: "My Architecture Philosophy: Simplicity Over Cleverness"
+description: "After designing systems for five years, I've learned that the best architecture isn't the most elegant — it's the one your team can debug at 3 AM. Here's the framework I use to make architectural decisions."
+tags: [architecture, leadership, career, lessons]
+authors: [catvy]
+date: 2026-01-02
+image: https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80
+---
+
+Every architect has a philosophy — a set of principles that guide decisions when the trade-offs are real and the stakes are high. Mine crystallized during a production outage at 2 AM, staring at a distributed trace that looked like a plate of spaghetti, wondering why we'd built something so clever that nobody could understand it when it broke.
+
+The principle I came back to, then and ever since: **simplicity over cleverness, every single time.**
+
+{/* truncate */}
+
+## The Cleverness Trap
+
+The cleverness trap is seductive because it looks like engineering excellence. You use the latest pattern — event sourcing with CQRS, multi-model routing with cascade fallbacks, a service mesh with mTLS between every pod. You deploy it. It works. You feel brilliant.
+
+Then something breaks at 3 AM. The on-call engineer opens the runbook, stares at seventeen microservices communicating through three different protocols, and has no idea where to start. The clever architecture that impressed your peers in a design review is now actively preventing your team from recovering from an outage.
+
+I've fallen into this trap. More than once. Here's what I learned.
+
+## My Five Principles
+
+### 1. Debuggability Is a Feature
+
+If you have to choose between a pattern that's slightly more performant and one that's significantly more debuggable, choose debuggable. Performance can be optimized incrementally. Debuggability is architectural — you either have it or you don't.
+
+Concretely:
+- **Request IDs everywhere** — Every service, every log line, every API response. I can trace a user's request from the load balancer to the database and back in 30 seconds.
+- **Structured logging, always** — JSON logs with consistent field names. `grep` is not an observability strategy.
+- **The "one minute" rule** — A new team member should be able to understand what a service does and how it connects to others within one minute of looking at the architecture diagram. If they can't, the diagram is wrong, or the architecture is overcomplicated.
+
+### 2. Start Monolithic, Split When Proven
+
+The microservices pendulum has swung. After a decade of "everything must be a microservice," the industry is rediscovering the value of well-structured monoliths. My rule: start with a single deployable that has clear module boundaries. Split into separate services only when you have concrete evidence that independent scaling, independent deployment, or team autonomy requires it.
+
+Evidence means data, not feelings. "We might need to scale the payment module independently" is a feeling. "The payment module handles 10x the traffic of everything else and its latency is degrading the monolith" is data. Split on data.
+
+### 3. The Best Code Is the Code You Delete
+
+Every line of code is a liability. It needs to be tested, maintained, understood, and eventually migrated or removed. The best engineering decision I make every week is "we don't need this."
+
+This applies to architecture too. Every service, every queue, every database table is something that can break, needs monitoring, and adds cognitive load. Before adding anything, ask: what happens if we don't add this? Can we solve this problem with what we already have?
+
+### 4. Conventions Over Configuration
+
+A team of five engineers making independent decisions about folder structure, naming conventions, and error handling will produce a codebase that looks like five different codebases stitched together. The cognitive overhead of context-switching between styles is real and expensive.
+
+My approach: pick conventions early, document them, enforce them with linting and code review, and revisit them quarterly. The specific conventions matter less than the consistency. I'd rather have a consistently mediocre naming convention than a brilliant one that only half the team follows.
+
+### 5. Design for Failure, Not Perfection
+
+Assume every dependency will fail. Assume the network will partition. Assume the database will be slow. Design your system to degrade gracefully under these conditions — circuit breakers, retry budgets, fallback responses, cached data — rather than assuming everything will work perfectly.
+
+The difference between a system that handles failure gracefully and one that doesn't is rarely in the happy path. It's in the edge cases. And the edge cases are where on-call engineers earn their gray hair.
+
+## How I Make Architectural Decisions
+
+When faced with an architectural decision, I run through this checklist:
+
+1. **What's the simplest thing that could work?** Start here. Only add complexity when the simple solution demonstrably fails.
+2. **What breaks if I'm wrong?** Every architectural decision is a bet. Understand what you're risking. Can you reverse the decision later? What's the migration cost?
+3. **Can I explain this to a new team member in five minutes?** If the answer is no, the design is too complex — or I don't understand it well enough.
+4. **What does the team think?** Architecture decisions made in isolation are fragile. The team that implements the architecture needs to believe in it.
+5. **What would I do if I had to ship this next week?** Constraints are clarifying. Tight deadlines expose what's essential and what's vanity.
+
+## What This Means for 2026
+
+As AI becomes a bigger part of our architectures, the simplicity principle becomes more important, not less. LLM-based systems are inherently non-deterministic. Adding architectural complexity on top of model non-determinism is asking for systems that are impossible to debug, impossible to predict, and impossible to trust.
+
+The best AI architectures in 2026 will be the ones that surround the probabilistic model with deterministic guardrails — clear boundaries, predictable failure modes, and a blast radius small enough that a hallucination doesn't cascade into a catastrophe.
+
+Simplicity isn't laziness. It's the recognition that complex systems fail in complex ways, and that the engineer debugging the failure at 3 AM — possibly you — deserves all the help you can give them.

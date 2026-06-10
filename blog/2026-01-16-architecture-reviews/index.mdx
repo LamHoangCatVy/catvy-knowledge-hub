@@ -1,0 +1,114 @@
+---
+slug: architecture-reviews
+title: "How I Run Architecture Reviews That Don't Waste Everyone's Time"
+description: "Most architecture reviews are either rubber stamps or brutal critiques that kill morale. Here's the process I developed to make reviews rigorous, collaborative, and actually useful."
+tags: [architecture, leadership, career, growth]
+authors: [catvy]
+date: 2026-01-16
+image: https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200&q=80
+---
+
+My first architecture review as a senior engineer was a disaster. I spent an hour presenting a design I'd worked on for three weeks. The principal engineer nodded. Nobody asked questions. The design was approved — and four months later, it failed in production in exactly the ways nobody had questioned. The problem wasn't the design. It was the review process.
+
+{/* truncate */}
+
+## The Failure Modes of Bad Reviews
+
+**The rubber stamp.** The reviewer doesn't have context, doesn't read the document in advance, and approves because "it looks fine." The review catches nothing. False confidence is worse than no review at all.
+
+**The surprise attack.** The designer presents. The reviewer asks questions the designer hasn't considered. The designer gets defensive. The review becomes a debate instead of a collaboration. Everyone leaves frustrated.
+
+**The ivory tower.** The architect reviews alone, writes a list of required changes, and sends it back. The team implements the changes without understanding why. The architecture becomes the architect's design, not the team's.
+
+**The premature review.** The design is half-baked — a few diagrams and some bullet points. The review becomes a brainstorming session. Useful for ideation, terrible for decision-making.
+
+## The Process That Works
+
+### Before the Review: The RFC
+
+Every architecture change starts with an RFC (Request for Comments) document. The format:
+
+1. **Context** — What problem are we solving? Why now? What constraints exist?
+2. **Proposed solution** — What are we building? Include diagrams. Not "a microservice" — specific services, specific databases, specific APIs.
+3. **Alternatives considered** — What else did we think about? Why did we reject those options? This is the most important section. It shows you did the work.
+4. **Trade-offs** — What gets better? What gets worse? Be honest about the downsides. If you can't think of any, you haven't thought hard enough.
+5. **Migration plan** — How do we get from current state to proposed state? What's the rollback plan if things go wrong?
+6. **Open questions** — What don't you know yet? What assumptions need validation?
+
+The RFC is shared 48 hours before the review. Reviewers are expected to read it and add comments in advance. If nobody reads the RFC, the review is canceled.
+
+### During the Review: 60 Minutes, Structured
+
+- **0-10 min**: The designer presents the RFC. Not reads it — presents the key decisions and trade-offs. Everyone already read the document.
+- **10-40 min**: Discussion. Questions, concerns, alternatives. The designer listens and takes notes — doesn't defend. Defensiveness is the enemy of good review.
+- **40-50 min**: Decision. Does this design proceed as-is? With modifications? Back to the drawing board? The decision is documented in the RFC.
+- **50-60 min**: Action items. Who does what by when? If modifications are needed, what's the follow-up process?
+
+### After the Review: The ADR
+
+The RFC becomes an ADR (Architecture Decision Record) — a permanent document in the repository. Even rejected proposals get archived. Six months later, when someone asks "why did we build it this way?", the ADR answers.
+
+## The Reviewer's Mindset
+
+The best reviewers don't ask "is this design correct?" They ask "what will fail?"
+
+- "What happens when this database is unreachable for 30 seconds?"
+- "How many concurrent requests before this service degrades?"
+- "What's the blast radius if this IAM role is compromised?"
+- "How does an on-call engineer debug this at 3 AM?"
+- "What's the cost per million requests? What's the cost if traffic 10x?"
+
+These questions aren't criticisms. They're the engineering work that turns a good design into a production-ready system. If the designer can answer them, the design is solid. If they can't, the review caught something before it became an incident.
+
+## What I Changed After That First Failed Review
+
+1. **No reviews without written RFCs.** Verbal designs are impossible to evaluate rigorously. If you can't write it down, you don't understand it.
+
+2. **Read before, discuss during, decide at the end.** The review is for discussion, not for reading. Reading happens offline. Decisions happen in the room (or on the document).
+
+3. **Separate ideation from decision.** Brainstorming sessions are for generating ideas. Architecture reviews are for making decisions. Mixing the two wastes time and produces half-baked commitments.
+
+4. **Celebrate rejected proposals.** A design that's caught before implementation saved the company months of rework. The designer didn't fail — the process succeeded.
+
+5. **Reviewers share accountability.** If a reviewer approves a design and it fails, the reviewer owns part of the failure. This eliminates rubber-stamping — nobody wants their name attached to a future postmortem.
+
+## The Template I Use
+
+```
+# RFC: [Title]
+
+**Status**: Proposed | Approved | Rejected | Implemented | Superseded
+**Author**: [Name]
+**Date**: [YYYY-MM-DD]
+**Reviewers**: [Names]
+
+## Context
+[1-3 paragraphs: problem statement, constraints, stakeholders]
+
+## Proposed Solution
+[System diagram, component description, data flow]
+
+## Alternatives Considered
+| Option | Pros | Cons | Why Rejected |
+|---|---|---|---|
+| Option A | ... | ... | ... |
+| Option B | ... | ... | ... |
+
+## Trade-offs
+**What improves**: [performance, reliability, developer experience, cost]
+**What degrades**: [complexity, operational burden, migration effort]
+
+## Migration Plan
+[Phases, rollback strategy, success criteria]
+
+## Open Questions
+- [ ]
+- [ ]
+
+## Decision
+[Documented after review]
+```
+
+Two pages max. If your RFC is longer, you're writing documentation, not a decision document. Split the details into a separate design doc and link it from the RFC.
+
+Architecture reviews aren't about finding the perfect design. They're about finding the fatal flaws before they find you in production. A good review process catches the obvious mistakes, surfaces hidden assumptions, and makes the designer smarter for the next one. Everything else is ceremony.

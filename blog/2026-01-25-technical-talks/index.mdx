@@ -1,0 +1,67 @@
+---
+slug: technical-talks
+title: "5 Technical Talks That Changed How I Build Software"
+description: "The conference talks that most influenced my engineering thinking — not just good presentations, but talks that permanently rewired my approach to architecture, teams, and decision-making."
+tags: [career, architecture, growth, personal, leadership]
+authors: [catvy]
+date: 2026-01-25
+image: https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&q=80
+---
+
+A great technical talk is a compressed experience — years of someone else's mistakes, distilled into 45 minutes, delivered with the clarity that only comes from deep understanding. Here are five talks that changed how I build software. Not necessarily the most popular ones, but the ones I reference in architectural decisions and team discussions years after watching them.
+
+{/* truncate */}
+
+## 1. "Simple Made Easy" — Rich Hickey (Strange Loop 2011)
+
+Rich Hickey, creator of Clojure, delivered the most influential talk on software design I've encountered. The core distinction: simple ≠ easy. "Simple" means one fold, one braid — the opposite of complex (many folds, entwined). "Easy" means near at hand, familiar.
+
+A technology can be easy (Rails scaffolding generates a whole app in one command) without being simple (the generated app couples routing, persistence, and presentation in ways that resist change). A technology can be simple (a pure function with no side effects) without being easy (it requires understanding functional programming).
+
+**What it changed**: I stopped chasing the "easy" solution and started evaluating the "simple" one. The question shifted from "how fast can I build this?" to "how easy will this be to change in six months?" Simple systems are composable, debuggable, and evolvable. Easy systems are fast to start and slow to maintain.
+
+## 2. "How to Design a Good API and Why It Matters" — Joshua Bloch (Google Tech Talks 2007)
+
+Joshua Bloch designed the Java Collections Framework — one of the most widely used APIs in software history. His talk distills API design into actionable principles that apply to REST endpoints, library interfaces, and even system prompts for LLMs.
+
+The principles that stuck: "When in doubt, leave it out" (every API surface is a commitment — smaller surfaces are easier to maintain). "Implementation should not impact the API" (your API should make sense even if the implementation changes completely). "Names matter" (the time you spend naming a method is proportional to the number of times developers will read that name).
+
+**What it changed**: I design APIs starting from the consumer experience, not the implementation. I write the client code first — the code that _uses_ the API — then design the API to make that code clean. If the consumer code is awkward, the API is wrong, regardless of how elegant the implementation is.
+
+## 3. "Turning the Database Inside-Out" — Martin Kleppmann (Strange Loop 2014)
+
+Kleppmann argues that databases should be thought of as streams of immutable facts, not mutable state. The current state of a record is a cached aggregation of all the events that produced it. This is the intellectual foundation of event sourcing and stream processing.
+
+The key insight: a database that overwrites data destroys information. If you update a user's email from `old@email.com` to `new@email.com`, the fact that they ever used `old@email.com` is lost. An event-sourced system preserves every fact — the state is a derived view of the event log.
+
+**What it changed**: I started designing systems where the event log is the source of truth and the database is a materialized view. Not every system needs event sourcing (it's expensive). But understanding that mutable databases destroy information changed how I think about data — and made me reach for event sourcing when the audit trail matters as much as the current state.
+
+## 4. "The Mother of All Demos" — Douglas Engelbart (1968)
+
+In 1968, Engelbart demonstrated the computer mouse, hypertext, video conferencing, collaborative editing, and windowed interfaces — simultaneously, on a single system, in front of a live audience. It's not a "talk" in the conventional sense. It's 90 minutes of seeing the future 50 years early.
+
+**What it changed**: Humility about predicting technology. The core ideas of modern computing — graphical interfaces, collaborative tools, information linking — were demonstrated in 1968 by a single team. The distance between invention and adoption is measured in decades, not years. When I'm tempted to claim "this technology will change everything," I remember that the mouse took 16 years to reach consumers. Patience and persistence matter more than predictions.
+
+## 5. "How to Do Code Reviews Like a Human" — Michaela Greiler (multiple conferences)
+
+Greiler's research on code review practices found something counterintuitive: the speed of code review matters more than the depth. Reviews completed within 24 hours correlate with higher code quality than reviews that take a week with more thorough examination. Fast reviews keep the developer's context fresh — they still understand the code they wrote and the trade-offs they made.
+
+**What it changed**: I restructured my review practice. I review PRs in my morning routine, not when I "have time." I aim for under 24 hours for every PR. I prioritize reviews over my own coding. And I've seen the effects: faster merge cycles, less context-switching pain, and a team culture where reviews aren't a bottleneck. The "human" in the title matters — code review is a conversation between people, not just a quality gate.
+
+## Honorable Mentions
+
+**"Worse Is Better"** — Richard Gabriel (1991 essay). The counterintuitive argument that simplicity of implementation matters more than correctness of design. Unix and C succeeded because they were simple to implement, not because they were perfectly designed. Many elegant architectures fail because they're too hard to build.
+
+**"The Tail at Scale"** — Jeffrey Dean (CACM 2013). Why p99 latency matters more than average. In a system with 100 parallel requests, if each request has a 1% chance of being slow, 63% of user requests will experience a slow response. Optimizing for p99 is optimizing for the user experience, not the monitoring dashboard.
+
+**"Stevey's Google Platforms Rant"** — Steve Yegge (2011, accidentally public). An internal memo about Google's platform strategy that accidentally became a famous essay. The key lesson: platforms must serve internal teams as customers. If your internal platform isn't good enough for your own teams, external customers won't use it either.
+
+## The Pattern in Great Talks
+
+The talks that changed me share a pattern:
+1. They challenge conventional wisdom (simple vs. easy, mutable state vs. event streams).
+2. They offer concrete principles, not vague advice ("when in doubt, leave it out").
+3. They come from deep experience — the speaker has earned the right to challenge convention through years of building.
+4. They're remarkably portable — a talk about API design applies to REST endpoints, GraphQL schemas, system prompts, and Terraform modules.
+
+Watch these talks. Then watch the talks your colleagues recommend. The right talk at the right time can compress months of learning into an afternoon.

@@ -1,0 +1,126 @@
+---
+slug: zero-trust-implementation
+title: "Zero Trust Architecture: From Buzzword to AWS Implementation"
+description: "Zero trust means 'never trust, always verify.' But what does that actually look like in AWS? A practical guide to implementing zero trust principles across identity, network, and data layers."
+tags: [security, aws, cloud, zero-trust, iam, architecture]
+authors: [catvy]
+date: 2026-01-15
+image: https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80
+---
+
+"Zero trust" is the most overused term in security since "military-grade encryption." Every vendor claims their product enables it. Every CISO demands it. Very few teams implement it. Here's what zero trust actually looks like in AWS — not the slideware version, but the architecture you can build today.
+
+{/* truncate */}
+
+## What Zero Trust Actually Means
+
+Zero trust is a design principle: **no user, device, or network is trusted by default.** Every access request is authenticated, authorized, and encrypted — regardless of where it originates. The corporate network is not a trust boundary. Being "inside the VPN" does not grant access. Every request stands on its own.
+
+In practice, zero trust has three pillars:
+
+1. **Identity-based access** — Not "this IP can access this server." "This authenticated identity with these attributes can perform this action on this resource."
+2. **Least privilege, continuously verified** — Not "once authenticated, access everything." Each request is evaluated independently. Privileges are reviewed and revoked automatically.
+3. **Assume breach** — Not "our network is secure." Design as if the attacker is already inside. Encrypt everything. Log everything. Segment everything.
+
+## Pillar 1: Identity-Based Access
+
+In a zero trust architecture, identity is the perimeter. The question isn't "what network is this request coming from?" It's "who is making this request, and what are they authorized to do?"
+
+### IAM as the Policy Language
+
+Every AWS resource interaction goes through IAM. Your zero trust implementation starts here:
+
+**Replace IAM users with IAM Identity Center.** Federate with your corporate identity provider (Entra ID, Okta). Users authenticate with corporate credentials + MFA. They assume IAM roles with temporary credentials that expire in hours, not years.
+
+**Use attribute-based access control (ABAC).** Instead of role-per-user, use tags to define access:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": "ec2:StartInstances",
+  "Resource": "*",
+  "Condition": {
+    "StringEquals": {
+      "ec2:ResourceTag/Environment": "${aws:PrincipalTag/Environment}"
+    }
+  }
+}
+```
+
+A developer tagged with `Environment=dev` can start dev instances. They cannot start production instances — not because they have a different role, but because the policy evaluates their attributes dynamically. Add a user to the production team by changing their tag, not by creating a new role.
+
+### MFA Everywhere, No Exceptions
+
+Zero trust without MFA is trust. Require MFA for:
+- Console access (enforce via IAM Identity Center).
+- API calls that modify resources (enforce via IAM policy conditions).
+- Role assumption (enforce via the trust policy on every IAM role).
+- Sensitive operations — deleting S3 buckets, modifying IAM policies, disabling CloudTrail.
+
+## Pillar 2: Network Segmentation
+
+In zero trust, the network is hostile by default. Resources don't trust each other just because they're in the same VPC.
+
+### Micro-Segmentation with Security Groups
+
+Instead of broad security group rules (allow all traffic within the VPC), define rules by service identity:
+
+```
+AppServer-SG:
+  Inbound: Allow TCP/3000 from LoadBalancer-SG
+  Inbound: Allow TCP/3000 from Monitoring-SG
+  Outbound: Allow TCP/5432 to Database-SG
+
+Database-SG:
+  Inbound: Allow TCP/5432 from AppServer-SG
+  Outbound: Allow TCP/443 to S3 VPC Endpoint
+```
+
+Each security group represents a service identity. Rules reference other security groups (not IPs or CIDR ranges). When an AppServer instance is replaced by autoscaling, it gets the same security group — same access, zero manual configuration.
+
+### VPC Endpoints: Keep Traffic Off the Internet
+
+S3, DynamoDB, SQS, KMS — every AWS service should be accessed through VPC endpoints, not the public internet. Traffic stays on the AWS backbone. No NAT gateway. No internet gateway. Resources in private subnets can reach AWS services without ever touching the public internet.
+
+### PrivateLink for Cross-Account Access
+
+When Service A in Account 1 needs to call Service B in Account 2, don't expose Service B to the internet. Create a PrivateLink endpoint service. Service A connects through an interface endpoint with a private IP. The traffic never leaves the AWS network.
+
+## Pillar 3: Assume Breach
+
+Design every system as if the attacker has already compromised some part of it.
+
+### Encryption Everywhere
+
+- **In transit**: TLS 1.3 minimum. Enforce via security group rules, CloudFront policies, and ALB listener configuration.
+- **At rest**: KMS-managed encryption for S3, EBS, RDS, DynamoDB, SQS, SNS. Audit with AWS Config rule `encrypted-volumes`.
+- **End-to-end**: For highly sensitive data, encrypt at the application layer before it reaches cloud storage. KMS manages the key; your application manages the envelope.
+
+### Comprehensive Logging
+
+If you can't see an attack, you can't respond to it:
+
+- **CloudTrail**: Every API call, in every account, in every region. Organization trail covering all accounts. Log file validation enabled.
+- **VPC Flow Logs**: Every network connection. Ingest into your SIEM. Alert on: traffic to known malicious IPs, unusual protocols (SSH from internet to database subnet), data exfiltration volumes (tens of GB to an unfamiliar IP at 2 AM).
+- **Route 53 DNS query logs**: Every DNS query. Attackers use DNS for command-and-control. If a server suddenly resolves `exfil-bad-guy.com`, you want to know.
+- **GuardDuty**: ML-based threat detection. Cryptocurrency mining, unusual API calls, credential compromise indicators. Even if you miss the attack in your logs, GuardDuty catches the pattern.
+
+### Automated Response
+
+The zero trust ideal: the system detects the attack and responds before a human wakes up.
+
+- **GuardDuty → Lambda → Revoke compromised credentials.** If GuardDuty detects credential compromise, automatically revoke the associated IAM role or access key. The attacker loses access in seconds.
+- **Config → SNS → Lambda → Remediate insecure resources.** If Config detects a security group with `0.0.0.0/0`, automatically revoke the rule and notify the team.
+- **CloudWatch Alarms → PagerDuty.** For patterns that require human judgment (unusual data transfer, IAM policy changes), alert the on-call engineer. Automate the detection, not the response — yet.
+
+## The Zero Trust Migration Path
+
+You don't implement zero trust in a weekend. The migration path:
+
+1. **Identity first.** Federate IAM with your IdP. Enforce MFA. Replace IAM users with roles.
+2. **Network segmentation.** Tighten security groups. Deploy VPC endpoints. Remove public subnets where possible.
+3. **Logging.** Enable CloudTrail, VPC Flow Logs, GuardDuty. Ensure logs flow to a dedicated security account.
+4. **Automation.** Automated remediation for common misconfigurations. Automated response for detected threats.
+5. **Continuous verification.** IAM Access Analyzer continuously evaluates permissions. Config continuously evaluates resource compliance. Security Hub aggregates findings.
+
+Zero trust isn't a product you buy. It's a set of architectural decisions you make, one at a time, until your default posture shifts from "trust unless proven dangerous" to "verify unless explicitly authorized."

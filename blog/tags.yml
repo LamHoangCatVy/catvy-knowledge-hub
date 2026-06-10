@@ -107,3 +107,98 @@ prompt-engineering:
   label: Prompt Engineering
   permalink: /prompt-engineering
   description: Posts about prompt engineering techniques and security
+
+llm:
+  label: LLM Engineering
+  permalink: /llm
+  description: Posts about LLM architecture, deployment, and engineering
+
+distributed-systems:
+  label: Distributed Systems
+  permalink: /distributed-systems
+  description: Posts about distributed systems design and patterns
+
+databases:
+  label: Databases
+  permalink: /databases
+  description: Posts about database design, optimization, and selection
+
+vector-db:
+  label: Vector Databases
+  permalink: /vector-db
+  description: Posts about vector databases and similarity search
+
+embeddings:
+  label: Embeddings
+  permalink: /embeddings
+  description: Posts about text embeddings, embedding models, and strategies
+
+productivity:
+  label: Productivity
+  permalink: /productivity
+  description: Posts about developer productivity, tools, and workflows
+
+tools:
+  label: Tools
+  permalink: /tools
+  description: Posts about development tools, setups, and recommendations
+
+system-design:
+  label: System Design
+  permalink: /system-design
+  description: Posts about system design, architecture patterns, and trade-offs
+
+iam:
+  label: IAM
+  permalink: /iam
+  description: Posts about identity and access management
+
+terraform:
+  label: Terraform
+  permalink: /terraform
+  description: Posts about Terraform and infrastructure-as-code
+
+devops:
+  label: DevOps
+  permalink: /devops
+  description: Posts about CI/CD, DevOps practices, and deployment
+
+zero-trust:
+  label: Zero Trust
+  permalink: /zero-trust
+  description: Posts about zero trust architecture and security models
+
+api:
+  label: API Design
+  permalink: /api
+  description: Posts about API design patterns and best practices
+
+microservices:
+  label: Microservices
+  permalink: /microservices
+  description: Posts about microservice architecture and patterns
+
+serverless:
+  label: Serverless
+  permalink: /serverless
+  description: Posts about serverless architecture and Lambda
+
+kafka:
+  label: Kafka
+  permalink: /kafka
+  description: Posts about Apache Kafka and event streaming
+
+event-driven:
+  label: Event-Driven
+  permalink: /event-driven
+  description: Posts about event-driven architecture and patterns
+
+performance:
+  label: Performance
+  permalink: /performance
+  description: Posts about performance optimization and tuning
+
+caching:
+  label: Caching
+  permalink: /caching
+  description: Posts about caching strategies and patterns

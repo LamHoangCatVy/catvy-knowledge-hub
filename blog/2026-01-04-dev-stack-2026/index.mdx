@@ -1,0 +1,72 @@
+---
+slug: dev-stack-2026
+title: "My Development Stack 2026: Every Tool I Use Daily"
+description: "The complete development environment I use as a Senior AI Systems Architect — from IDE and terminal to cloud tools, AI assistants, and productivity workflows."
+tags: [productivity, tools, career, personal]
+authors: [catvy]
+date: 2026-01-04
+image: https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&q=80
+---
+
+An engineer's development environment is deeply personal. It evolves through trial and error — tools adopted, abandoned, and rediscovered over years of daily use. Here's my complete stack entering 2026, from the terminal I open first thing every morning to the cloud tools I use to deploy production systems.
+
+{/* truncate */}
+
+## Terminal & Shell
+
+**Warp** on macOS. I switched from iTerm2 in late 2024 and haven't looked back. Warp's block-based output (each command is a discrete block you can navigate, copy, and share), AI-powered command suggestions, and native split panes make it the best terminal I've used. The AI autocomplete — type `find all files modified in the last 24 hours and` — saves me from `man find` every other day.
+
+**Oh My Zsh** with the Powerlevel10k theme. My `.zshrc` has accumulated aliases over years: `gcam` for `git commit -am`, `k` for `kubectl`, `tf` for `terraform`. The key to a good shell setup isn't the tool — it's the muscle memory. If I have to think about how to execute a command, my flow is broken.
+
+## IDE
+
+**Cursor** is my primary editor. Built on VS Code, so all my extensions and keybindings work. The AI integration — inline code generation, multi-file edits, context-aware completions that understand my entire codebase — has replaced about 40% of the boilerplate I used to write manually.
+
+I still use **VS Code** for heavy TypeScript work where I want full control. And **terminal vim** for quick edits on remote servers. But Cursor handles 80% of my daily coding.
+
+Key extensions: GitHub Copilot (redundant with Cursor's built-in AI, but I keep it for specific languages), Prettier, ESLint, GitLens, Docker, Terraform, and Markdown Preview Mermaid Support.
+
+## AI Coding Assistants
+
+I use three AI tools daily, each for different purposes:
+
+- **Cursor's built-in AI** — Inline code generation while writing. It knows my codebase context, which makes suggestions dramatically more relevant than generic Copilot completions.
+- **Claude (via API)** — Complex architectural questions, system design reasoning, and code review. Claude's long context window means I can paste an entire file and ask "what are the security vulnerabilities here?" and get a thoughtful answer.
+- **ChatGPT** — Quick questions, syntax lookups, and exploring unfamiliar libraries. The speed matters more than the depth for these use cases.
+
+The skill I'm still developing: knowing when _not_ to use AI. For algorithmic problems where I need deep understanding, I write the code manually first, then use AI to review and suggest improvements. Relying on AI for the first draft of complex logic leads to code I understand at a surface level but can't debug effectively.
+
+## Version Control & Collaboration
+
+**GitHub** for everything. Branch protection rules, required reviews, linear history (`git rebase`, not `git merge`). I enforce conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`) because readable commit history is documentation that costs almost nothing to produce and is invaluable six months later.
+
+**GitHub Copilot for PRs** auto-generates PR descriptions from the diff. It's not perfect, but a 70%-accurate starting point is better than a blank text box.
+
+## Cloud & Infrastructure Tools
+
+- **AWS CLI v2** with named profiles for every account. I use `aws-vault` for temporary credentials — no long-lived access keys on my local machine.
+- **Terraform** for infrastructure-as-code. I evaluated Pulumi in 2024 and it's compelling (TypeScript for infrastructure!), but Terraform's ecosystem and team familiarity kept us on HCL.
+- **Docker** with multi-stage builds. My `Dockerfile` templates have evolved to the point where I can scaffold a production-ready container in under 5 minutes.
+- **Lens** for Kubernetes cluster management. The GUI isn't a replacement for `kubectl`, but for visualizing pod states, logs, and resource usage across namespaces, it's invaluable.
+
+## Documentation & Notes
+
+**Obsidian** for personal knowledge management. Every technical concept I learn goes into my Obsidian vault with bidirectional links. This knowledge hub website started as an Obsidian vault before I migrated it to Docusaurus.
+
+**Docusaurus** for the public knowledge hub. MDX files in a Git repo, deployed to Vercel. Writing in the same environment where my code lives means documentation stays in sync with implementation.
+
+## Communication
+
+- **Slack** for team chat. I keep notifications to mentions and DMs only.
+- **Linear** for project management. Fast, keyboard-driven, purpose-built for engineering teams. The integration with GitHub means issues and PRs stay in sync automatically.
+- **Loom** for async video updates. A 3-minute screen recording replaces a 45-minute meeting. I record Loom videos for architecture walkthroughs, bug reproduction steps, and feature demos.
+
+## The Philosophy
+
+My tool stack follows three rules:
+
+1. **Keyboard-first** — If a tool requires me to reach for the mouse for common operations, I'll eventually replace it.
+2. **Fast above all** — A tool that takes 3 seconds to open is a tool I'll avoid using. Latency compounds across a workday.
+3. **One tool, one purpose** — I don't use an all-in-one platform. I use the best tool for each job and ensure they integrate (via APIs, webhooks, or GitHub).
+
+The stack evolves. Six months from now, something on this list will have been replaced. The constants are the principles: speed, simplicity, and tools that disappear into the background so I can focus on the work that matters.

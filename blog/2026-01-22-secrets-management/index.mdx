@@ -1,0 +1,125 @@
+---
+slug: secrets-management
+title: "Secrets Management: Beyond .env Files and Into Production"
+description: "Every engineer starts with .env files. Every production system needs more. A practical guide to secrets management across development, CI/CD, and cloud — with real patterns and the mistakes I've seen."
+tags: [security, cloud, devops, architecture, aws]
+authors: [catvy]
+date: 2026-01-22
+image: https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80
+---
+
+The most expensive secret I ever leaked was an AWS access key committed to a public GitHub repository. Within 12 minutes, an attacker was mining cryptocurrency on $40,000 worth of EC2 instances. The key had been in a `.env` file that someone accidentally staged. That incident rewired how I think about secrets management.
+
+{/* truncate */}
+
+## The Secrets Hierarchy
+
+Not all secrets need the same level of protection. Categorize them:
+
+### Tier 1: Compromise = Catastrophe
+- Cloud provider access keys (AWS IAM, Azure service principals)
+- Database master credentials
+- Private keys (TLS certificates, SSH keys, signing keys)
+- API keys with billing access (OpenAI, Stripe, Twilio)
+
+**Requirements**: Never in code. Never in .env files. Never in environment variables visible to subprocesses. Rotated automatically. Access logged and audited.
+
+### Tier 2: Compromise = Serious Incident
+- Database user credentials (application-level, not master)
+- Third-party API keys (SendGrid, Slack, monitoring tools)
+- OAuth client secrets
+- Encryption keys for application data
+
+**Requirements**: Never in code. Stored in a secrets manager. Rotated on a schedule. Access restricted by IAM role.
+
+### Tier 3: Compromise = Limited Damage
+- Feature flags for beta features
+- Internal service tokens (short-lived, auto-rotated)
+- Development environment credentials (isolated from production)
+
+**Requirements**: Reasonable protection. Environment variables might be acceptable for dev. Production always goes through secrets manager.
+
+## The Secrets Management Stack
+
+### Development: .env Is Fine (With Guardrails)
+
+Local development needs secrets. `.env` files work. The guardrails:
+
+- **`.env` in `.gitignore` — always.** Verify with `git status` before committing. Set up a pre-commit hook that blocks files matching `.env` patterns.
+- **`.env.example` committed to the repo.** Shows the required variables with placeholder values. Developers copy to `.env` and fill in their own secrets.
+- **No production secrets in `.env.example`.** Ever. The example file contains `DATABASE_URL=postgres://user:password@localhost:5432/db`, not the production connection string.
+- **Use a secrets injector for local dev.** Tools like `aws-vault` or `direnv` inject secrets into your shell environment without persisting them in files. No `.env` file at all — just session-level environment variables.
+
+### CI/CD: Secrets as Pipeline Variables
+
+CI/CD pipelines need secrets to deploy. GitHub Actions, GitLab CI, and Jenkins all have secrets management built in.
+
+**The pattern I trust**:
+
+1. Store secrets in the CI/CD platform's secrets store (GitHub Secrets, GitLab Variables).
+2. Reference them in pipeline YAML via variable substitution: `${{ secrets.AWS_ACCESS_KEY_ID }}`.
+3. Inject them into the deployment step only — not the build, test, or lint steps.
+4. Mask them in logs. All CI/CD platforms automatically mask secret values. Verify that your logging doesn't accidentally expose them (structured logs that dump entire objects are the usual culprit).
+
+**The anti-pattern**: Storing secrets in the repository as encrypted files (ansible-vault, sops, git-crypt). It works for configuration management. It adds complexity for application secrets. The CI/CD platform's built-in secrets store is simpler, more auditable, and already integrated with your pipeline.
+
+### Production: AWS Secrets Manager / Parameter Store
+
+For applications running in AWS, the hierarchy:
+
+- **AWS Systems Manager Parameter Store**: For Tier 3 configuration values. Free for standard parameters. Supports `String`, `StringList`, and `SecureString` types with KMS encryption.
+- **AWS Secrets Manager**: For Tier 1 and 2 secrets. Automatic rotation via Lambda. Cross-account access. Detailed audit logging via CloudTrail. Costs $0.40 per secret per month.
+
+**The IAM pattern**: Applications retrieve secrets via their IAM role, not via access keys:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": "secretsmanager:GetSecretValue",
+  "Resource": "arn:aws:secretsmanager:us-east-1:123456789012:secret:myapp/database-*"
+}
+```
+
+The EC2 instance, Lambda function, or ECS task has an IAM role that allows reading specific secrets. No credentials embedded in the application. No access keys to rotate. The IAM role is the authentication mechanism.
+
+### Multi-Cloud: HashiCorp Vault
+
+If you span AWS + Azure + on-premise, Vault is the unified secrets layer. It's complex to operate (Vault is a distributed system with its own consensus protocol). The complexity is justified only when you genuinely need cross-provider secrets management.
+
+For AWS-only environments, Secrets Manager + Parameter Store covers everything. Don't introduce Vault because you "might be multi-cloud someday." Introduce it when you are multi-cloud today.
+
+## The Rotation Problem
+
+Secrets should rotate. The challenge: rotating a secret without downtime.
+
+**Secrets Manager auto-rotation**: Define a Lambda function that:
+1. Creates a new secret version.
+2. Updates the database/service with the new credential.
+3. Marks the new version as current.
+4. Monitors for errors. If the new credential fails, roll back.
+
+Secrets Manager handles the orchestration — it calls your Lambda on a schedule and manages the version lifecycle. The Lambda contains your rotation logic, which is specific to each service.
+
+**For JWT signing keys**: Rotate on a schedule (90 days). Publish the new public key to a JWKS endpoint. Accept both old and new keys during the overlap period (typically 2x the token lifetime). Stop accepting old keys after the overlap.
+
+**For database credentials**: Use IAM database authentication (RDS, Aurora) instead of passwords. No password to rotate. IAM generates temporary credentials via the database's IAM integration.
+
+## The Mistakes I've Made
+
+**Committing .env to git.** We all do it once. The fix: `git rm --cached .env`, add to `.gitignore`, rotate the exposed credentials immediately. Don't just remove the file — the secrets are in the git history and any attacker who finds the repository can retrieve them.
+
+**Logging secrets in error messages.** A database connection error dumped the full connection string — including username and password — into CloudWatch Logs. Anyone with log access could see the database credentials. The fix: sanitize error messages before logging. Config libraries like `pydantic` (Python) and `envalid` (Node.js) can mask secrets in validation errors.
+
+**Hardcoding secrets in Docker images.** An API key baked into a Dockerfile layer is visible in the image history. Anyone with access to the container registry can extract it. The fix: inject secrets at runtime (environment variables from Secrets Manager), not at build time.
+
+**Sharing secrets across environments.** The staging database password was the same as production because it was easier to manage. A staging environment breach would have exposed production credentials. The fix: separate secrets per environment. `myapp/production/database` and `myapp/staging/database` are different secrets with different values.
+
+## The Principle
+
+Every secret should answer four questions:
+1. **Where is it stored?** If the answer is "a file on disk" or "an environment variable in a running container," the answer is wrong.
+2. **Who can access it?** IAM roles, not humans. If a human needs to read a production secret, the architecture is wrong.
+3. **When does it rotate?** Automatic, on a schedule. If the answer is "when someone remembers," the answer is wrong.
+4. **How do I know if it leaked?** CloudTrail logs, GuardDuty alerts, GitHub secret scanning. Detection within minutes, not months.
+
+Secrets management isn't about preventing leaks. It's about making leaks inconsequential — secrets that rotate automatically, have minimal blast radius, and cost nothing to revoke.

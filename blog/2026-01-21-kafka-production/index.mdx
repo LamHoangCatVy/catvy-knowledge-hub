@@ -1,0 +1,110 @@
+---
+slug: kafka-production
+title: "Kafka in Production: What 2 Years Taught Me About Partition Design"
+description: "Kafka's partition model is simple in theory and punishing in practice. After two years of production incidents, here's what I learned about partition count, key design, and consumer group management."
+tags: [kafka, architecture, distributed-systems, event-driven, lessons]
+authors: [catvy]
+date: 2026-01-21
+image: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80
+---
+
+Six months into running Kafka in production, our ordering system stopped processing events. Customers placed orders. Nothing happened. The on-call engineer discovered the problem: one consumer in the group had crashed, triggering a rebalance — and during the rebalance, the entire consumer group paused. For three minutes. At peak traffic.
+
+The root cause wasn't Kafka. It was our partition design.
+
+{/* truncate */}
+
+## The Partition Is Everything
+
+Kafka's fundamental unit of parallelism is the partition. One partition = one consumer thread. You cannot have more consumer instances than partitions. Understanding this relationship is the difference between Kafka that scales and Kafka that stalls.
+
+### Partition Count: Choose Wisely, You Can't Go Back
+
+The number of partitions for a topic is fixed at creation. You can increase it (with consequences). You cannot decrease it. This is the single most important decision in Kafka topic design.
+
+**Too few partitions**: Your consumer group can't scale. With 3 partitions, at most 3 consumer instances can process in parallel. If you need 10 instances to handle peak load, you rebuild the topic.
+
+**Too many partitions**: More partitions mean more overhead — more open file handles on the broker, more leader election traffic during failures, more consumer group coordination overhead. A topic with 1,000 partitions that handles 10 messages per second is burning resources for no benefit.
+
+**The Goldilocks number**: Throughput per partition is typically 10-50 MB/s (depending on hardware). Calculate your peak throughput, divide by 10 MB/s, and round up. Add headroom. That's your target partition count.
+
+Example: Your order events generate 200 MB/s at peak. 200 / 10 = 20 partitions minimum. Round up to 30 for headroom. This allows up to 30 consumer instances and 300 MB/s peak throughput before the topic becomes the bottleneck.
+
+### Key Design: The Silent Scaling Killer
+
+Kafka routes messages to partitions by hashing the key: `partition = hash(key) % num_partitions`. Same key → same partition → same order.
+
+**Good key**: `order_id`. All events for order #123 go to the same partition, in order. A consumer processing that partition sees the complete lifecycle of order #123 — created, paid, shipped, delivered. No race conditions.
+
+**Bad key**: No key (null). Messages are round-robin distributed across partitions. No ordering guarantee. Consumer A processes `order_created` for order #123. Consumer B processes `order_paid` for the same order — before Consumer A finishes. Race condition.
+
+**Dangerous key**: `order_status`. All "pending" orders go to one partition. All "completed" orders go to another. The "pending" partition becomes a hot spot. Nice even key distribution? Not anymore.
+
+### Hot Partitions: The Incident That Wakes You Up
+
+A hot partition is one that receives disproportionate traffic. The symptoms: consumer lag on one partition (others are fine), broker disk I/O spiking on one partition's leader, and eventually — the consumer group stalls behind the hot partition while other consumers sit idle.
+
+The most common cause: a key distribution that looked uniform at design time but isn't uniform in production. A user_id as key is uniform until one of your users is a bot generating 100x normal traffic. A tenant_id as key is uniform until your largest customer has a flash sale.
+
+**Detection**: Monitor `max(consumer_lag) / avg(consumer_lag)`. If the ratio exceeds 2x, you likely have a hot partition. Set an alert.
+
+**Mitigation**: If the hot partition is caused by key design, you can't fix it without changing keys (which breaks ordering). Accept that some keys are naturally hot (power users, large tenants) and design for it: over-partition the topic so the hot partition gets its own dedicated consumer.
+
+## Consumer Groups: The Rebalance Problem
+
+A consumer group is a set of consumers that cooperate to process a topic. Each partition is assigned to exactly one consumer in the group. When consumers join or leave, Kafka reassigns partitions — a rebalance. During a rebalance, **the entire consumer group pauses.**
+
+The most common rebalance triggers:
+- A consumer instance crashes (expected, handled by health checks).
+- A consumer instance is slow (processing takes longer than `max.poll.interval.ms`, Kafka assumes it's dead).
+- A deployment rolling restart (every pod restart triggers a rebalance).
+- A consumer instance joins (scaling up).
+
+### Cooperative Rebalancing: The Fix
+
+Kafka 3.x introduced cooperative (incremental) rebalancing. Instead of stopping all consumers and reassigning everything, cooperative rebalancing reassigns only the partitions that changed. Consumers keep processing their other partitions during the rebalance.
+
+Enable it:
+```java
+props.put("partition.assignment.strategy", "org.apache.kafka.clients.consumer.CooperativeStickyAssignor");
+```
+
+Cooperative rebalancing reduces the "stop-the-world" pause from minutes to seconds. If you're running Kafka 3.x and haven't enabled it, you're accepting unnecessary downtime.
+
+### Static Group Membership: For Stable Environments
+
+If your consumer instances have stable identities (pod names, instance IDs), static group membership prevents rebalances entirely on restart:
+
+```java
+props.put("group.instance.id", "consumer-3");
+```
+
+When `consumer-3` restarts, Kafka recognizes it by instance ID and gives it back its old partitions. No rebalance. No pause. The consumer has `session.timeout.ms` to reconnect before Kafka considers it permanently gone.
+
+Static membership is ideal for Kubernetes deployments where pods restart but keep their identities. It's wrong for auto-scaling environments where consumer identities come and go.
+
+## Exactly-Once Semantics: Know What You're Promising
+
+Kafka's "exactly-once" is really three guarantees combined:
+
+1. **Idempotent producer**: The producer won't introduce duplicates on retry. Enabled by default in Kafka 3.0+.
+2. **Transactional producer**: Write to multiple topic-partitions atomically. All messages committed together or none visible. Uses a transaction coordinator.
+3. **Exactly-once stream processing**: Kafka Streams with `processing.guarantee=exactly_once_v2`. Achieves end-to-end exactly-once when source and sink are both Kafka topics.
+
+The guarantee breaks when the sink is an external system. If you read from Kafka and write to PostgreSQL, exactly-once requires idempotent database writes — a property of your application code, not Kafka.
+
+**My approach**: Design consumers to be idempotent. Use unique message IDs and upsert semantics in the database. Don't rely on Kafka to solve deduplication for you. It's a distributed commit log, not a distributed transaction manager.
+
+## The Production Checklist
+
+After two years and several incidents, here's what I verify for every new Kafka topic:
+
+1. **Partition count matches peak throughput × headroom.** Under-partitioning is the hardest mistake to fix.
+2. **Key design verified against production traffic patterns.** Test with real data, not synthetic distributions.
+3. **Consumer group has cooperative rebalancing enabled.** Minutes of downtime per rebalance is unacceptable.
+4. **Consumer lag monitoring alerts on per-partition max/avg ratio.** Hot partitions develop slowly and kill you suddenly.
+5. **max.poll.interval.ms exceeds your slowest processing time with margin.** A slow message shouldn't trigger a rebalance.
+6. **Retention period documented and justified.** Messages retained for 7 days costs 7x more storage than 1 day. Know what you're paying for.
+7. **Schema registry integration.** Protobuf or Avro schemas. Versioned. Backward compatible changes enforced at the registry level.
+
+Kafka's brilliance is its simplicity — a distributed commit log. Kafka's danger is that the simplicity hides sharp edges. Partitions, keys, and consumer groups look straightforward until they interact in production at 3 AM. Plan for those interactions.

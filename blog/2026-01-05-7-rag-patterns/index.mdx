@@ -1,0 +1,129 @@
+---
+slug: 7-rag-patterns
+title: "7 RAG Patterns Every Engineer Should Know in 2026"
+description: "From naive retrieval to agentic RAG with self-correction — the seven retrieval-augmented generation patterns that separate prototypes from production systems."
+tags: [genai, rag, architecture, enterprise, ai]
+authors: [catvy]
+date: 2026-01-05
+image: https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=1200&q=80
+---
+
+I've built five RAG systems in production over the past two years — from a simple knowledge base Q&A bot to a multi-agent document intelligence pipeline processing thousands of PDFs daily. Along the way, I discovered that RAG isn't one pattern. It's a spectrum — and knowing which pattern fits your use case is the difference between a prototype that works and a system that scales.
+
+{/* truncate */}
+
+## Pattern 1: Naive RAG (The Starting Point)
+
+```
+User Query → Embed → Vector Search → Top-K Chunks → LLM → Response
+```
+
+The simplest form. Chunk documents, embed them, store in a vector database. At query time, embed the query, retrieve the top-K most similar chunks, stuff them into the prompt, and let the LLM answer.
+
+**When to use**: Internal knowledge base, small document sets (< 1000 docs), proof-of-concept.
+
+**Why it fails**: Chunk boundaries are arbitrary. The most relevant text spans two chunks, and you only retrieve fragments. The retrieved chunks might be contextually similar but factually irrelevant. And there's no mechanism to say "actually, I need more information."
+
+**What breaks first**: The "stuff everything into the prompt" approach. As documents grow, you either exceed the context window or dilute relevance with too many chunks.
+
+## Pattern 2: Sentence Window Retrieval
+
+```
+User Query → Embed → Vector Search → Top-K Sentences → Expand to Surrounding Context → LLM
+```
+
+Instead of chunking by fixed token count, chunk by sentence. At retrieval time, find the most relevant sentences, then expand each to include surrounding context — the sentences before and after the match.
+
+**Why it's better**: The retrieval is precise (sentence-level), but the context is rich (surrounding sentences provide the missing context that naive chunk boundaries destroy).
+
+**Trade-off**: More tokens per retrieved chunk. Your token budget gets consumed faster.
+
+## Pattern 3: Hybrid Search (BM25 + Dense)
+
+```
+User Query → BM25 (Keyword) + Dense Embedding (Semantic) → Reciprocal Rank Fusion → Top-K → LLM
+```
+
+Vector search alone misses exact keyword matches. If a user searches for "project XJ-42 quarterly report," a pure embedding search might return documents about "quarterly financial reporting for internal projects" — semantically similar but factually wrong.
+
+BM25 (or any lexical search) catches exact term matches. Dense embeddings catch semantic similarity. Reciprocal Rank Fusion (RRF) combines the two rankings into a single result set.
+
+**When to use**: Any production RAG system. This is table stakes now. If you're doing vector-only retrieval in 2026, you're leaving accuracy on the table.
+
+## Pattern 4: Multi-Stage Retrieval
+
+```
+User Query → Lightweight Retriever (Fast) → Top-50 Candidates → Heavyweight Reranker (Slow) → Top-5 Final → LLM
+```
+
+Don't run your expensive reranker over your entire document store. Use a fast, lightweight retriever (sparse embeddings, BM25, or approximate nearest neighbor) to get a broad set of candidates. Then apply a cross-encoder reranker — a model that takes the query and each candidate together and scores true relevance — to the candidate set.
+
+**Why it's worth the latency**: The reranker is much more accurate than embedding similarity alone. It understands the _relationship_ between query and document, not just their individual embeddings.
+
+**Libraries**: Cohere Rerank, Jina Reranker, or a fine-tuned cross-encoder from sentence-transformers.
+
+## Pattern 5: Self-Querying Retrieval
+
+```
+User Query → LLM Extracts Metadata Filters → Apply Filters → Vector Search → LLM
+```
+
+For structured data with metadata (dates, categories, authors, product types), let the LLM extract filter criteria from the natural language query.
+
+User asks: "What were the Q3 2025 security incidents related to API keys?"
+
+LLM extracts filter: `{ "date_range": "2025-Q3", "category": "security", "subcategory": "api-keys" }`
+
+Vector search runs with these metadata filters applied, dramatically narrowing the search space.
+
+**The key insight**: The LLM is better at extracting structured filters from natural language than a regex or keyword parser. Use it.
+
+## Pattern 6: Corrective RAG (CRAG)
+
+```
+User Query → Retrieve → Evaluate Relevance of Each Chunk → 
+  If ALL relevant: Generate Answer
+  If SOME irrelevant: Rewrite Query → Retrieve Again → Generate
+  If MOST irrelevant: Web Search → Generate
+```
+
+The retrieval step might return garbage. Corrective RAG adds a self-evaluation step: before generating an answer, evaluate whether the retrieved documents actually answer the query. If they don't, rewrite the query, retrieve again, or fall back to a web search.
+
+**Why this matters for production**: Users ask questions your knowledge base doesn't cover. Without corrective RAG, the model confidently hallucinates using irrelevant chunks as "evidence." With corrective RAG, it recognizes the gap and either searches more broadly or admits it doesn't know.
+
+## Pattern 7: Agentic RAG (Self-Correction Loop)
+
+```
+User Query → Agent Plans Research → Tool Selection → Execute Tool → 
+  Evaluate Result → More Research Needed? → Repeat → Synthesize Answer
+```
+
+The most sophisticated pattern. The LLM acts as an agent that plans its own research: it decides which tools to use (vector search, SQL query, web search, API call), evaluates intermediate results, and iterates until it has enough information to answer.
+
+**Example**: "Compare our Q4 revenue with industry benchmarks."
+
+1. Agent uses SQL tool to query internal revenue database.
+2. Agent uses web search tool to find 2025 industry benchmarks.
+3. Agent evaluates: the internal data is comprehensive, but the industry data lacks SaaS-specific numbers.
+4. Agent uses document search to find relevant analyst reports in the knowledge base.
+5. Agent synthesizes all sources into a comparison table.
+
+**The risk**: Agentic RAG is the most powerful pattern — and the most dangerous. Without proper guardrails, the agent can loop forever, call expensive APIs repeatedly, or make decisions based on hallucinated intermediate results. Every agentic RAG deployment needs: max iterations, cost budgets, output validation at each step, and a fallback to simpler patterns for queries the agent struggles with.
+
+## Choosing Your Pattern
+
+| Pattern | Complexity | Accuracy | Latency | Best For |
+|---|---|---|---|---|
+| Naive RAG | Trivial | Low | Fast | Prototypes, demos |
+| Sentence Window | Low | Medium | Fast | Document Q&A |
+| Hybrid Search | Low | Medium-High | Fast | Most production systems |
+| Multi-Stage Retrieval | Medium | High | Medium | When accuracy is critical |
+| Self-Querying | Medium | High | Fast | Structured data + metadata |
+| Corrective RAG | Medium | High | Medium-Slow | Knowledge bases with coverage gaps |
+| Agentic RAG | High | Highest | Slow | Complex, multi-source research |
+
+## The Pattern I Use Most
+
+For ezPolicy at my company, we run Pattern 6 (Corrective RAG) with Pattern 3 (Hybrid Search) as the retrieval engine and Pattern 4 (Multi-Stage) for reranking. The combination: hybrid search gets broad candidate sets, multi-stage reranking narrows to the best candidates, and corrective RAG ensures we don't generate answers from garbage.
+
+The lesson from building all five systems: don't start with Pattern 7. Start with Pattern 3 (Hybrid Search). Run it in production. Measure where it fails. Add complexity only where the data shows you need it. The best RAG pattern is the one where you understand every component well enough to debug it at 3 AM.

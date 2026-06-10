@@ -1,0 +1,95 @@
+---
+slug: developer-to-architect
+title: "Skills That Took Me from Developer to Architect"
+description: "The concrete skills, mindset shifts, and deliberate practices that transformed me from a mid-level developer into a Senior AI Systems Architect — and the timeline it actually took."
+tags: [career, growth, architecture, leadership, personal]
+authors: [catvy]
+date: 2026-01-09
+image: https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&q=80
+---
+
+Three years ago, I was a mid-level developer who wrote good code and bad architecture decisions. I could implement a feature in a weekend. I couldn't explain why the system should be built one way versus another. The transition from developer to architect wasn't about writing more code — it was about developing an entirely different set of skills that nobody formally teaches.
+
+{/* truncate */}
+
+## What "Architect" Actually Means
+
+The title is overused and underdefined. To me, an architect is someone who:
+
+- **Makes decisions under uncertainty** — There's rarely a "correct" architecture. There are trade-offs with different costs, and you need to make a call even when you don't have all the information.
+- **Communicates decisions clearly** — An architecture nobody understands is an architecture nobody follows. The RFC you write matters as much as the design it contains.
+- **Takes ownership of outcomes** — When the system fails, the architect doesn't say "the developers implemented it wrong." They say "my design didn't anticipate this failure mode, and here's how we fix it."
+- **Enables the team, not constrains it** — Bad architects dictate. Good architects set guardrails within which teams have autonomy.
+
+## The Skills That Mattered
+
+### 1. Systems Thinking (Year 1)
+
+The first shift: stop seeing code and start seeing systems. A feature isn't a function — it's a chain of services, databases, caches, and queues. When you change one link, the chain reacts.
+
+I forced myself to diagram every system I worked on, even small ones. Box-and-arrow diagrams, sequence diagrams, data flow diagrams. The act of drawing revealed assumptions I didn't know I had. "The API always responds within 200ms" becomes visibly suspect when you draw the network path.
+
+**What to practice**: Take any feature in your codebase. Draw the full path from user click to database write and back. Include caches, queues, CDNs, load balancers. For each arrow, ask: what happens if this breaks?
+
+### 2. Trade-off Analysis (Year 1-2)
+
+Every architectural decision is a bet. The skill is identifying what you're betting on and what you risk losing.
+
+Consistency vs. availability. Latency vs. throughput. Development speed vs. operational simplicity. These aren't hypotheticals — they're the actual conversations you'll have with your team, your product manager, and your CTO.
+
+I learned to structure every architectural proposal around trade-offs:
+
+- **Option A** gives us X but costs us Y.
+- **Option B** gives us Z but costs us W.
+- **I recommend A because** [specific reason tied to business goals, not personal preference].
+
+This format forces clarity. It prevents the most common architecture failure mode: choosing a pattern because it's interesting, not because it's right for the problem.
+
+### 3. Communication (Year 2)
+
+The best architect I ever worked with wrote RFCs that junior engineers could understand and CTOs could approve. His writing was clear, concise, and never assumed the reader knew acronyms or context.
+
+I started writing Architecture Decision Records (ADRs) for every significant decision. The format: context (what's the situation?), decision (what are we doing?), consequences (what becomes easier, what becomes harder?). Two pages maximum. Linked to related ADRs.
+
+The discipline of writing ADRs improved my thinking. If I couldn't explain a decision in two pages, I didn't understand it well enough.
+
+### 3. Thinking in Failure Modes (Year 2-3)
+
+This is the skill that separates senior developers from architects. Developers think about the happy path. Architects think about what happens when the database is slow, the network partitions, the third-party API returns 500s, and the deployment introduces a subtle bug that corrupts data.
+
+For every system I design, I maintain a "failure modes" document:
+- What breaks if this service goes down?
+- What breaks if this database is unreachable for 30 seconds?
+- What breaks if this message queue accumulates a 10-million-message backlog?
+- What breaks if someone accidentally deletes this S3 bucket?
+- What does the operator do at 3 AM when the alert fires?
+
+The answers shape the architecture. Circuit breakers, retry budgets, degraded modes, automated recovery — these aren't features. They're the acknowledgment that failure is inevitable.
+
+### 4. Understanding the Business (Year 3)
+
+The revelation that made me an architect, not just a senior developer: the best technical decision is the one that serves the business, not the one that's most technically elegant.
+
+A two-week migration to a shiny new database might be technically superior and operationally disastrous if it delays a feature launch that the business has already sold to customers. The architect's job is to understand these tensions and make recommendations that balance technical excellence with business reality.
+
+I started attending product meetings. I asked product managers what kept them up at night. I learned the business metrics that mattered — customer acquisition cost, churn rate, revenue per user — and how my architectural decisions affected them.
+
+## The Timeline
+
+This didn't happen in a bootcamp. It was a gradual accumulation:
+
+- **Year 1**: Systems thinking. Diagramming everything. Learning to see the whole system.
+- **Year 2**: Communication. Writing ADRs. Learning to explain decisions to non-technical stakeholders.
+- **Year 3**: Ownership. Making architectural decisions for production systems serving real users. Owning the outcomes — good and bad.
+
+## What I'd Do Differently
+
+**Learn the business faster.** I spent too long optimizing for technical elegance before understanding what the business actually needed.
+
+**Write more.** Every ADR, postmortem, and design doc I wrote sharpened my thinking. I should have started sooner.
+
+**Ask for architectural feedback earlier.** I spent months designing in isolation, afraid of criticism. The first time I shared a design and a senior architect pointed out three failure modes I'd missed, I learned more in 30 minutes than I had in weeks of solo design.
+
+**Ship smaller decisions.** I designed monolithic architectures because I was afraid of making incremental bets. The best architectures evolve from a series of small, reversible decisions — not one perfect master plan.
+
+The path from developer to architect isn't about titles or certifications. It's about developing the muscle of making good decisions under uncertainty — and that muscle only grows through deliberate practice, honest reflection on failures, and the willingness to own the outcomes.

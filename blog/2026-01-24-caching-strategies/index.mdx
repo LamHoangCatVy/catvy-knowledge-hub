@@ -1,0 +1,151 @@
+---
+slug: caching-strategies
+title: "Caching Strategies from Browser to Database: A Complete Guide"
+description: "Caching is the most cost-effective performance optimization in software engineering. From browser cache to CDN to Redis to database query cache — a practical guide to every caching layer and when to use each."
+tags: [architecture, system-design, caching, performance, databases]
+authors: [catvy]
+date: 2026-01-24
+image: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80
+---
+
+The fastest database query is the one you never make. Caching is the art of not doing work you've already done — and it's the highest-leverage performance optimization in software engineering. A well-designed cache strategy can reduce database load by 90%, cut API latency by 80%, and cost a fraction of the infrastructure it replaces. Here's every caching layer, when to use it, and the trade-offs that matter.
+
+{/* truncate */}
+
+## The Cache Hierarchy
+
+```
+Browser Cache (localStorage, Service Worker, HTTP Cache)
+    ↓
+CDN (CloudFront, Cloudflare, Fastly)
+    ↓
+API Gateway / Load Balancer Cache
+    ↓
+Application Cache (Redis, Memcached)
+    ↓
+Database Query Cache / Materialized Views
+    ↓
+Database (the source of truth)
+```
+
+Each layer trades freshness for speed. The closer to the user, the faster and staler. The closer to the database, the slower and fresher. The art is placing data at the right layer based on its access pattern and freshness requirements.
+
+## Pattern 1: Cache-Aside (Lazy Loading)
+
+The most common pattern. Application checks cache first. If miss, loads from database, writes to cache, returns.
+
+```python
+def get_user(user_id):
+    user = cache.get(f"user:{user_id}")
+    if user:
+        return user
+    user = db.query("SELECT * FROM users WHERE id = ?", user_id)
+    cache.set(f"user:{user_id}", user, ttl=3600)
+    return user
+```
+
+**Best for**: Read-heavy workloads where cache misses are acceptable. Most application data.
+
+**Weakness**: Cache stampede on cold start. If the cache is empty (after a deployment or failure), every request misses simultaneously. All requests hit the database at once.
+
+**Mitigation**: Rate-limit database access during cold starts. Use a distributed lock so only one thread loads the data while others wait. Or pre-warm the cache before taking traffic.
+
+## Pattern 2: Read-Through
+
+Cache sits between the application and the database. Application always reads from cache. Cache handles misses transparently — loading from the database and returning the result.
+
+```python
+# Application code
+user = cache.get(f"user:{user_id}")  # Cache handles miss internally
+
+# Cache library handles:
+# 1. Check cache
+# 2. If miss, call load_function(user_id)
+# 3. Store result in cache
+# 4. Return result
+```
+
+**Best for**: Simplifying application code. The cache miss logic isn't scattered across every data access function.
+
+**Weakness**: The load function must be deterministic and idempotent. Same key always returns same value. If the load function has side effects, read-through becomes dangerous.
+
+## Pattern 3: Write-Through
+
+Application writes to cache. Cache synchronously writes to database. Both cache and database are always consistent.
+
+```python
+def update_user(user):
+    cache.set(f"user:{user.id}", user)
+    db.update("UPDATE users SET ... WHERE id = ?", user.id)
+```
+
+**Best for**: Data that must be consistent between cache and database. User profile updates that should be immediately visible.
+
+**Weakness**: Write latency doubles — every write hits both cache and database. If the cache is remote (Redis across the network), write latency increases.
+
+## Pattern 4: Write-Behind (Write-Back)
+
+Application writes to cache. Cache asynchronously writes to database later — batching multiple writes together.
+
+```python
+# Application writes to cache
+cache.set(f"user:{user_id}", user)
+
+# Background process flushes changes to DB
+# Batches writes: 100 updates in one transaction
+```
+
+**Best for**: Write-heavy workloads where database write throughput is the bottleneck.
+
+**Weakness**: Cache failure = data loss. If Redis crashes before flushing, the writes are gone. The risk is acceptable for analytics data (page views, click tracking). Unacceptable for financial transactions.
+
+## Pattern 5: Refresh-Ahead
+
+Cache predicts which keys will be accessed soon and refreshes them before expiry. The application never experiences a cache miss.
+
+**Best for**: Predictable access patterns. Products featured on the homepage are always hot — refresh them automatically. Recommendation feeds that are the same for all users.
+
+**Weakness**: Complexity. The prediction logic must be correct enough that the compute cost of refreshing unused keys doesn't exceed the benefit of preventing cache misses.
+
+## The Cache Invalidation Problem
+
+There are only two hard problems in computer science: naming things, cache invalidation, and off-by-one errors.
+
+Invalidation strategy depends on your consistency requirements:
+
+**TTL-based (Eventual Consistency)**: Set a time-to-live. Old data serves for the TTL duration. New data appears after TTL expires. Simple, robust, eventually consistent. Works for 90% of application data.
+
+**Write-through (Strong Consistency)**: Update cache immediately on write. Cache is always consistent with the database. Works for data where staleness is unacceptable (user permissions, payment status).
+
+**Event-driven Invalidation (Causal Consistency)**: When data changes, publish an event. Cache subscribers listen for events and invalidate or update affected keys. More complex than TTL, more scalable than write-through.
+
+## Common Cache Mistakes
+
+**Caching everything**: Not all data benefits from caching. Data that's accessed once, data that changes every second, data that's already served from memory — caching adds complexity without benefit. Profile first. Cache second.
+
+**No cache key namespace**: `cache.set("config", value)` — what config? For which service? In which environment? Use namespaced keys: `cache.set("myapp:production:config:v2", value)`. Namespaces make it safe to invalidate all keys for a service without affecting others.
+
+**Infinite TTL**: If data never expires, the cache grows indefinitely until it exceeds memory and crashes. Every cached key needs a TTL — even if it's long (24 hours, 7 days). The TTL is the safety valve for cache size.
+
+**Serializing everything as JSON**: JSON serialization is expensive for large objects. Protocol Buffers, MessagePack, or flatbuffers serialize faster and produce smaller payloads. The difference matters at cache scale.
+
+**Cache avalanche**: Many keys expire at the same time. All requests miss simultaneously. Database overloads. Fix: randomize TTLs. Instead of `ttl=3600`, use `ttl=random(3300, 3900)`. Staggered expirations prevent mass simultaneous misses.
+
+## The Sizing Question
+
+How big should your cache be?
+
+**Redis/Memcached**: Cache the working set — the data actively accessed within your TTL window. If you have 50GB of total data but users only access 5GB per hour, your cache should be ~6GB (working set + headroom).
+
+**CloudFront CDN**: Cache static assets (images, CSS, JS) and optionally API responses. The cache hit ratio is the key metric. Below 80% hit ratio: increase TTL, improve cache key design, or accept that the content isn't cacheable.
+
+## When Not to Cache
+
+- **Data that changes on every read** (real-time sensor data, stock prices during trading hours). Caching provides stale data and adds latency.
+- **Data that's already fast.** A configuration table with 50 rows, queried from a local database — the database query is faster than a Redis round trip.
+- **Data you can't invalidate reliably.** If you can't guarantee that stale data won't cause incorrect behavior, don't cache. A medical record, a financial balance, an authentication state — wrong data is worse than slow data.
+- **Write-heavy, read-rare data.** If data is written 1,000 times and read once, caching the write adds overhead without benefiting the read.
+
+## The Golden Rule
+
+Cache only when you have measured a problem. Profile your database queries. Identify the top 5 queries by frequency × latency. Cache those. Measure the improvement. Repeat. Caching without measurement is premature optimization. Caching with measurement is the most cost-effective performance improvement you can make.

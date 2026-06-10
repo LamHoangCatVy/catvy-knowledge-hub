@@ -1,0 +1,74 @@
+---
+slug: engineering-books
+title: "Engineering Books That Changed How I Think in 2025"
+description: "The books that most influenced my engineering thinking this year — from distributed systems to AI safety to engineering management. Not a generic reading list; these are the books I actually read and applied."
+tags: [career, architecture, growth, personal]
+authors: [catvy]
+date: 2026-01-11
+image: https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=1200&q=80
+---
+
+I read about 25 technical books this year — some new, some classics I finally got around to. Here are the ones that changed how I think, not just what I know. Each one shifted my mental model of how software should be built, operated, or led.
+
+{/* truncate */}
+
+## 1. Designing Data-Intensive Applications — Martin Kleppmann
+
+I finally read it cover to cover in 2025. I know, I know — I'm late. But this book deserves its reputation as the bible of distributed systems.
+
+**What changed**: My understanding of consistency models. I thought I understood eventual vs strong consistency. Kleppmann's treatment of linearizability, serializability, and the subtle ways they differ made me realize I'd been conflating concepts for years. The chapter on transactions alone is worth the price of the book — it explains why isolation levels exist, what each one guarantees, and when weaker isolation is acceptable.
+
+**Who should read it**: Every engineer who designs systems with databases. If you've ever used the phrase "ACID compliant" without understanding that ACID means different things to different database vendors, read this book.
+
+## 2. Building Microservices (2nd Edition) — Sam Newman
+
+The first edition was published in 2015 and launched a thousand microservice migrations. The second edition (2022) is more nuanced — Newman spends significant time on when _not_ to use microservices and how to do modular monoliths well.
+
+**What changed**: My position on microservices shifted from "eventually, yes" to "only when proven necessary." Newman's treatment of the socio-technical aspects — Conway's Law, team topology, cognitive load — made me realize that microservice success depends more on organizational structure than technical architecture.
+
+**Who should read it**: Architects evaluating whether to split a monolith. The chapters on finding service boundaries and designing for migration are the most practical treatment of the topic I've found.
+
+## 3. The Alignment Problem — Brian Christian
+
+A history of machine learning through the lens of AI alignment — how do we ensure AI systems do what we want them to do? Published in 2020, it reads like a prequel to today's LLM safety concerns.
+
+**What changed**: My understanding of why LLM safety is so hard. Christian traces the alignment problem back to the earliest ML systems — where a recommendation algorithm optimized for engagement and accidentally radicalized users, where a medical model learned the wrong correlations from biased training data. The specific technologies are different, but the fundamental problem — models optimize what you measure, not what you want — is universal.
+
+**Who should read it**: Anyone building with LLMs who wants to understand why safety isn't a filter you add after deployment. It's a property you design for from the start.
+
+## 4. Staff Engineer — Will Larson
+
+Larson's taxonomy of staff-plus engineer archetypes changed how I think about career progression beyond senior. The four archetypes — Tech Lead, Architect, Solver, Right Hand — describe different ways to create impact at the staff level.
+
+**What changed**: I stopped trying to be good at everything and focused on my natural archetype (Architect, with some Solver tendencies). The realization that you don't need to be the best coder, the best mentor, and the best architect simultaneously — you need to be exceptional at one or two and competent at the rest — was liberating.
+
+**Who should read it**: Senior engineers thinking about what's next. Even if you're not pursuing a staff title, the framework for thinking about organizational impact at scale is valuable.
+
+## 5. The Pragmatic Programmer (20th Anniversary Edition) — Hunt & Thomas
+
+I read the original edition years ago. The 20th anniversary edition, updated for the cloud-native era, is a different book. The core principles remain — DRY, orthogonality, tracer bullets — but the context has shifted from desktop applications to distributed systems.
+
+**What changed**: The chapters on concurrency and "Don't Outrun Your Headlights" (make small, reversible decisions) resonated differently with a decade more experience. What seemed obvious as a junior engineer — of course you should write modular code — now feels foundational in a world of microservices, event streams, and polyglot persistence.
+
+**Who should read it**: Early-career engineers. The principles in this book are the foundation that everything else builds on. Read it before you read anything about specific technologies.
+
+## 6. Thinking in Systems — Donella Meadows
+
+Not a software book at all — it's about systems thinking in general, from ecosystems to economies to organizations. But the mental models apply directly to distributed systems design.
+
+**What changed**: I started seeing feedback loops everywhere. A cache that reduces database load → database autoscales down → cache miss results in even more load on the smaller database → latency spikes → more requests because retries → cascade failure. That's a positive feedback loop dressed up as a caching strategy.
+
+Meadows' concept of leverage points — places in a system where a small change produces a large effect — changed how I think about performance optimization. Instead of optimizing the hot loop (often a low-leverage point), find the structural bottleneck (the high-leverage point).
+
+**Who should read it**: Architects and senior engineers. This book will change how you debug production incidents — you'll start looking for feedback loops and leverage points instead of just reading error logs.
+
+## Books I Plan to Read in 2026
+
+- **Database Internals** — Alex Petrov. I understand databases from the outside. This book goes inside the storage engine.
+- **Fundamentals of Data Engineering** — Joe Reis & Matt Housley. The data engineering equivalent of Kleppmann's book.
+- **Domain-Driven Design** — Eric Evans. Another classic I haven't properly read. The strategic design patterns (bounded contexts, ubiquitous language) are increasingly relevant as our systems grow more complex.
+- **Resilient Management** — Lara Hogan. I'm doing more mentoring and leadership. Hogan's book is the most recommended resource I haven't read yet.
+
+---
+
+The books that matter most aren't the ones about specific technologies. They're the ones that change your mental models — how you think about systems, about people, about decisions under uncertainty. Technologies change every few years. Mental models compound for a career.

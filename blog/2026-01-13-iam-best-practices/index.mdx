@@ -1,0 +1,93 @@
+---
+slug: iam-best-practices
+title: "IAM Best Practices I Wish I Learned Before My First AWS Breach"
+description: "The IAM patterns that separate secure AWS environments from the ones that end up on the news. Least privilege, permission boundaries, SCPs, and the operational practices that actually work at scale."
+tags: [aws, cloud, security, iam, architecture]
+authors: [catvy]
+date: 2026-01-13
+image: https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=1200&q=80
+---
+
+My first AWS security incident wasn't a sophisticated attack. It was an IAM user with `AdministratorAccess` and a leaked access key committed to a public GitHub repository. Within 12 minutes, the attacker had spun up $40,000 worth of EC2 instances for crypto mining. The lesson: IAM is the most important security control in AWS, and most teams get it wrong until they get burned.
+
+{/* truncate */}
+
+## The One Rule That Changes Everything
+
+**No human should ever have long-lived AWS access keys.** Period.
+
+If a human needs AWS access, they authenticate through IAM Identity Center with their corporate credentials and MFA. They get temporary credentials that expire in 1-12 hours. If their laptop is stolen, the credentials expire before the thief can use them. If a key is accidentally committed to a repository, it's already invalid.
+
+The only exception: service accounts that need programmatic access. Even then, prefer IAM roles for EC2, Lambda, and ECS. Use access keys only when there's genuinely no alternative — and rotate them every 90 days with automated tooling.
+
+## Least Privilege: Easier Said Than Done
+
+"Grant the minimum permissions necessary" is the most repeated IAM advice and the hardest to implement. The gap between theory and practice is in the tooling.
+
+### What Works
+
+**Start with `ReadOnlyAccess` and add writes one at a time.** When a developer says "I need S3 access," they don't need `s3:*`. They need `s3:GetObject` and `s3:PutObject` on a specific bucket. Start with read-only. When a write operation fails, add the specific permission. This is slow but correct.
+
+**Use IAM Access Analyzer policy generation.** Enable CloudTrail, run your workload, and let Access Analyzer generate an IAM policy based on actual API usage. The generated policy contains exactly the actions your code used — nothing more. Review it, add intentional omissions, and deploy it.
+
+**Permissions are additive. Deny is subtractive.** Structure your policies so that broad permissions come from managed policies and restrictions come from inline policies or SCPs. This separation makes the intent clear: "This role can do S3 operations (managed) but not on production buckets (inline deny)."
+
+### What Doesn't Work
+
+**Copying an existing role and modifying it.** You inherit permissions you don't understand and may not need. Start from scratch with explicit, deliberate permissions.
+
+**Wildcard actions as "temporary."** `s3:*` added "just to get it working" will stay in production for years. Every wildcard is a future incident.
+
+**Inline policies for everything.** Managed policies can be reused, versioned, and reviewed across roles. Inline policies are unique to each role — harder to audit, harder to maintain.
+
+## Permission Boundaries: The Safety Net
+
+A permission boundary is a managed policy that defines the maximum permissions an IAM role can ever have — regardless of what other policies are attached. It's the organizational equivalent of "I trust you, but I'm verifying."
+
+**Real use case**: Your platform team wants to let development teams create their own IAM roles for applications. But you don't want any team creating a role with `AdministratorAccess`. The permission boundary caps every developer-created role at the permissions the platform team has approved.
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["s3:*", "dynamodb:*", "sqs:*", "sns:*"],
+  "Resource": "*"
+}
+```
+
+Any role created with this boundary can never access EC2, IAM, or RDS — regardless of what policies the developer attaches. They can work with their application's data services and nothing else.
+
+## SCPs: The Organizational Guardrails
+
+Service Control Policies apply at the AWS Organizations level. They don't grant permissions — they define the maximum boundary that no IAM policy can exceed.
+
+### The SCPs Every Organization Needs
+
+**Block root user** — The root user has unrestricted access to the account. Once your organization is set up, nobody should use root. This SCP makes it impossible.
+
+**Region restriction** — For data residency compliance, block resource creation outside approved regions. One SCP, applied at the root OU, cascades to every account.
+
+**Deny CloudTrail modification** — Protect your audit trail. If an attacker compromises an account, they might delete CloudTrail to cover their tracks. This SCP prevents that.
+
+**Deny leaving the organization** — An account that leaves the organization loses SCP protection and centralized logging. Block this at the root level.
+
+### The SCP Mistake I See Most Often
+
+Teams write SCPs that are too broad and too restrictive. An SCP that denies `ec2:*` in production breaks autoscaling, load balancer health checks, and monitoring agents. SCPs should deny the genuinely dangerous actions — not every action. Test each SCP in a non-production OU before applying it broadly.
+
+## Access Keys: The Operational Reality
+
+Despite the "no long-lived keys" rule, you will have access keys. CI/CD pipelines, third-party tools, legacy applications. Here's what to do:
+
+- **Rotate automatically.** Don't put "rotate access key" on someone's calendar. Use AWS Secrets Manager rotation or a Lambda function that rotates keys and updates the consuming system.
+- **Monitor for exposed keys.** Enable GuardDuty. It scans GitHub, GitLab, and Bitbucket for exposed AWS credentials. When it finds one, you get an alert within minutes, not when the crypto mining bill arrives.
+- **Use separate keys per purpose.** The CI/CD key should be different from the monitoring key. When one is compromised, you revoke one key, not everything.
+- **CloudTrail alerting on key usage.** Set up CloudWatch alarms that fire when an access key is used from an unusual location or at an unusual time. The key used from Vietnam when your team is in Germany is a compromise indicator.
+
+## The IAM Maturity Model
+
+- **Level 1: Wild West.** IAM users with AdministratorAccess. Access keys in config files. No MFA. You will be breached. It's a matter of when.
+- **Level 2: Basic hygiene.** MFA enforced. IAM users with managed policies. Keys in Secrets Manager. You've eliminated the most common attack vectors.
+- **Level 3: Least privilege.** Custom policies per role. Permission boundaries on developer-created roles. Access Analyzer running continuously. You've made it hard for an attacker to do damage even with valid credentials.
+- **Level 4: Automated governance.** SCPs enforce organizational guardrails. IAM policy generation from access logs. Automated key rotation. Compliance-as-code validates IAM posture. An attacker needs to defeat multiple layers — and you'll detect them before they do.
+
+Most organizations operate at Level 2. The ones that get breached are at Level 1. The ones that sleep well are at Level 3 or 4. The gap between levels isn't technology — it's the consistent application of IAM discipline across every account, every role, every policy.

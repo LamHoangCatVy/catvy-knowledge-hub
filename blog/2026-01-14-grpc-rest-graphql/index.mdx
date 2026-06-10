@@ -1,0 +1,115 @@
+---
+slug: grpc-rest-graphql
+title: "gRPC vs REST vs GraphQL: How I Choose for Production"
+description: "A decision framework for choosing between the three dominant API paradigms. Not theoretical trade-offs — practical criteria based on real projects where I chose wrong and had to fix it."
+tags: [architecture, api, microservices, system-design]
+authors: [catvy]
+date: 2026-01-14
+image: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80
+---
+
+I've chosen wrong on API design more times than I've chosen right. A REST API that should have been gRPC. A GraphQL schema that should have stayed REST. A gRPC service that no browser client could consume. After living with the consequences, here's how I decide now.
+
+{/* truncate */}
+
+## The Framework
+
+I evaluate every API decision against four criteria, in order of importance:
+
+1. **Who's consuming this API?** Internal services? External developers? Browser clients? Mobile apps?
+2. **What's the data shape?** Flat resources with predictable fields? Deeply nested graph structures? Heterogeneous data from multiple sources?
+3. **What's the communication pattern?** Request-response? Streaming? Real-time? Fire-and-forget?
+4. **What's the team's expertise?** Do they know Protocol Buffers? GraphQL resolvers? REST best practices?
+
+The first two criteria dominate the decision. The last one is a constraint, not a driver — you can learn a new paradigm, but you can't change your consumers.
+
+## REST: The Safe Default
+
+REST is the default for a reason. Every HTTP client understands it. Every caching layer works with it. Every monitoring tool instruments it. For external APIs consumed by unknown clients, REST is almost always the right choice.
+
+**Choose REST when**:
+- Your API is consumed by external developers who don't work for your company.
+- Resources map cleanly to CRUD operations (users, orders, products).
+- HTTP caching is important (GET requests with `ETag` and `Cache-Control`).
+- You need broad ecosystem compatibility — every language has an HTTP client.
+
+**Avoid REST when**:
+- You have deeply nested data that requires N+1 requests (user → posts → comments → author). REST forces multiple round trips or over-fetching.
+- You need streaming or real-time communication. REST is fundamentally request-response. Long polling and WebSockets are workarounds, not native features.
+- Your internal services communicate at high throughput and low latency. REST's JSON serialization and text-based protocol waste CPU and bandwidth at scale.
+
+### The REST Mistake I Made
+
+I designed an internal microservice API with REST because "that's what we always use." The service handled financial transactions — high throughput, low latency requirements, strict type safety. JSON schema validation caught errors at runtime that Protocol Buffers would have caught at compile time. The JSON serialization overhead was measurable at our transaction volume. We migrated to gRPC after six months. The migration was expensive — I should have chosen gRPC from the start.
+
+## gRPC: The Performance Choice
+
+gRPC is HTTP/2 + Protocol Buffers + code generation. It's fast, type-safe, and supports streaming natively. For internal service-to-service communication, it's the right choice more often than not.
+
+**Choose gRPC when**:
+- Your APIs are internal — service-to-service, not browser-to-service.
+- Performance matters — high throughput, low latency, binary serialization.
+- You want strong typing — Protocol Buffers generate client and server code in 12+ languages.
+- You need streaming — server streaming, client streaming, or bidirectional.
+- You have polyglot services — gRPC generates consistent clients across Go, Java, Python, Node.js.
+
+**Avoid gRPC when**:
+- Browsers are your primary consumers. gRPC-Web exists but doesn't support all streaming patterns and requires a proxy. REST or GraphQL over HTTP/2 is simpler.
+- External third parties consume your API. REST is the universal language. gRPC requires protobuf tooling and generated clients — a barrier to adoption.
+- You need HTTP caching. gRPC uses POST for everything (technically HTTP/2, but traditional caching infrastructure doesn't understand protobuf payloads).
+
+### The gRPC Mistake I Made
+
+I designed a gRPC API for an internal admin dashboard — thinking "internal = gRPC." The frontend team struggled with gRPC-Web configuration. The debugging workflow was painful — binary payloads invisible in browser devtools. We should have built a REST API with a gRPC backend. The rule I learned: the browser is a REST/GraphQL consumer. gRPC belongs behind the API gateway, not at the edge.
+
+## GraphQL: The Flexibility Choice
+
+GraphQL gives clients control over what data they receive. For complex UIs that need heterogeneous data from multiple sources in a single request, GraphQL is transformative. But the complexity cost is real.
+
+**Choose GraphQL when**:
+- Your frontend needs flexible, heterogeneous data in a single request (dashboards, feed pages, detail views with nested related data).
+- Multiple client teams consume the same API with different data requirements.
+- Your data model has rich relationships that clients frequently traverse.
+- You can invest in the infrastructure — persisted queries, query cost analysis, DataLoader batching.
+
+**Avoid GraphQL when**:
+- Your API is simple CRUD over flat resources. GraphQL's complexity isn't justified for a todo list API.
+- You can't invest in the operational infrastructure. GraphQL without query cost analysis is vulnerable to expensive queries. Without persisted queries, HTTP caching is impossible.
+- Your consumers prefer REST conventions. Forcing external developers to learn GraphQL when they expected REST creates adoption friction.
+- File upload or binary streaming is a primary use case. GraphQL handles these, but REST handles them more naturally.
+
+### The GraphQL Mistake I Made
+
+I introduced GraphQL for an internal tool where the data model was flat and the consumers were a single frontend team. The resolver complexity, the N+1 debugging, and the tooling overhead weren't justified. REST would have been simpler, faster to build, and easier to maintain. GraphQL's value proposition — "clients request exactly what they need" — matters when you have multiple clients with different needs. With one client, it's over-engineered.
+
+## The Hybrid Reality
+
+In practice, most production architectures use all three:
+
+```
+Browser → GraphQL (flexible data fetching for complex UIs)
+         ↓
+API Gateway
+         ↓
+         ├── gRPC (high-throughput service-to-service)
+         ├── REST (external integrations, webhooks)
+         └── Message Queue (async, event-driven)
+```
+
+The API Gateway is the boundary. External traffic (browsers, third parties) hits REST or GraphQL endpoints. Internal traffic uses gRPC for performance and type safety. Async operations go through the message queue.
+
+This isn't complexity for complexity's sake — each protocol serves a specific purpose at the layer where its strengths matter most.
+
+## The Decision Tree
+
+```
+Is the consumer a browser?
+├── Yes → REST or GraphQL (browser support)
+│   ├── Complex nested data, multiple client teams? → GraphQL
+│   └── Simple CRUD, single client? → REST
+└── No → gRPC (internal service-to-service)
+    ├── Streaming or real-time needed? → gRPC (native support)
+    └── Request-response only, external consumers? → REST
+```
+
+The decision is rarely permanent. Start with the simplest option that works. Migrate when the data shows you need to — not when a blog post convinces you that the grass is greener with a different protocol.

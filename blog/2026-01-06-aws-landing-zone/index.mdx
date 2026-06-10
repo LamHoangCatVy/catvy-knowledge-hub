@@ -1,0 +1,145 @@
+---
+slug: aws-landing-zone
+title: "AWS Landing Zone: Your Enterprise Cloud Foundation"
+description: "A practical guide to designing and deploying a production-grade AWS Landing Zone — multi-account strategy, SCPs, Control Tower, and the governance patterns that scale with your organization."
+tags: [aws, cloud, architecture, security, enterprise]
+authors: [catvy]
+date: 2026-01-06
+image: https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=80
+---
+
+Every enterprise AWS deployment starts the same way: a single account, a credit card, and the best intentions. Six months later, you have 50 accounts, inconsistent security configurations, developers with AdministratorAccess, and no centralized logging. The AWS Landing Zone exists to prevent this trajectory — and if you're already on it, to reverse it.
+
+{/* truncate */}
+
+## What a Landing Zone Actually Is
+
+A Landing Zone is not a product you buy. It's a multi-account architecture that bakes governance, security, and networking into the foundation of your AWS environment. Every account created within the Landing Zone inherits guardrails, identity federation, network connectivity, and logging automatically.
+
+The core components:
+
+- **AWS Organizations** — The hierarchical structure that groups accounts into Organizational Units (OUs).
+- **Service Control Policies (SCPs)** — Preventive guardrails that define the maximum permissions any identity can have. SCPs don't grant permissions; they only limit them.
+- **IAM Identity Center** — Centralized identity federation. Users sign in with corporate credentials and assume roles with just-in-time access.
+- **Centralized Logging** — CloudTrail (API audit), Config (resource compliance), and VPC Flow Logs (network traffic) aggregated into a dedicated security account.
+- **Network Architecture** — Transit Gateway or VPC peering connecting accounts, with traffic inspection and egress controls.
+
+## The Account Structure That Works
+
+After deploying Landing Zones for multiple enterprise clients, this is the OU hierarchy I've converged on:
+
+```
+Root
+├── Security OU
+│   ├── Audit Account (CloudTrail aggregation)
+│   ├── Log Archive Account (centralized logging)
+│   └── Security Tooling Account (GuardDuty, Security Hub, Inspector)
+├── Infrastructure OU
+│   ├── Network Account (Transit Gateway, Direct Connect)
+│   ├── Shared Services Account (CI/CD tooling, container registry, DNS)
+│   └── Identity Account (IAM Identity Center, directory services)
+├── Workload OUs
+│   ├── Development OU (dev accounts per application)
+│   ├── Staging OU (pre-production accounts)
+│   └── Production OU (production accounts, stricter SCPs)
+├── Sandbox OU (time-bound, budget-capped experimentation)
+└── Transitional OU (accounts being migrated or decommissioned)
+```
+
+### Why This Structure
+
+**Security OU is separate from Workload OUs** because you want different SCPs. The security accounts need to do things (aggregate logs, scan for threats) that workload accounts should never do (delete CloudTrail trails, modify GuardDuty settings). Separating them means your security SCPs can be tighter on workloads without breaking your security tooling.
+
+**Infrastructure OU is centralized** because network connectivity, CI/CD, and identity are shared services. Every workload account connects to the Network Account via Transit Gateway. Every pipeline runs in the Shared Services Account. Every user authenticates through the Identity Account.
+
+**Sandbox OU has strict guardrails but high autonomy**. Sandbox accounts are time-bounded (auto-delete after 90 days unless extended), budget-capped ($500/month default), and blocked from production resources. Developers can experiment without going through the full account provisioning process, but they can't accidentally cost the company $50K or expose production data.
+
+## Service Control Policies That Actually Work
+
+The most common SCP mistake: denying everything. A deny-all SCP is secure but useless — developers can't work. The art is denying the dangerous things while allowing the necessary things.
+
+### Must-Have SCPs
+
+**Deny Root User Usage**
+```json
+{
+  "Effect": "Deny",
+  "Action": "*",
+  "Resource": "*",
+  "Condition": {
+    "StringLike": {
+      "aws:PrincipalArn": "arn:aws:iam::*:root"
+    }
+  }
+}
+```
+The root user has unrestricted access. Once your Landing Zone is set up, nobody should use the root user for daily operations. This SCP enforces it at the organizational level.
+
+**Deny Leaving Organization**
+```json
+{
+  "Effect": "Deny",
+  "Action": "organizations:LeaveOrganization",
+  "Resource": "*"
+}
+```
+A single account leaving the organization loses all SCP protections, centralized logging, and identity federation. This SCP prevents that — whether intentional or accidental.
+
+**Region Restriction**
+```json
+{
+  "Effect": "Deny",
+  "Action": "*",
+  "Resource": "*",
+  "Condition": {
+    "StringNotEquals": {
+      "aws:RequestedRegion": ["us-east-1", "us-east-2", "eu-west-1"]
+    }
+  }
+}
+```
+Data residency compliance, simplified. If your company operates in specific regions, block resources from being created elsewhere.
+
+**Deny CloudTrail and Config Modification**
+Protect your audit trail. Nobody should be able to delete CloudTrail trails, stop logging, or modify Config rules — even if they're administrators.
+
+### SCPs I See Missing Most Often
+
+**Deny Public S3 Buckets**: An SCP that blocks `s3:PutBucketPublicAccessBlock` with any setting that allows public access. Combined with S3 Block Public Access at the account level, this makes accidental data exposure nearly impossible.
+
+**Require IMDSv2**: The Instance Metadata Service v1 is vulnerable to SSRF attacks. IMDSv2 requires a session token. Deny EC2 operations that don't enforce IMDSv2.
+
+## Identity Federation Done Right
+
+IAM Identity Center (formerly AWS SSO) connected to your corporate identity provider — Azure AD / Entra ID, Okta, or on-premise Active Directory — means:
+
+- No IAM users with long-lived access keys.
+- Users sign in with corporate credentials and MFA.
+- Permission sets map job functions to AWS access. "Developer" gets read access to dev, limited access to staging, and read-only access to production.
+- Temporary credentials, automatically rotated.
+
+The killer feature: Permission sets deployed once, assigned to accounts via group membership. When a developer joins the payments team, add them to the Payments-Developer group. They get payment-dev access immediately. When they leave, remove them from the group. Access revoked everywhere — no hunting for IAM users across 50 accounts.
+
+## Automation with Control Tower
+
+AWS Control Tower automates Landing Zone deployment using CloudFormation and service catalog products. It provisions the core OUs, sets up Account Factory (for provisioning new accounts with standardized baselines), and provides a dashboard showing compliance status across your organization.
+
+### When Control Tower Works
+
+Control Tower excels for new AWS deployments starting from scratch. You get a well-architected Landing Zone in hours, not months.
+
+### When Control Tower Fights You
+
+For organizations with existing multi-account structures, Control Tower can be challenging. Migrating existing accounts into a Control Tower-managed organization requires careful planning — SCP conflicts, existing networking configurations, and customizations that don't fit Control Tower's opinionated baseline.
+
+My advice: if you're starting fresh, use Control Tower. If you're retrofitting, understand that you'll spend significant time on migration planning. The investment is worth it — centralized governance pays for itself within the first avoided security incident — but the timeline is measured in months, not weeks.
+
+## The ROI of a Landing Zone
+
+A well-designed Landing Zone prevents:
+- Shadow IT accounts opened with personal credit cards, invisible to security.
+- IAM users with AdministratorAccess and no MFA.
+- S3 buckets accidentally made public (and discovered years later by a security researcher).
+- Logs that don't exist when you need them for an incident investigation.
+
+The ROI isn't measured in dollars saved. It's measured in incidents avoided, compliance audits passed, and the confidence that when a developer provisions a new account, it inherits your security baseline automatically — not when someone remembers to configure it.
