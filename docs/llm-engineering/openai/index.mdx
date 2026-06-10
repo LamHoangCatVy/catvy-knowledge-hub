@@ -3,4 +3,35 @@ sidebar_position: 1
 ---
 # OpenAI
 
-GPT model architectures, token optimization strategies, and enterprise deployment patterns. Cost-effective API usage and real-world use cases for OpenAI-powered systems.
+OpenAI's GPT models are the default starting point for most LLM-powered applications — and for good reason. They combine state-of-the-art reasoning, broad knowledge, and a developer ecosystem that makes integration straightforward. But using the API is the easy part. Using it well — at scale, at reasonable cost, with reliable outputs — is the real work.
+
+## What Makes OpenAI Different
+
+OpenAI has consistently pushed the frontier of what language models can do, but their real differentiators go beyond raw capability:
+
+- **API-first delivery** — Unlike some competitors that require self-hosting or model downloads, OpenAI delivers all models through a single, well-documented API. Models upgrade behind the scenes while your integration stays stable.
+- **Model ecosystem** — From GPT-4o (flagship multimodal) to GPT-4o-mini (cost-optimized for simple tasks) to o-series (reasoning-focused). You pick the model that matches your task's complexity and budget, not a one-size-fits-all default.
+- **Platform capabilities** — Assistants API (managed conversation state + tool use), function calling (structured JSON outputs), structured outputs (guaranteed schema adherence), and vision capabilities. These aren't just model features — they're platform primitives that change how you architect LLM applications.
+- **Developer experience** — Comprehensive documentation, SDKs in Python and Node.js, playground for prompt iteration, rate limit transparency. The tooling lowers the barrier from "I have an API key" to "I have a production feature."
+
+## The GPT Model Family
+
+### GPT-4o
+Multimodal flagship. Accepts text and images, produces text. Reasoning quality comparable to GPT-4 Turbo but faster, cheaper, and multimodal by default. The default choice for complex tasks requiring deep reasoning.
+
+### GPT-4o-mini
+Cost-optimized for high-volume, low-complexity tasks. Classification, extraction, simple Q&A. Roughly 1/20th the cost per token of GPT-4o while maintaining strong performance on structured tasks. The workhorse for production pipelines that process millions of items.
+
+### o1 / o3-mini (Reasoning Models)
+Built for complex reasoning — math, coding, multi-step logic. These models "think" before responding, using chain-of-thought internally. Slower and more expensive per token, but dramatically better on benchmarks requiring structured reasoning. Best for symbolic tasks where correctness matters more than speed.
+
+## Key Areas We Cover
+
+### Model Architecture
+Deep dives into GPT architecture evolution — from GPT-3's sparse attention patterns to GPT-4's mixture-of-experts design. Understanding what happens under the hood informs your prompting, your model selection, and your cost optimization.
+
+### Cost Optimization
+Token economics isn't just about picking cheaper models. It's about prompt caching, batch processing, semantic compression, and building tiered routing: simple queries → fast/cheap model, complex queries → capable/expensive model. We cover practical strategies that cut API costs by 50--80% without sacrificing quality.
+
+### Enterprise Use Cases
+From customer support automation to code generation to document intelligence. Production deployment patterns, guardrails, monitoring, and integration with existing enterprise systems. The patterns that separate demos from production-grade products.

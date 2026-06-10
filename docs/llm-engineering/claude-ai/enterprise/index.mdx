@@ -3,4 +3,42 @@ sidebar_position: 1
 ---
 # Enterprise Deployment
 
-Governance frameworks, compliance considerations, and production deployment patterns for Claude in regulated enterprise environments.
+Deploying Claude in an enterprise isn't just about API keys and prompts. It's about navigating procurement, security review, compliance requirements, and the internal politics of introducing AI into regulated workflows. Enterprise deployment is where technical architecture meets organizational reality.
+
+## What Makes Enterprise LLM Deployment Different
+
+Consumer LLM products optimize for engagement. Enterprise LLM deployments optimize for:
+- **Risk management** — A hallucinated answer in a consumer chatbot is annoying. In a medical, legal, or financial context, it's a liability.
+- **Data governance** — Where does the data go? Who can see it? Is it used for training? Enterprise legal teams need clear answers, not terms-of-service clickthroughs.
+- **Access control** — Not every employee should be able to ask the model anything. Role-based access, departmental restrictions, and audit trails for every interaction.
+- **Integration** — The model doesn't exist in isolation. It needs to work with your SSO provider, your data warehouse, your ticketing system, your monitoring stack.
+
+## The Enterprise Deployment Framework
+
+### Vendor Assessment
+Before Claude touches production data:
+- **Data handling** — Anthropic's API data usage policy: data submitted through the API is not used for training. Get this in writing through your enterprise agreement.
+- **Compliance certifications** — SOC 2, ISO 27001. If you need HIPAA, GDPR data processing agreements, or FedRAMP, confirm availability and timeline.
+- **SLAs** — What uptime does Anthropic guarantee? What happens during an outage? What's the support escalation path?
+
+### Architecture for Enterprise
+- **API gateway** — All LLM calls go through a centralized gateway that handles authentication (API key management), rate limiting (per-user/per-department), logging (every prompt and response for audit), and cost attribution.
+- **Data isolation** — PII detection and redaction before prompts ever leave your infrastructure. For sensitive data, consider Amazon Bedrock (Claude available through AWS with VPC endpoint, keeping traffic within your AWS account).
+- **SSO and identity** — Integrate Claude access with your corporate identity provider (Entra ID, Okta). Users authenticate through SSO; the API gateway maps identities to access policies.
+
+### Monitoring and Governance
+- **Usage dashboards** — Who's using Claude, for what, at what cost? A department experimenting with AI for document analysis is different from one employee using it as their personal therapist.
+- **Content filtering** — Enterprise-grade output filters that enforce acceptable use policies, block PII leakage, and flag potentially problematic outputs for human review.
+- **Model versioning** — Anthropic updates models over time. Your evals might pass on `claude-sonnet-20240229` and break on `claude-sonnet-20240620`. Pin model versions in production and run your evaluation suite against new versions before upgrading.
+
+## The Organizational Playbook
+
+The technical architecture is the easy part. The harder work:
+- **Executive sponsorship** — Someone with budget authority needs to understand why Claude, not "wait and see."
+- **Legal and compliance buy-in** — Start conversations early. Bring the data processing agreement, the SOC 2 report, and a clear explanation of how data flows. Legal doesn't need to understand attention mechanisms; they need to understand data boundaries.
+- **Use case prioritization** — Don't boil the ocean. Pick one high-value, low-risk use case (internal knowledge base Q&A, document summarization) and deliver measurable results. Use that momentum to expand.
+- **Change management** — The biggest resistance isn't technical — it's organizational. "Will this replace my job?" Be honest about what changes and what doesn't. AI augments knowledge workers; it doesn't replace domain expertise (yet).
+
+## Why Enterprise Deployment Is the Hardest Part
+
+Getting Claude to give a good answer is a solved problem. Deploying Claude in a way that satisfies legal, security, compliance, IT, procurement, and the people whose jobs it might change — that's the real work. The most sophisticated LLM architecture means nothing if the organization never lets it into production.

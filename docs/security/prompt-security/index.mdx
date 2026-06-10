@@ -3,4 +3,51 @@ sidebar_position: 1
 ---
 # Prompt Security
 
-Defense-in-depth strategies against prompt injection, jailbreak attempts, and output manipulation. Multi-layer filtering and detection for LLM safety in production.
+The prompt is the only interface between your application and your LLM — and it's the primary attack surface. Prompt security is the discipline of hardening that interface against manipulation, ensuring that user input can't override system instructions, and that model outputs don't contain harmful content. It's a multi-layer problem because there's no single defense that catches everything.
+
+## The Attack Surface
+
+An LLM application typically has three prompt components:
+1. **System prompt** — The developer's instructions that define the model's role, behavior, and constraints.
+2. **Context** — Retrieved documents, conversation history, tool outputs — data the model needs to answer the user's question.
+3. **User input** — The actual query from the end user.
+
+The attack surface exists because user input (untrusted) is concatenated with system instructions (trusted) and context (semi-trusted) into a single prompt. The model cannot inherently distinguish between "instructions from the developer" and "text from the user that looks like instructions from the developer."
+
+## The Defense-in-Depth Approach
+
+No single technique stops all prompt attacks. Defense-in-depth combines multiple layers:
+
+### Layer 1: Input Validation
+Sanitize user input before it reaches the model. Reject or clean inputs that contain:
+- Suspicious patterns (repeated special characters, known injection syntax).
+- Attempts to mimic system messages (text containing "system:", "assistant:", or role-marking delimiters).
+- Extreme length (prompt stuffing attacks that exhaust the context window to force the model into unpredictable behavior).
+
+### Layer 2: Structural Separation
+Encode the boundary between system instructions and user input in ways the model can better respect:
+- **Delimiter-based**: Wrap user input in XML tags, JSON, or special delimiter strings. "Respond to the user's query: `<user_query>`[input]`</user_query>`"
+- **Retrieval-augmented**: Context comes from a verified knowledge base, not the user's raw input. The model answers based on retrieved documents, not free-form reasoning.
+- **Dual-LLM architecture**: A separate, smaller model evaluates the safety of the prompt before it reaches the main model. The evaluator can be more conservative without affecting response quality.
+
+### Layer 3: Semantic Analysis
+Beyond pattern matching, analyze what the user is actually trying to accomplish:
+- **Intent classification** — Is this a legitimate query, or is the user attempting to elicit harmful content?
+- **Embedding-based detection** — Does this query cluster with known jailbreak attempts in embedding space?
+- **Canary token monitoring** — Embed unique, secret strings in the system prompt. If a model output contains a canary token, you know the system prompt was leaked.
+
+### Layer 4: Runtime Guardrails
+Monitor model outputs in real time and intervene when they cross safety boundaries:
+- Content filtering for toxicity, hate speech, violence, self-harm.
+- PII detection and redaction before the response reaches the user.
+- Policy-based blocking: "the model should never provide instructions for illegal activities" — if the output violates this, replace it with a refusal message.
+
+## What We Cover in Detail
+
+- **Injection Defense** — The techniques that prevent user input from becoming system instructions.
+- **Jailbreak Prevention** — Understanding how attackers bypass safety guardrails and how to stop them.
+- **Output Filtering** — Catching harmful model outputs before they reach end users.
+
+## Why Prompt Security Is a Systems Problem
+
+Prompt security isn't just about clever prompt engineering. It requires infrastructure: logging every prompt and response for audit, monitoring for anomalous query patterns that might indicate an attack in progress, and maintaining the ability to rapidly deploy updated safety filters without redeploying the entire application. The prompt is the attack surface. Your defense is the engineering around it.

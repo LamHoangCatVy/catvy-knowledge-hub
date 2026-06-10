@@ -3,4 +3,28 @@ sidebar_position: 1
 ---
 # Claude AI
 
-Anthropic Claude deployment patterns, constitutional AI principles, and enterprise tool-use architectures. Leveraging Claude's safety-first design for production applications.
+Anthropic built Claude with a radically different philosophy: safety isn't a filter you apply after training — it's baked into the model's fundamental architecture. Understanding Claude means understanding constitutional AI, value alignment, and why "helpful, harmless, and honest" isn't just marketing — it's a training objective.
+
+## What Makes Claude Different
+
+While OpenAI optimized for capability and broad utility, Anthropic optimized for aligned behavior. The difference shows in production:
+
+- **Refusal calibration** — Claude is designed to refuse harmful requests while being genuinely helpful on legitimate ones. It's trained to understand the intent behind a query, not just pattern-match against a blocklist. This means fewer false positives (refusing a medical question because it contains a body part name) and fewer misses.
+- **Nuanced reasoning about ethics** — Claude can engage in substantive discussions about controversial topics without promoting harm. It distinguishes between "explain how a phishing attack works" (educational, legitimate) and "help me craft a phishing email" (harmful, refused).
+- **Transparency about uncertainty** — Claude is trained to express uncertainty rather than confabulate. When it doesn't know something, it's more likely to say so rather than inventing a plausible-sounding answer. This makes it particularly valuable for enterprise use cases where wrong answers have real consequences.
+- **Long-context performance** — Claude's 200K token context window isn't just a spec sheet number. The model maintains coherent reasoning across the full window, with near-perfect recall at scale. For document-heavy workflows (legal, research, codebase analysis), this is transformative.
+
+## Key Areas We Cover
+
+### Constitutional AI
+The training methodology that makes Claude different. Instead of using human feedback to suppress undesirable outputs (whack-a-mole), Constitutional AI trains the model to self-critique and revise according to a written constitution of principles. The result: a model that internalizes ethical reasoning rather than memorizing what humans flagged as bad.
+
+### Tool Use
+Claude's function calling capabilities — defining tools, structured outputs, and multi-step tool orchestration. How to build autonomous agents that interact with external systems while maintaining Claude's safety properties.
+
+### Enterprise Deployment
+Governance frameworks, compliance considerations, and deployment patterns for Claude in regulated environments. How enterprises balance AI capability with risk management, audit requirements, and data privacy.
+
+## Why Claude Matters
+
+For high-stakes enterprise use cases — healthcare, legal, finance, government — capability isn't enough. You need a model that's trustworthy, that knows what it doesn't know, and that won't inadvertently cause harm while trying to be helpful. Claude's architecture makes these properties intrinsic rather than bolted-on, shifting the safety burden from the application developer to the model itself.

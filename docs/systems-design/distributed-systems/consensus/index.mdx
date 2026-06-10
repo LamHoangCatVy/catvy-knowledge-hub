@@ -3,4 +3,51 @@ sidebar_position: 1
 ---
 # Consensus Algorithms
 
-Raft, Paxos, and modern consensus protocols — how distributed systems agree on state. Leader election, log replication, and safety guarantees explained.
+Consensus is the problem of getting a group of machines to agree on something — a value, a sequence of operations, or who the leader is. It sounds simple. It's one of the hardest problems in computer science. Without consensus, you can't have replicated databases, distributed locks, or coordinated failover. Every distributed system that claims reliability is built on consensus somewhere in its stack.
+
+## The Consensus Problem
+
+Given N nodes in a distributed system, where nodes can crash and messages can be delayed or lost, consensus requires:
+- **Agreement** — All non-faulty nodes decide on the same value.
+- **Termination** — Every non-faulty node eventually decides on some value.
+- **Validity** — The decided value was proposed by some node.
+
+The FLP impossibility result proves that in an asynchronous system (no bound on message delivery time), consensus is impossible if even one node can fail. This isn't a practical limitation — it's a mathematical proof. Real-world consensus algorithms are possible because they assume partial synchrony: most of the time, messages are delivered promptly, and when they aren't, the system makes progress once the network heals.
+
+## Raft: Consensus Made Understandable
+
+Raft was designed explicitly to be easier to understand than Paxos. It decomposes consensus into three subproblems:
+
+### Leader Election
+Nodes are in one of three states: **leader**, **follower**, or **candidate**. Time is divided into terms, each beginning with an election. If a follower doesn't hear from the leader within an election timeout, it becomes a candidate, increments the term, and requests votes. A candidate that receives votes from a majority of nodes becomes the leader.
+
+The key mechanism: each node votes at most once per term, for the first candidate that asks. This guarantees at most one leader per term.
+
+### Log Replication
+The leader accepts commands from clients, appends them to its log, and replicates log entries to followers via AppendEntries RPCs. An entry is **committed** once a majority of nodes have it in their logs. The leader applies committed entries to its state machine and tells followers to do the same.
+
+Safety property: if two logs contain an entry with the same index and term, they're identical up to that index. The leader never overwrites or deletes its own entries, only appends.
+
+### Safety
+Raft guarantees that once a leader commits an entry, that entry will be present in the logs of all future leaders. This requires a restriction on leader election: a candidate must have a log that is at least as up-to-date as a majority of the cluster. If a node with an incomplete log tries to become leader, it won't receive enough votes.
+
+## Paxos: The Original
+
+Paxos, first described by Leslie Lamport in 1989 (using a fictional Greek parliament as metaphor), is the theoretical foundation of consensus. It's notoriously difficult to understand and even harder to implement correctly — which is why Raft exists.
+
+Paxos solves single-decree consensus (agreeing on one value). Multi-Paxos extends this to a sequence of values (a replicated log) by running multiple instances of Paxos with a stable leader — functionally equivalent to what Raft does, but with significantly more implementation complexity.
+
+## Modern Consensus in Practice
+
+### etcd (Kubernetes)
+Uses Raft to maintain a consistent key-value store. All Kubernetes cluster state — pods, services, config maps — is stored in etcd. Every `kubectl apply` eventually becomes a Raft log entry.
+
+### ZooKeeper
+Uses ZAB (ZooKeeper Atomic Broadcast), a custom consensus protocol similar to Raft. Provides distributed coordination primitives: leader election, distributed locks, configuration management, and group membership. Used by Kafka for broker coordination and by Hadoop for high availability.
+
+### Consul
+Uses Raft for its consistent key-value store and service discovery catalog. Service health checks, configuration data, and intentions (service mesh authorization rules) flow through Raft.
+
+## Why Consensus Matters
+
+Without consensus, you can't have a replicated state machine — and without replicated state machines, you can't have reliable distributed systems. Every time you deploy to Kubernetes, every time Kafka delivers a message exactly once, every time a PostgreSQL replica takes over when the primary fails — consensus algorithms are the silent foundation making it possible. Understanding them isn't just academic. It's the difference between "the system is reliable" and "the system appears reliable until a partition reveals that it isn't."

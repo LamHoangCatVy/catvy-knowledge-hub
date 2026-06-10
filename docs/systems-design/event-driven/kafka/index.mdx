@@ -3,4 +3,69 @@ sidebar_position: 1
 ---
 # Apache Kafka
 
-Topic design patterns, consumer group semantics, exactly-once processing guarantees, and Kafka Streams for real-time data processing at scale.
+Kafka isn't just a message queue. It's a distributed streaming platform that combines high throughput (millions of messages per second), durable storage (events persist on disk for configurable retention periods), and real-time processing (Kafka Streams). Understanding Kafka means understanding the commit log abstraction and how it fundamentally differs from traditional messaging.
+
+## The Core Abstraction: A Distributed Commit Log
+
+Kafka is built around the concept of a distributed, partitioned, replicated commit log. Events are appended to the end of a log (a topic). Each event gets a sequential offset number. Consumers read events in order from a specific offset. Unlike a queue (where messages are deleted after consumption), Kafka retains events even after they're consumed — consumers are just pointers moving through the log.
+
+This has profound implications:
+- **Replayability** — A consumer can reset its offset and reprocess the entire history. If you discover a bug in your processing logic, you don't lose data — you fix the code and replay.
+- **Multiple consumers, independent progress** — Different consumer groups read the same topic at different speeds. A real-time dashboard processes events within seconds. A nightly batch analytics job processes the same events hours later, starting from the last batch's offset.
+- **Auditability** — The log is the canonical record of what happened. No event is ever modified or deleted (until retention expires).
+
+## Topic and Partition Design
+
+### Topics
+A topic is a category or feed name to which records are published. `orders`, `user_events`, `page_views`. Topics are the unit of organization — each represents a distinct event stream.
+
+### Partitions
+Topics are split into partitions for parallelism. Each partition is an ordered, immutable sequence of records. Kafka guarantees order within a partition, not across partitions.
+
+The partition count is a critical design decision:
+- **Too few partitions** → limits consumer parallelism. With 3 partitions, at most 3 consumer instances can process in parallel.
+- **Too many partitions** → increases overhead (more open file handles, longer leader election during failures). Also, partitions are the unit of replication — more partitions mean more network traffic.
+- **Partitions can only be increased, never decreased** — choose carefully for production topics.
+
+### Message Keys and Partition Assignment
+When producing a message, Kafka hashes the key to determine the partition: `partition = hash(key) % num_partitions`. This guarantees that all messages with the same key go to the same partition in order.
+
+**Key design matters**: If you're producing order events and key them by `order_id`, all events for order #123 are in the same partition, in order. Processing is straightforward. If you use `null` keys, messages are round-robin distributed — order is not guaranteed.
+
+## Consumer Groups
+
+Kafka's consumer group model is its scalability mechanism. Consumers in the same group divide partitions among themselves:
+
+- 1 topic, 6 partitions, Consumer Group with 3 instances → each instance handles 2 partitions.
+- 1 topic, 6 partitions, Consumer Group with 6 instances → each handles 1 partition.
+- 1 topic, 6 partitions, Consumer Group with 12 instances → 6 instances are idle.
+
+This is why partition count caps parallelism. Groups scale horizontally within the partition limit.
+
+### Offset Management
+Each consumer group tracks its position (offset) for each partition independently. Historically stored in ZooKeeper; modern Kafka stores offsets in an internal `__consumer_offsets` topic. Consumers commit offsets after processing batches, enabling at-least-once delivery semantics.
+
+### Rebalancing
+When a consumer joins or leaves a group (new instance, crashed instance, scaling event), Kafka reassigns partitions. During rebalancing, the consumer group pauses briefly. Strategies for minimizing disruption:
+- **Cooperative rebalancing (incremental)** — Consumers keep most partitions during a rebalance, only reassigning a subset. Reduces the "stop-the-world" effect.
+- **Static group membership** — Consumers are assigned fixed partition assignments that persist across restarts. No rebalancing on temporary disconnections.
+
+## Exactly-Once Semantics
+
+Kafka's "exactly-once" is actually a combination of guarantees:
+- **Idempotent producers** — The producer assigns a sequence number to each message. The broker deduplicates messages with the same producer ID + sequence number. Prevents duplicate writes from producer retries.
+- **Transactional writes** — Multiple messages across topics/partitions are produced atomically. All committed together or none visible. Enables atomic read-process-write cycles (consume from topic A, transform, produce to topic B — all as one transaction).
+- **Exactly-once stream processing** — Kafka Streams can achieve end-to-end exactly-once semantics when the source, processing, and sink are all Kafka topics. For external systems (databases, APIs), idempotent writes are the practical alternative.
+
+## Kafka Streams and ksqlDB
+
+Kafka isn't just for data movement — it can process data in real time:
+
+- **Kafka Streams** — A Java library for building stream processing applications. Filter, map, join, aggregate, and window event streams. Stateful operations maintain local state stores (RocksDB) backed by Kafka changelog topics for fault tolerance.
+- **ksqlDB** — SQL-like interface for stream processing on Kafka. `CREATE STREAM orders AS SELECT * FROM raw_orders WHERE amount > 100;` defines a continuous query that updates in real time. Lower barrier to entry than Kafka Streams, suitable for operational analytics and real-time ETL.
+
+## When Kafka Is the Right Fit
+
+Kafka shines for high-throughput event streaming, real-time data pipelines, and scenarios where event replay and multiple independent consumers are requirements. It's overkill for simple work queues (use RabbitMQ or SQS), request-response APIs (use REST or gRPC), and workloads where message ordering across all events is critical (use a single-partition queue or a different architecture).
+
+The deciding question: do you need to replay events, have multiple independent consumers at different processing speeds, or maintain an immutable audit log of everything that happened? If yes to any of these, Kafka's architecture pays for itself. If you just need to distribute work to background workers, a simpler queue will serve you better.

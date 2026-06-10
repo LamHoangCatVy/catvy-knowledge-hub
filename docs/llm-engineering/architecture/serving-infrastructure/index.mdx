@@ -3,4 +3,48 @@ sidebar_position: 1
 ---
 # Serving Infrastructure
 
-vLLM, TGI, Triton Inference Server — comparing serving frameworks, GPU cluster orchestration, and autoscaling strategies for LLM deployments.
+A trained model on a GPU is a science experiment. A model serving production traffic with reliable latency, predictable throughput, and graceful degradation is infrastructure engineering. LLM serving infrastructure bridges this gap — the frameworks, orchestration layers, and operational practices that turn model weights into an API.
+
+## The LLM Serving Stack
+
+### Model Serving Frameworks
+
+**vLLM** is the current frontrunner for open-source LLM serving. Built at UC Berkeley, it introduced PagedAttention — managing KV cache in non-contiguous memory blocks to nearly eliminate memory waste. It achieves up to 24x throughput over naive HuggingFace serving through continuous batching, optimized CUDA kernels, and efficient memory management. If you're self-hosting LLMs in 2025, vLLM is likely your starting point.
+
+**Text Generation Inference (TGI)** is HuggingFace's production serving framework. Tightly integrated with the HuggingFace ecosystem — models, tokenizers, and quantization formats work out of the box. Features include watermarking (detecting AI-generated text), grammar-constrained generation, and speculative decoding. Best choice if you're deeply embedded in the HuggingFace model ecosystem.
+
+**Triton Inference Server** comes from NVIDIA and takes a broader approach: it serves any model (LLMs, computer vision, tabular) with unified infrastructure. For teams running diverse ML workloads, Triton provides a single serving plane. Its Model Analyzer tool profiles models and recommends optimal configurations (batch size, instance count, precision).
+
+### GPU Cluster Orchestration
+
+Running one model on one GPU is straightforward. Running multiple models across dozens of GPUs with different scaling requirements introduces operational complexity:
+
+- **Kubernetes with GPU support** — NVIDIA's device plugin and GPU Operator enable K8s scheduling of GPU workloads. Define resource requests (`nvidia.com/gpu: 2`) and K8s finds nodes with available GPUs.
+- **Autoscaling** — Horizontal Pod Autoscaling (HPA) based on request latency or queue depth. The challenge: GPU nodes take minutes to provision and model loading adds more minutes. Use over-provisioning, pre-warming, or node tainting to keep spare capacity.
+- **Model distribution** — Large models (70B+ parameters) don't fit on a single GPU. Sharding across GPUs via tensor parallelism (split layers across GPUs) or pipeline parallelism (split sequential layers across GPUs). vLLM and TGI handle this internally; you just specify `--tensor-parallel-size 8`.
+
+### Load Balancing and Traffic Management
+
+LLM traffic has unique characteristics:
+- **Long-lived connections** — Streaming responses keep connections open for seconds or minutes. Traditional round-robin load balancing can concentrate long requests on unlucky backends.
+- **Variable request cost** — Two requests might both be "one API call," but a 5-token classification costs 1000x less compute than a 5000-token reasoning chain. Load balancers need to be aware of in-flight token counts, not just connection counts.
+- **Request prioritization** — Interactive users need low latency; batch jobs can wait. Priority queues and preemption ensure interactive traffic gets immediate GPU time while batch jobs fill idle cycles.
+
+## Operational Considerations
+
+### Model Loading and Versioning
+Loading a 70B parameter model from disk can take minutes. Strategies:
+- **Pre-loaded models** — Keep the model loaded in GPU memory permanently. Trade-off: ties up expensive GPU RAM even when idle.
+- **Model swapping** — Load/unload models on demand. Useful when serving multiple LoRA adapters or fine-tuned variants.
+- **A/B testing** — Serve two model versions simultaneously, route a percentage of traffic to the candidate, compare quality/latency/cost metrics.
+
+### Monitoring
+LLM-specific metrics beyond standard infrastructure monitoring:
+- **Time to First Token (TTFT)** — How long before the user sees the first word of the response? High TTFT feels unresponsive even if total generation time is reasonable.
+- **Tokens Per Second (TPS)** — Generation throughput per user. Below ~20 TPS, the experience feels sluggish.
+- **GPU utilization vs. request latency** — The fundamental trade-off. Higher batching → higher utilization → higher per-request latency. Find your Sweet spot.
+
+### Failure Modes
+- **OOM (Out of Memory)** — The GPU runs out of VRAM. Usually from KV-cache accumulation on long sequences. Mitigations: max sequence length limits, KV-cache offloading to CPU RAM, proactive request eviction.
+- **Cold start** — New model instance takes minutes to load. Mitigations: keep warm spares, lazy model loading with fast fallback (route to a smaller model while the large one loads).
+- **Token generation hangs** — Model gets stuck in a repetitive loop or generates extremely long outputs. Mitigations: max_tokens limit, repetition penalty, or a secondary model that detects degenerate outputs.

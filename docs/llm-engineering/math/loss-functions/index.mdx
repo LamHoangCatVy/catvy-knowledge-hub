@@ -3,4 +3,101 @@ sidebar_position: 1
 ---
 # Loss Functions
 
-Cross-entropy loss, contrastive learning objectives, RLHF reward modeling, and how training objectives shape model behavior and output quality.
+A language model's behavior is entirely determined by what it's rewarded for during training — and the loss function defines what "rewarded" means. Understanding loss functions reveals why models produce certain kinds of outputs, why they fail in specific ways, and what training objectives are available for shaping model behavior.
+
+## The Fundamental Objective: Next-Token Prediction
+
+At its core, every autoregressive LLM is trained to maximize the probability of the next token given the previous context:
+
+```
+P(token_t | token_1, token_2, ..., token_{t-1})
+```
+
+The model outputs a probability distribution over its entire vocabulary for each position. The training objective: make the correct next token as probable as possible.
+
+## Cross-Entropy Loss
+
+Cross-entropy is the workhorse loss function for language modeling. For a single prediction:
+
+```
+Loss = -log(P(correct_token))
+```
+
+Where `P(correct_token)` is the probability the model assigned to the token that actually appeared in the training data.
+
+- If the model is **100% confident** in the correct token → P = 1.0 → Loss = 0 (perfect prediction)
+- If the model is **50% confident** → P = 0.5 → Loss ≈ 0.69 (moderate uncertainty)
+- If the model is **1% confident** → P = 0.01 → Loss ≈ 4.6 (strong penalty for being wrong)
+
+The total loss for a sequence is the average cross-entropy across all tokens. This is also called the **perplexity** of the model on that sequence (exponentiated cross-entropy).
+
+### Why Cross-Entropy Works
+
+Cross-entropy has a crucial property: it's a proper scoring function, meaning the optimal strategy is to output your true beliefs about token probabilities. If you internally think there's a 70% chance the next word is "the," your loss is minimized by outputting exactly 0.7 — not by exaggerating to 0.9 or hedging to 0.5. This incentive for calibrated uncertainty is what makes cross-entropy produce models that "know what they don't know" (to the extent that LLMs do).
+
+### Limitations of Next-Token Prediction
+
+The objective is purely about predicting what humans wrote, not about being helpful, truthful, or safe. A model minimizing cross-entropy on internet text would:
+- Be perfectly fluent but occasionally toxic (it learned from Reddit).
+- Confidently state falsehoods that appear frequently in its training data.
+- Generate plausible but worthless answers when it doesn't know (humans do this too in their writing).
+- Have no concept of "refusing" — the training data rarely includes examples of someone saying "I shouldn't answer that."
+
+This gap between "predict what humans wrote" and "be a helpful, safe assistant" is what the next two sections address.
+
+## Contrastive Loss
+
+Contrastive learning trains models to distinguish between similar and dissimilar pairs. Given a positive pair (query + relevant document) and negative pairs (query + irrelevant documents), the model learns to pull the positive pair closer in embedding space and push negatives apart.
+
+Common applications in LLM systems:
+- **Retrieval training** — Training embedding models that power RAG (Retrieval-Augmented Generation). Given a query and a set of documents, the model learns to rank the relevant one highest.
+- **Representation learning** — Training sentence embeddings for semantic similarity, clustering, and classification.
+
+The typical formulation is InfoNCE loss (a generalization of softmax cross-entropy to the contrastive setting). For a query q and a set of candidates {k₁, k₂, ..., k_n} where one k is the positive match:
+
+```
+Loss = -log[ exp(sim(q, k_pos) / τ) / Σᵢ exp(sim(q, kᵢ) / τ) ]
+```
+
+Where τ (temperature) controls the sharpness of the distinction: low τ creates hard distinctions (fine-grained differences matter), high τ creates soft distinctions (only large differences matter).
+
+## RLHF: Reinforcement Learning from Human Feedback
+
+RLHF bridges the gap between "predict what humans wrote" and "be a helpful assistant." It's a three-stage process:
+
+### Stage 1: Supervised Fine-Tuning (SFT)
+Collect human demonstrations of ideal assistant behavior. Fine-tune the base model to produce these responses. This teaches the model what the format of a helpful response looks like.
+
+### Stage 2: Reward Model Training
+For a given prompt, generate multiple responses (from the SFT model or variants). Humans rank these responses from best to worst. Train a reward model to predict these human preference scores.
+
+The reward model's loss function is typically a pairwise preference loss:
+```
+Loss = -log(σ(r_won - r_lost))
+```
+Where `σ` is the sigmoid function, `r_won` is the predicted reward for the preferred response, and `r_lost` is the predicted reward for the inferior response. This teaches the reward model to assign higher scores to responses humans prefer.
+
+### Stage 3: PPO (Proximal Policy Optimization)
+Reinforcement learning phase. The language model generates responses, the reward model scores them, and PPO updates the model to maximize reward — with a KL divergence penalty that prevents the model from deviating too far from the SFT model:
+
+```
+Objective = E[reward(response)] - β × KL(π_current || π_SFT)
+```
+
+The KL penalty is critical. Without it, the model "hacks" the reward model — finding degenerate responses that score highly according to the (imperfect) reward model but are actually gibberish or worse. The KL term keeps the model tethered to reasonable behavior.
+
+## DPO: Direct Preference Optimization (RLHF Alternative)
+
+DPO simplifies RLHF by directly optimizing the language model on preference data, bypassing the reward model entirely. The insight: the optimal policy under a Bradley-Terry preference model can be expressed directly in terms of the policy probabilities, without a separate reward function.
+
+```
+Loss = -log(σ(β × [log(π_θ(y_won | x) / π_ref(y_won | x)) - log(π_θ(y_lost | x) / π_ref(y_lost | x))]))
+```
+
+Where π_θ is the model being trained and π_ref is a frozen reference model (typically the SFT model). This is simpler than RLHF (no reward model, no PPO), more stable, and has become the default preference alignment method used by models like Llama 3 and Mistral.
+
+## Why Loss Functions Determine Everything
+
+The loss function is the model's North Star. If you train on next-token prediction of internet text, you get a model that's fluent, knowledgeable, and sometimes toxic — because that's what the internet rewards. If you train on human preference rankings, you get a model that's helpful and harmless. If you train on both (RLHF/DPO after pre-training), you get ChatGPT.
+
+Every behavioral property of an LLM — its verbosity, its refusal patterns, its tendency to hedge or commit, its political leanings — traces back to what was rewarded during training. Understanding loss functions gives you the vocabulary to describe what your model was optimized for and what it was optimized against.

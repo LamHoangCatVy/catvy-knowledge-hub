@@ -3,4 +3,38 @@ sidebar_position: 1
 ---
 # API Design
 
-REST, GraphQL, and gRPC design patterns. Resource modeling, schema design, and API versioning strategies for robust service interfaces.
+APIs are the user interface for developers. A well-designed API feels obvious — the right endpoints, the right data shapes, the right error messages at the right time. A poorly designed API feels like a puzzle you didn't sign up to solve. The difference is almost never about which protocol you chose. It's about whether you designed the interface or just exposed your database.
+
+## What Is API Design?
+
+API design is the practice of defining the contract between a service and its consumers: the endpoints, request/response formats, authentication mechanisms, error handling conventions, and versioning strategy. Good API design makes the right thing easy and the wrong thing hard — guiding consumers toward correct usage through thoughtful structure rather than documentation pleading.
+
+## The Three Protocols
+
+### REST (Representational State Transfer)
+The dominant web API paradigm. Resources identified by URLs. Standard HTTP methods map to operations (GET = read, POST = create, PUT/PATCH = update, DELETE = remove). Stateless — each request contains all the information the server needs to process it.
+
+REST's strength is simplicity and universal compatibility. Every HTTP client understands REST. Its weakness: over-fetching (the server decides what data to return) and under-fetching (you need data from multiple resources, requiring multiple requests).
+
+### GraphQL
+A query language for APIs developed at Facebook. Clients specify exactly what data they need, and the server returns exactly that — no more, no less. A single endpoint (`/graphql`) handles all operations.
+
+GraphQL's strength is client flexibility — frontend teams can iterate without backend changes. Its weakness: complexity. The N+1 problem (resolving nested fields generates a cascade of database queries), the difficulty of caching (everything is POST to a single endpoint), and the risk of expensive queries that join across the entire data graph.
+
+### gRPC
+A high-performance RPC framework from Google. Uses Protocol Buffers for schema definition and binary serialization. Supports four communication patterns: unary (request-response), server streaming, client streaming, and bidirectional streaming.
+
+gRPC's strength is performance and type safety. Binary protocol buffers are an order of magnitude faster to serialize/deserialize than JSON. Code generation produces typed clients and servers from `.proto` definitions. Its weakness: poor browser support (requires gRPC-Web proxy), and the binary format isn't human-readable for debugging.
+
+## Beyond the Protocol: Universal API Design Principles
+
+- **Consistency over cleverness** — Pick conventions (naming, error format, pagination style) and apply them ruthlessly. A consumer who understands one endpoint should be able to predict how others work.
+- **Errors are part of the interface** — Error responses are API design, not afterthoughts. A good error response says what went wrong (machine-readable error code), why it went wrong (human-readable message), and what to do about it (documentation link, suggested fix).
+- **Versioning is a promise** — Every breaking change to your API is a broken promise to every consumer who trusted your contract. Design for evolution from day one: additive changes are safe, subtractive changes require versioning or deprecation windows.
+- **Pagination by default** — If an endpoint returns a list, it returns a paginated list. No exceptions. "But this list will never have more than 10 items" is famous last words.
+
+## What We Cover
+
+- **REST Best Practices** — Resource modeling, HATEOAS, status codes, pagination, and versioning.
+- **gRPC & Protocol Buffers** — Service definitions, streaming patterns, and gRPC internals.
+- **GraphQL** — Schema design, resolvers, federation, and solving the N+1 problem.

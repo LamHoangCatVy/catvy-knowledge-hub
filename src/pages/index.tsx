@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import useIsBrowser from '@docusaurus/useIsBrowser';
-import '../css/custom.css';
+import Layout from '@theme/Layout';
 
 function PortfolioEntry() {
   const isBrowser = useIsBrowser();
@@ -22,8 +22,8 @@ function PortfolioEntry() {
         flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         color: '#e0e0e0', fontFamily: 'JetBrains Mono, monospace',
       }}>
-        <div className="mb-4 w-16 h-16 border-2 border-[#bc13fe]/20 border-t-[#00f3ff] rounded-full animate-spin" />
-        <div className="text-xs text-gray-500 tracking-widest uppercase">Fetching Core Modules...</div>
+        <div style={{ width: 64, height: 64, border: '2px solid rgba(188,19,254,0.2)', borderTopColor: '#00f3ff', borderRadius: '50%', marginBottom: 16, animation: 'spin 1s linear infinite' }} />
+        <div style={{ fontSize: 12, color: '#888', letterSpacing: '0.25em', textTransform: 'uppercase' }}>Fetching Core Modules...</div>
       </div>
     );
   }
@@ -32,5 +32,9 @@ function PortfolioEntry() {
 }
 
 export default function Home(): React.ReactNode {
-  return <PortfolioEntry />;
+  return (
+    <Layout>
+      <PortfolioEntry />
+    </Layout>
+  );
 }

@@ -3,4 +3,51 @@ sidebar_position: 1
 ---
 # Constitutional AI
 
-Principles and implementation of constitutional AI — value alignment, harmlessness training, and how Anthropic builds safety directly into the model's training process.
+Constitutional AI (CAI) is Anthropic's answer to the alignment problem: how do you train an AI to be helpful while ensuring it won't cause harm, even when users explicitly try to make it do so? The core insight: instead of relying entirely on human feedback (which is expensive, inconsistent, and impossible to scale to every possible harmful scenario), CAI gives the model a written "constitution" — a set of principles — and trains it to self-critique and self-correct.
+
+## How Constitutional AI Works
+
+Traditional RLHF (Reinforcement Learning from Human Feedback) has humans rate model outputs and trains a reward model to predict those ratings. The problem: humans have to identify every possible harmful output pattern in advance. Miss one, and it's a vulnerability.
+
+CAI replaces human feedback with AI feedback guided by principles:
+
+### Phase 1: Supervised Self-Critique and Revision
+1. The model generates a response to a potentially harmful prompt.
+2. The model critiques its own response against the constitution. "Does this response promote illegal activity? Does it contain discriminatory content? Does it respect user privacy?"
+3. The model revises its response to address any constitutional violations.
+4. The original prompt + revised response becomes a training example for supervised fine-tuning.
+
+The key: the model learns to internalize the constitution's principles, not just memorize a list of forbidden phrases. It develops a genuine capability for ethical reasoning within its domain.
+
+### Phase 2: AI-Assisted RLHF
+Instead of training a reward model exclusively on human preference data, the reward model also incorporates AI-generated evaluations based on constitutional principles. This amplifies the RLHF signal — the model learns not just "humans liked this" but "this response adheres to harmlessness, honesty, and helpfulness principles."
+
+## The Constitution Itself
+
+Anthropic's constitution draws from multiple sources:
+- The Universal Declaration of Human Rights
+- Apple's terms of service (as a model for responsible corporate behavior)
+- Academic ethics guidelines
+- Anthropic's own research on AI safety
+
+The principles cover: non-violence, non-discrimination, privacy, honesty, transparency about limitations, avoiding illegal content, and maintaining appropriate boundaries while being genuinely helpful.
+
+## Why Constitutional AI Matters
+
+### Scalability
+Human feedback doesn't scale. Every new capability, every new deployment context potentially introduces new failure modes. CAI scales because the constitution — a text document — can be updated, extended, and version-controlled. As understanding of AI risks evolves, so can the constitution.
+
+### Interpretability
+The constitution provides a concrete artifact that can be examined, debated, and audited. Unlike a black-box reward model trained on human preferences (where you can't know exactly what it's rewarding), the constitution's principles are explicit and inspectable.
+
+### Robustness
+Models trained with CAI show resilience to jailbreak attacks that defeat models relying on post-hoc filtering. Because ethical reasoning is baked into the training, the model is less likely to produce harmful outputs even when users structure their prompts to circumvent safety restrictions. It's the difference between a lock on the door and a building designed without doors where you'd want walls.
+
+## Criticisms and Limitations
+
+CAI is not a solved problem. Critics note that:
+- A written constitution can't cover every ethical edge case — there will always be novel scenarios that existing principles don't address.
+- The constitution reflects the values of its authors. Who gets to write the constitution? How do you ensure it represents diverse cultural and ethical perspectives?
+- Self-critique works well for clear-cut harms (violence, hate speech) but struggles with subtle harms (biased framing, omission of important context, reinforcing stereotypes through tone rather than explicit statements).
+
+These are active research areas — not reasons to abandon CAI, but reasons to treat it as an evolving approach rather than a final solution.

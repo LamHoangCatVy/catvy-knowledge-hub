@@ -3,4 +3,45 @@ sidebar_position: 1
 ---
 # Landing Zone Design
 
-Multi-account AWS architecture — Organizations, SCPs, and automated Landing Zone deployment with Control Tower. Governance patterns for enterprise-scale AWS environments.
+A Landing Zone is the foundational multi-account architecture that secures, governs, and automates your AWS environment from day one. Without it, every account is a snowflake — and snowflakes don't scale.
+
+## What Is a Landing Zone?
+
+A Landing Zone is a pre-configured, secure, and scalable multi-account AWS environment based on best practices. Think of it as the operating system for your cloud presence: it defines the account structure, network topology, identity federation, logging, and security guardrails that every workload inherits automatically.
+
+AWS recommends a multi-account strategy as the default, not the exception. The Landing Zone provides the scaffolding that makes this manageable.
+
+## Core Components
+
+### Account Structure (AWS Organizations)
+The account is AWS's strongest isolation boundary. A well-designed Landing Zone groups accounts into Organizational Units (OUs) that map to your operational model:
+
+- **Security OU** — Audit account (CloudTrail aggregation), Log Archive account (centralized logging), Security Tooling account (GuardDuty, Security Hub).
+- **Infrastructure OU** — Network account (Transit Gateway, Direct Connect), Shared Services account (CI/CD tooling, container registries).
+- **Workload OUs** — Development, Staging, Production — each with as many accounts as needed per application or team.
+- **Sandbox OU** — Time-bounded, budget-capped accounts where developers experiment without affecting production guardrails.
+
+### Service Control Policies (SCPs)
+SCPs are preventive guardrails applied at the OU or account level. They don't grant permissions — they define the maximum boundary of what IAM policies can allow. Common SCPs include:
+- Deny actions in unapproved regions (data residency compliance).
+- Block deletion of CloudTrail and Config resources.
+- Prevent root user usage.
+- Require IMDSv2 on EC2 instances.
+- Deny public S3 bucket creation.
+
+### Identity Federation
+Tying AWS IAM Identity Center (formerly SSO) to your corporate identity provider — Azure AD, Okta, or on-premise Active Directory. Users authenticate with their corporate credentials and assume IAM roles with just-in-time access. Permission sets map job functions to AWS access, eliminating IAM user sprawl.
+
+## Automation with Control Tower
+
+AWS Control Tower orchestrates Landing Zone deployment using CloudFormation and service catalog products. It sets up the core OUs, Account Factory (for provisioning new accounts), guardrails (preventive and detective), and a dashboard showing compliance status across your organization.
+
+## Why Landing Zone Design Matters
+
+Without a Landing Zone, you get:
+- IAM users proliferating with long-lived access keys.
+- Shadow IT: accounts opened with credit cards, bypassing procurement.
+- No centralized logging when something goes wrong.
+- Inconsistent security posture across environments.
+
+With a Landing Zone, every account inherits governance, security, and networking from the baseline. Teams get autonomy within guardrails. Security gets visibility. Finance gets accountability. That's the promise — and the implementation demands deliberate design.

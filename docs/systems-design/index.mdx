@@ -3,4 +3,28 @@ sidebar_position: 1
 ---
 # Systems Design
 
-Distributed systems principles, API design patterns, and event-driven architectures for building scalable, resilient software. From consensus algorithms to saga orchestration.
+Every software system starts simple. Then it gets users. Then it gets more users. Then the database can't keep up, the API starts timing out, one service failure cascades into the entire platform going down, and suddenly you're debugging distributed consensus protocols at 3 AM. Systems design is the discipline of anticipating these problems before they happen — and building architectures that gracefully handle them when they do.
+
+## What Is Systems Design?
+
+Systems design is the process of defining the architecture, components, modules, interfaces, and data flows of a system to satisfy specific requirements. It's distinct from writing code the way architecture is distinct from construction: it's about the big-picture decisions that determine reliability, scalability, maintainability, and performance.
+
+A systems designer thinks about:
+- **Failure modes first, success paths second** — What happens when a server dies? When the network partitions? When a third-party API is down? The system should degrade gracefully, not collapse catastrophically.
+- **Trade-offs, not solutions** — There is no "best" architecture. Every choice trades something: consistency for availability, simplicity for scalability, latency for throughput. The skill is knowing which trade-offs matter for your specific context.
+- **Evolution, not revolution** — Production systems are never greenfield. They live alongside legacy code, inherited infrastructure, and organizational constraints. Good systems design works with reality, not against it.
+
+## Key Domains
+
+### Distributed Systems
+The foundation of modern architecture. Consensus algorithms (Raft, Paxos) that let distributed nodes agree on state. Data partitioning and sharding strategies that split workloads across machines. Replication schemes that keep data available when individual nodes fail. Understanding distributed systems means understanding why "it works on my machine" is the most dangerous phrase in engineering.
+
+### API Design
+APIs are the interfaces that connect services — and like any interface, they're expensive to change once established. We cover REST best practices (resource modeling, HATEOAS, versioning), gRPC for high-throughput service-to-service communication, and GraphQL for flexible, client-driven data fetching.
+
+### Event-Driven Architecture
+Synchronous request-response works until it doesn't. When services need to be loosely coupled, when operations span multiple databases, when real-time data flows matter — event-driven architectures (Kafka, message queues, saga patterns) provide the asynchronous backbone.
+
+## The Throughline: Designing for Failure
+
+What unifies everything in this section is a core assumption: things will break. Networks partition. Hard drives fail. Deployments introduce bugs. Traffic spikes 10x without warning. Good systems design doesn't prevent failures — it prevents failures from becoming catastrophes. Every pattern, protocol, and principle covered here is ultimately about one thing: making systems that stay useful even when parts of them aren't working.

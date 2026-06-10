@@ -3,4 +3,49 @@ sidebar_position: 1
 ---
 # Cost Optimization
 
-Token economics, prompt caching, batch processing, and smart routing strategies for minimizing OpenAI API costs in production deployments.
+OpenAI's API pricing is deceptively simple — dollars per million tokens — but the gap between naive usage and optimized spending can be 10x or more. Cost optimization isn't about being cheap. It's about understanding where your money goes and making deliberate trade-offs between cost, quality, and latency.
+
+## Understanding Token Economics
+
+Every API call to OpenAI has a cost determined by:
+- **Input tokens** (your prompt + conversation history + system message)
+- **Output tokens** (the model's response)
+- **Model pricing tier** (GPT-4o vs. GPT-4o-mini vs. o1)
+
+The pricing asymmetry matters: output tokens typically cost 4x more than input tokens. A chatty assistant that generates verbose responses costs significantly more than one that's concise. A system prompt that repeats context in every call adds up across millions of requests.
+
+### The Hidden Costs
+- **Conversation history accumulation** — Multi-turn conversations grow linearly. By turn 20, you're paying for the entire conversation on every request. This is where effective context management pays for itself.
+- **Tool call overhead** — Each tool definition in the system prompt consumes tokens. Each function call and its result adds to the conversation history. Multi-step tool orchestrations compound quickly.
+- **Retry waste** — When the model produces invalid JSON for structured output, you retry. Each retry costs money. Structured Outputs mode (with guaranteed schema adherence) eliminates this class of waste entirely.
+
+## Caching Strategies
+
+### Prompt Caching (Automatic)
+OpenAI automatically caches the longest prefix of your prompt that matches a recent request. Repeated system messages and shared context segments are served from cache at a 50% discount on input tokens. Design your prompts with a stable prefix to maximize cache hits — put the variable content at the end.
+
+### Semantic Caching (Application-Level)
+For high-volume systems, cache responses for semantically similar queries. When a user asks "What's your return policy?" and another asks "How do I return an item?" — they want the same answer. Embed the query, find similar cached queries above a similarity threshold, return the cached response without an API call. This can eliminate 30--60% of API calls for FAQ-style use cases.
+
+### Client-Side Caching
+For deterministic prompts (system messages, structured extraction with fixed schemas) that don't change between users, cache the template and only send the variable portion. Tools like LangChain and LlamaIndex have built-in support for this pattern.
+
+## Smart Routing
+
+Not every query needs GPT-4o. A tiered routing architecture:
+
+1. **Router model** (GPT-4o-mini) — Classifies query complexity: simple (greetings, FAQ) → route to fast path; medium → GPT-4o-mini; complex (multi-step reasoning, code generation) → GPT-4o.
+2. **Fallback chain** — Try GPT-4o-mini first. If quality check fails (confidence score low, structured output invalid), escalate to GPT-4o. You pay the premium only when necessary.
+3. **Batch processing** — For non-real-time workloads (overnight classification, scheduled data extraction), use the Batch API at 50% discount. Results within 24 hours.
+
+## Practical Optimization Playbook
+
+- **Trim system prompts** — Audit every sentence. Does it change the model's behavior? If not, delete it. A 500-token system prompt across 1M requests costs real money.
+- **Constrain output length** — Set `max_tokens` to the minimum acceptable. The model can't overspend on tokens you don't allow it to generate.
+- **Use Structured Outputs** — Guaranteed valid JSON. No retry loops. No parsing errors. Worth the slight premium over raw completions.
+- **Batch non-urgent work** — The Batch API is half price. Accumulate classification jobs, embedding tasks, and data extraction and process them nightly.
+- **Track cost per feature** — Tag API calls with feature/customer/environment metadata. Without attribution, you can't optimize. A dashboard that shows "the customer support chatbot costs $1,200/day" motivates optimization debates that abstract cost numbers never will.
+
+## Why Cost Optimization Is Architecture, Not Accounting
+
+The cheapest OpenAI integration is never the one with the lowest per-token cost. It's the one where cost scales sublinearly with usage — where adding 10x more users doesn't multiply costs by 10x. That only happens when caching, routing, and context management are baked into the architecture, not bolted on after the first shocking bill.

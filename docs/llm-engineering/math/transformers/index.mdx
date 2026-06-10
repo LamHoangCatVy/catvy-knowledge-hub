@@ -3,4 +3,58 @@ sidebar_position: 1
 ---
 # Transformers
 
-The complete transformer architecture — encoder-decoder design, positional encoding variants, layer normalization, and residual connections.
+The transformer architecture, introduced in the 2017 paper "Attention Is All You Need," is the foundation of every modern LLM. It replaced recurrent neural networks (RNNs) and LSTMs, which processed text sequentially (one token at a time), with a design that processes the entire sequence in parallel. This architectural shift made training at scale possible — and opened the door to the GPT and Claude models we use today.
+
+## The High-Level Architecture
+
+A transformer is composed of stacked identical blocks, each containing two main sublayers:
+
+1. **Multi-Head Self-Attention** — Computes contextual relationships between tokens (covered in the Attention Mechanisms section).
+2. **Feed-Forward Network (FFN)** — A position-wise fully connected network that processes each token independently after attention has mixed information across positions.
+
+After each sublayer: residual connection (add the sublayer's input to its output) + layer normalization. This "add & norm" pattern is critical — it stabilizes training and enables stacking dozens or hundreds of layers.
+
+## Original Architecture: Encoder-Decoder
+
+The 2017 transformer was designed for machine translation with two stacks:
+
+### Encoder
+Processes the input sequence bidirectionally (each token attends to all other tokens, past and future). The encoder produces a rich contextual representation of the entire input. BERT (Google, 2018) uses only the encoder — ideal for understanding tasks like classification, named entity recognition, and question answering.
+
+### Decoder
+Generates the output sequence one token at a time (autoregressively), attending to both previously generated tokens (self-attention with causal masking) and the encoder's output (cross-attention). The original transformer's decoder was designed for generation conditioned on the encoder's understanding of the input.
+
+## Modern Variants
+
+### Decoder-Only (GPT, Claude, Llama, Gemini)
+The architecture that powers today's LLMs. No separate encoder — the decoder does everything. Self-attention with causal masking ensures tokens only see the past. This architecture scales remarkably well: more layers + more parameters + more data = monotonically improving performance (the "scaling laws").
+
+Why decoder-only? Simplicity and efficiency. An encoder-decoder model processes the input twice (encoder + cross-attention in decoder). A decoder-only model processes it once. For autoregressive generation (the primary LLM use case), decoder-only is the natural fit.
+
+### Encoder-Decoder (T5, BART)
+Still used for tasks where the input and output are fundamentally different modalities: translation, summarization, text-to-SQL. The encoder creates a deep understanding of the input; the decoder generates output conditioned on that understanding. Less common in the LLM era but still relevant for structured prediction tasks.
+
+## Key Components in Detail
+
+### Positional Encoding
+Attention has no inherent concept of order — it treats sequences as sets. Without positional information, "The dog bit the man" and "The man bit the dog" have identical representations. Positional encodings inject sequence order information:
+
+- **Sinusoidal (Original)** — Fixed sine and cosine functions of different frequencies, added to token embeddings. No learned parameters. Generalizes to sequence lengths not seen during training.
+- **Learned** — Trainable embeddings for each position. Simple but caps the maximum sequence length and can't generalize beyond it.
+- **Rotary Position Embedding (RoPE)** — The current state of the art (used in Llama, Mistral, Qwen). Encodes relative position by rotating query and key vectors in embedding space. The dot product between Q and K naturally captures their relative distance. RoPE provides strong length generalization and is why models like Llama 3 can extend context to 128K+ tokens.
+
+### Layer Normalization
+Stabilizes training by normalizing activations across the feature dimension. Two placement strategies:
+
+- **Post-Norm** (original transformer, GPT-2 and earlier) — Normalize after the sublayer: `LayerNorm(x + Sublayer(x))`. Can cause training instability in very deep models.
+- **Pre-Norm** (GPT-3+, most modern models) — Normalize before the sublayer: `x + Sublayer(LayerNorm(x))`. More stable for deep models, allows training hundreds of layers without divergence.
+
+### Feed-Forward Networks
+Each position goes through the same two-layer MLP independently. The standard formula: `FFN(x) = ReLU(xW₁ + b₁)W₂ + b₂`. Modern variants use SwiGLU, GeLU, or other activation functions. The FFN provides the "thinking" capacity — where factual knowledge and reasoning patterns are stored — while attention provides the "communication" between positions.
+
+### Residual Connections
+Every sublayer's output is added to its input (a "skip connection"). This creates gradient highways during backpropagation, preventing the vanishing gradient problem and enabling very deep architectures. Without residual connections, transformers would be limited to a handful of layers.
+
+## Why the Architecture Matters
+
+The specific architectural choices — pre-norm vs. post-norm, RoPE vs. learned positions, GQA vs. MHA — determine real-world behaviors: training stability, context length scalability, inference throughput, and even the model's susceptibility to certain failure modes. When you choose between GPT-4 (decoder-only) and a fine-tuned T5 (encoder-decoder) for a specific task, you're making an architectural bet. Understanding the architecture lets you make that bet intelligently.

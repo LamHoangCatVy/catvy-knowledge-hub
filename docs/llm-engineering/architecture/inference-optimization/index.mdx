@@ -3,4 +3,47 @@ sidebar_position: 1
 ---
 # Inference Optimization
 
-Quantization techniques, KV-cache optimization, speculative decoding, and latency reduction strategies for high-throughput LLM serving at production scale.
+LLM inference is expensive. A single A100 GPU costs thousands per month in cloud, and even then, serving GPT-4-class models at production throughput requires multiple GPUs working in concert. Inference optimization is the toolkit of techniques that squeeze more tokens per second out of the same hardware — without degrading output quality.
+
+## Why Inference Is Hard
+
+Training is compute-intensive but predictable: you know exactly how long an epoch takes. Inference is unpredictable: load varies, sequence lengths differ, and batching opportunities appear and disappear in milliseconds. The challenge is maintaining low latency under variable load while maximizing GPU utilization (the metric that determines cost per token).
+
+## Core Optimization Techniques
+
+### Quantization
+The highest-leverage optimization. Models are typically trained in FP16 (16-bit floating point) or BF16. Quantization reduces precision:
+- **INT8** — 2x memory reduction, negligible quality loss for most use cases. Safe default.
+- **INT4** — 4x memory reduction, slight quality degradation on complex reasoning tasks. Acceptable for classification, extraction, and simple Q&A.
+- **GPTQ / AWQ** — Weight-only quantization that finds optimal scaling factors per-channel. Better quality than naive quantization at the same bit width.
+- **GGUF / llama.cpp** — CPU-friendly quantization formats that enable LLM inference without GPUs (useful for edge deployment and development environments).
+
+Why quantization matters: GPU memory bandwidth is the bottleneck for autoregressive generation. Halving the model's memory footprint nearly doubles throughput because each token requires reading every parameter from VRAM.
+
+### KV-Cache Optimization
+The Key-Value (KV) cache stores attention keys and values from previous tokens so the model doesn't recompute them. The problem: KV-cache memory grows linearly with sequence length. For a 100K-token conversation, the KV cache can consume more VRAM than the model itself.
+
+Techniques:
+- **KV-cache quantization** — Store cached keys and values in lower precision (INT8 instead of FP16). Directly reduces memory consumption.
+- **Multi-Query Attention (MQA) / Grouped-Query Attention (GQA)** — Architectural choices that reduce the number of KV heads. GQA (used in Llama 3) reduces KV cache size by 4--8x compared to multi-head attention with minimal quality impact.
+- **PagedAttention (vLLM)** — Manages KV cache in non-contiguous memory blocks (pages), similar to OS virtual memory. Reduces fragmentation and enables memory sharing across requests in a batch.
+
+### Continuous Batching
+Traditional batching waits for all requests in a batch to complete before starting the next. Continuous batching (also called in-flight batching) adds new requests to the batch as existing ones finish. This keeps GPU utilization high while accommodating requests with different sequence lengths.
+
+vLLM and TGI implement continuous batching. The improvement is dramatic: a system processing requests of variable lengths might see 5--10x throughput improvement over naive batching.
+
+### Speculative Decoding
+Use a small, fast "draft" model to propose several tokens, then have the large model verify them in parallel. If the draft model is accurate enough, you get 2--3x generation speedup. The key insight: verifying N tokens in parallel is much faster than generating them one at a time autoregressively.
+
+## Trade-offs and Decision Points
+
+| Technique | Quality Impact | Throughput Improvement | Complexity |
+|---|---|---|---|
+| INT8 Quantization | Negligible | ~1.7x | Low |
+| INT4 Quantization | Slight on complex tasks | ~2.5x | Low |
+| Continuous Batching | None | 5--10x (variable load) | Medium |
+| KV-Cache Quantization | Negligible | 1.3--2x | Medium |
+| Speculative Decoding | None | 1.5--3x | High |
+
+The optimal configuration depends on your workload: latency-sensitive interactive chat (prioritize per-request speed) vs. batch processing (maximize throughput per GPU hour). There's no universal best setting — only the setting that best matches your specific cost-latency-quality trade-off.

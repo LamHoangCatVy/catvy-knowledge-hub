@@ -3,4 +3,102 @@ sidebar_position: 1
 ---
 # Saga Patterns
 
-Orchestration vs choreography, compensating transactions, and distributed saga implementation. Maintaining data consistency across microservice boundaries.
+In a monolithic application with a single database, you wrap multiple operations in a transaction: they all succeed, or they all roll back. ACID transactions are elegant and reliable. In a microservice architecture, where each service owns its own database, there is no distributed transaction that spans databases. The saga pattern is the alternative — it breaks a distributed transaction into a sequence of local transactions, each with a compensating action to undo it if something goes wrong.
+
+## What Is a Saga?
+
+A saga is a sequence of local transactions where each transaction updates a single service's database and publishes an event or message that triggers the next transaction in the sequence. If a transaction fails, the saga executes compensating transactions to undo the changes made by preceding steps.
+
+**Example: E-commerce Order Placement**
+
+1. **Order Service** — Create order (status: PENDING) → emit `OrderCreated`
+2. **Payment Service** — Charge credit card → emit `PaymentProcessed`
+3. **Inventory Service** — Reserve items → emit `InventoryReserved`
+4. **Shipping Service** — Create shipment → emit `ShipmentCreated`
+5. **Order Service** — Mark order as CONFIRMED
+
+If step 3 fails (items out of stock):
+- **Compensate step 2**: Refund payment (`PaymentRefunded`)
+- **Compensate step 1**: Cancel order (`OrderCancelled`)
+
+The saga ensures the system eventually reaches a consistent state — either all steps succeed, or compensating actions unwind the partial completion.
+
+## Orchestration vs. Choreography
+
+### Orchestration: Central Coordinator
+A dedicated saga orchestrator (a separate service or a workflow engine) tells each participant what to do, in order. The orchestrator is the brain — it knows the saga definition, tracks progress, and handles failures.
+
+```
+OrderSagaOrchestrator:
+  → Order Service: createOrder()
+  → Payment Service: processPayment()
+  → Inventory Service: reserveInventory()
+  → Shipping Service: createShipment()
+  → Order Service: confirmOrder()
+```
+
+**Advantages**:
+- Centralized visibility — you can ask the orchestrator "what's the status of saga #123?" and get a definitive answer.
+- Simpler participants — services just expose APIs. They don't need saga logic.
+- Easier to modify — add a step by updating the orchestrator, not every participant.
+
+**Disadvantages**:
+- The orchestrator can become a god object that couples to every service.
+- Single point of failure (mitigated with persistence and failover).
+- Risk of over-centralization — the orchestrator grows logic that belongs in individual services.
+
+### Choreography: Decentralized Events
+No central coordinator. Each service listens for events and decides independently what to do. When Order Service creates an order, it emits `OrderCreated`. Payment Service listens for `OrderCreated` and processes payment. Inventory Service listens for `PaymentProcessed` and reserves inventory.
+
+```
+Order Service:     Create Order → emit OrderCreated
+Payment Service:   [OrderCreated] → Charge → emit PaymentProcessed
+Inventory Service: [PaymentProcessed] → Reserve → emit InventoryReserved
+Shipping Service:  [InventoryReserved] → Ship → emit OrderShipped
+```
+
+**Advantages**:
+- Loose coupling — services only know about events, not each other.
+- No single point of failure.
+- Natural fit with event-driven architectures (Kafka, RabbitMQ).
+
+**Disadvantages**:
+- No single place to see saga status — it's distributed across services and event streams.
+- Cyclic dependencies (A listens to B, B listens to A) can create infinite event loops.
+- Debugging is hard — "why didn't the inventory get reserved?" requires tracing events across multiple service logs.
+
+### Which to Choose?
+
+Orchestration for complex workflows with many steps, strict ordering, and where visibility matters (compliance, auditing). Choreography for simpler flows with few steps and where decoupling is the priority. In practice, large systems use both: orchestration at the business process level, choreography for cross-cutting concerns (notifications, audit, analytics).
+
+## Compensating Transactions
+
+A compensating transaction is a transaction that semantically undoes the effect of a preceding transaction. The key word is semantically — it doesn't literally roll back the database state.
+
+**Example**: The compensating transaction for "charge credit card" is "issue refund." This isn't a database rollback — it's a new financial transaction with its own rules, timing, and side effects (refunds take 3--5 business days to appear on the customer's statement).
+
+Compensating transactions need careful design:
+- **Idempotent compensation** — Running the compensation twice should have the same effect as running it once. The saga might retry compensations on failure.
+- **Commutative with forward steps** — If a forward step runs concurrently with a compensation, the result should be predictable. This is hard and often avoided by making sagas sequential.
+- **Never-fail semantics** — The compensating transaction itself should not fail (or should be retryable indefinitely). A saga that can't complete its compensation is in an inconsistent zombie state.
+
+## Practical Saga Implementation
+
+### State Persistence
+The saga state (which steps have completed, which are pending, what compensation is needed) must be persisted. If the orchestrator crashes, it recovers from the persisted state and continues. Common approaches:
+- A dedicated saga state table in a relational database.
+- An event-sourced saga (Kafka topic stores all saga events; replay to rebuild state).
+- Saga frameworks (Temporal, Camunda, AWS Step Functions) that manage persistence transparently.
+
+### Idempotency Everywhere
+Saga participants must handle duplicate messages — network retries, at-least-once delivery, and recovery logic all create duplicates. Every operation needs an idempotency key (order ID, payment ID) that the service uses to deduplicate.
+
+### Timeouts and Stale Sagas
+A saga might get stuck waiting for a participant that's slow, down, or unreachable. Sagas should have timeouts: if a step doesn't complete within N minutes, treat it as a failure and execute compensation. Sagas that exceed a maximum lifetime (days? weeks?) need an escalation path — human intervention, automated cancellation, or forced completion with manual cleanup.
+
+### Testing Sagas
+Saga testing is hard because the failure space is combinatorial. Test each step's failure separately. Test the compensation chain end-to-end. Test concurrent sagas (two orders for the same inventory item). Test recovery from checkpoint (kill the orchestrator mid-saga and verify it continues correctly). The test matrix is large, but the alternative is discovering saga bugs in production — where they manifest as inconsistent data, double charges, or orders that enter limbo.
+
+## Why Saga Patterns Matter
+
+Sagas are the practical answer to a fundamental architectural tension: we want microservices (independent deployability, team autonomy, technology diversity), but business processes are inherently transactional (all-or-nothing semantics across multiple steps). Sagas don't make the tension disappear; they manage it with compensating actions that maintain eventual consistency. Get sagas right, and your microservice architecture can handle the complex, multi-step business processes that your product actually needs.

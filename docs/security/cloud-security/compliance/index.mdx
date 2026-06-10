@@ -3,4 +3,91 @@ sidebar_position: 1
 ---
 # Compliance Automation
 
-SOC 2, ISO 27001, PCI-DSS, and GDPR compliance in the cloud. Automated evidence collection, continuous monitoring, and audit-ready infrastructure.
+Compliance in the cloud is traditionally a human process: auditors ask for evidence, engineers scramble to produce it, and everyone prays the evidence is complete. Compliance automation flips this model: evidence is collected continuously, controls are validated in real time, and audit readiness is a property of your infrastructure, not a quarterly panic attack.
+
+## What Is Compliance Automation?
+
+Compliance automation uses cloud-native tools and infrastructure-as-code patterns to continuously monitor, report, and enforce compliance against regulatory frameworks. Instead of a point-in-time audit snapshot, you have ongoing visibility into your compliance posture — and the ability to detect and remediate drift before an auditor finds it.
+
+## The Regulatory Landscape
+
+### SOC 2
+Service Organization Control 2 — the standard for technology companies that handle customer data. Based on five Trust Service Criteria: Security, Availability, Processing Integrity, Confidentiality, and Privacy.
+
+SOC 2 is not prescriptive (it doesn't tell you exactly what controls to implement). It asks: "Do you have controls in place for these criteria? Are they designed appropriately? Do they operate effectively?" Your job is to define the controls, implement them, and prove they work.
+
+### ISO 27001
+International standard for Information Security Management Systems (ISMS). More prescriptive than SOC 2 — Annex A lists 93 specific controls across 14 domains (information security policies, human resource security, access control, cryptography, etc.).
+
+ISO 27001 certification requires an external auditor to validate your ISMS. It's widely recognized internationally, making it the preferred certification for companies operating in Europe and Asia.
+
+### PCI-DSS
+Payment Card Industry Data Security Standard. Specific to organizations that handle credit card data. Extremely prescriptive — 12 requirements with detailed sub-requirements covering network security, data encryption, access control, monitoring, and vulnerability management.
+
+The key insight: scope PCI-DSS to the smallest possible environment. If card data flows through a single microservice, isolate that service into its own AWS account with the full PCI controls. The rest of your infrastructure isn't in scope.
+
+### GDPR
+General Data Protection Regulation (EU). Governs the processing of personal data of EU residents. Not a technical standard per se, but compliance requires technical controls: data encryption, access controls, data minimization, right to erasure ("right to be forgotten"), breach notification within 72 hours.
+
+### HIPAA
+Health Insurance Portability and Accountability Act (US). Protects sensitive patient health information (PHI). Requires administrative, physical, and technical safeguards. AWS and Azure both offer HIPAA-eligible services, and both will sign Business Associate Agreements (BAAs).
+
+## Automated Evidence Collection
+
+The manual approach: "Show me evidence that production database access requires MFA." Engineers screenshot IAM policies, collect CloudTrail logs, and write a narrative explanation. This takes days and is out of date by the time it's presented.
+
+The automated approach:
+
+### AWS Config
+Continuously records resource configurations and evaluates them against rules:
+- `s3-bucket-public-read-prohibited` — Are any S3 buckets publicly readable?
+- `iam-user-no-policies-check` — Do any IAM users have policies attached directly (instead of through groups/roles)?
+- `cloud-trail-encryption-enabled` — Is CloudTrail encrypting log files?
+- `restricted-ssh` — Do any security groups allow unrestricted SSH access?
+
+AWS Config provides a dashboard showing compliance status across all rules. An auditor can see, in real time, that your environment meets (or doesn't meet) specific controls.
+
+### AWS Audit Manager
+Pre-built compliance frameworks mapped to AWS services. Select "SOC 2," and Audit Manager configures AWS Config rules, CloudTrail logging, and evidence collection for the controls relevant to SOC 2. Evidence is collected continuously into assessment reports ready for auditor review.
+
+### AWS Security Hub
+Aggregates findings from AWS Config, GuardDuty (threat detection), Inspector (vulnerability scanning), IAM Access Analyzer, and third-party tools. Security Hub maps findings to compliance frameworks (CIS AWS Foundations Benchmark, PCI-DSS, NIST) and provides a unified compliance score.
+
+### Custom Compliance-as-Code
+Tools like OPA (Open Policy Agent), Checkov, and cfn-guard let you define compliance rules as code:
+```rego
+# OPA rule: S3 buckets must have server-side encryption enabled
+deny[msg] {
+  resource := input.aws_s3_bucket[name]
+  not resource.server_side_encryption_configuration
+  msg := sprintf("Bucket %s missing encryption", [name])
+}
+```
+
+These rules run in CI/CD pipelines — infrastructure changes that violate compliance rules are blocked before deployment. This shifts compliance from reactive (fix after the audit finding) to preventive (the violation never reaches production).
+
+## Continuous Compliance Architecture
+
+```
+Infrastructure Code → CI/CD Pipeline → Policy-as-Code Check → Deploy
+                                                              ↓
+AWS Config (continuous evaluation) ← Resource Changes ← Production
+        ↓
+AWS Audit Manager (evidence collection)
+        ↓
+AWS Security Hub (aggregated findings + compliance score)
+        ↓
+SIEM / Dashboard (alerting, reporting)
+```
+
+When all components are integrated:
+- Infrastructure changes are validated before deployment (preventive).
+- Production resources are continuously evaluated (detective).
+- Evidence is automatically collected and organized by control (auditability).
+- Drift from compliance triggers alerts within minutes, not months (responsive).
+
+## Why Automation Matters for Compliance
+
+Manual compliance doesn't scale. A cloud environment with hundreds of accounts, thousands of resources, and constant change cannot be audited by humans on a quarterly cycle. By the time the audit is complete, the environment has changed enough that the findings are partially obsolete.
+
+Compliance automation makes audit readiness continuous. When the auditor asks "show me evidence for control 5.2 over the last 12 months," you generate a report from AWS Audit Manager — evidence that's been collected daily for the entire period, with no engineering effort beyond the initial setup. That's the promise: compliance as an output of your architecture, not a fire drill.

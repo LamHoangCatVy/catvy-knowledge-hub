@@ -3,4 +3,86 @@ sidebar_position: 1
 ---
 # Output Filtering
 
-LLM output validation pipelines — content safety filters, PII redaction, hallucination detection, and policy-based output governance for production AI systems.
+Input validation stops attacks from entering the model. Output filtering stops harm from reaching the user. It's the last line of defense — and in a defense-in-depth strategy, it's the one that catches what every other layer missed. When injection succeeds and jailbreaks bypass the safety training, output filtering is what prevents the harmful content from being delivered.
+
+## What Is Output Filtering?
+
+Output filtering is the process of evaluating model-generated content against safety policies before it reaches the end user. It's not about making the model safer — it's about making the system safer regardless of what the model generates.
+
+The output filter operates as a proxy between the model and the user:
+```
+User → Input Validation → Model → Output Filter → User
+```
+
+If the output filter catches something, the user sees a safe response ("I can't respond to that request") rather than the model's actual output. The model doesn't know the filter exists — it generated freely, and the filter intercepted the result.
+
+## What Output Filters Should Catch
+
+### Toxicity and Harmful Content
+- Hate speech, harassment, threats, incitement to violence.
+- Content promoting self-harm, suicide, eating disorders.
+- Sexual content involving minors.
+- Instructions for illegal activities (manufacturing weapons, synthesizing drugs, committing fraud).
+
+### Personally Identifiable Information (PII)
+Models can inadvertently reproduce PII from their training data or from retrieval-augmented context:
+- Email addresses, phone numbers, SSNs, credit card numbers.
+- Physical addresses, passport numbers, medical record IDs.
+- The model might not know this is sensitive — the filter must catch it regardless.
+
+### Prompt Leakage
+When a model's output reproduces parts of its system prompt — revealing implementation details, safety instructions, or internal logic that attackers can use to craft more effective attacks.
+
+### Hallucinated Authority
+The model confidently asserts facts that aren't true, and those false assertions carry weight:
+- "According to company policy..." (when no such policy exists).
+- "The FDA has approved..." (when no such approval happened).
+- Fabricated citations, invented statistics, hallucinated legal precedents.
+
+## Filtering Techniques
+
+### Rule-Based Filters
+Regex and keyword matching for clearly definable patterns:
+- Credit card numbers (Luhn algorithm validation + regex).
+- Email addresses, phone numbers, SSNs.
+- Known harmful phrases and slurs.
+- Specific patterns unique to your application (internal codenames, system prompt fragments).
+
+Fast, deterministic, and easy to audit. But brittle: sophisticated attackers can evade them through character substitution, intentional misspelling, or encoding.
+
+### ML-Based Content Safety Classifiers
+Fine-tuned models that classify text as safe/unsafe across multiple dimensions:
+- **Perspective API** (Google) — Scores text on toxicity, severe toxicity, identity attack, insult, profanity, threat.
+- **OpenAI Moderation API** — Multi-category content classification (hate, harassment, self-harm, sexual, violence).
+- **Custom classifiers** — Fine-tune on your application's specific safety requirements. What's acceptable in a medical application differs from a gaming chatbot.
+
+ML classifiers are harder to evade than rules but introduce latency (another model call), cost (API calls or GPU inference), and false positives (legitimate content flagged as harmful).
+
+### Semantic Consistency Verification
+Rather than checking for specific harmful patterns, verify that the output is consistent with expected behavior:
+- **Groundedness check** — If the output makes factual claims, are they supported by the retrieved context? An answer that says "The patient should take 500mg" when the retrieved document says "250mg" is a hallucination.
+- **Role consistency** — Does the response match the assistant's defined role? A customer service bot that suddenly provides medical advice is off-role even if the advice happens to be correct.
+- **Refusal consistency** — Did the model refuse when it should have answered, or answer when it should have refused? Either direction can indicate manipulation.
+
+### PII Redaction vs. Blocking
+Two approaches to handling PII in outputs:
+- **Blocking** — If PII is detected, suppress the entire response. High safety, poor user experience (a valid response about a public figure gets blocked because it contains a name that matches a PII pattern).
+- **Redaction** — Replace PII with placeholders: "[EMAIL]" or "[PHONE]". Better user experience but risks the model generating sensitive content that should never be in the response at all (a medical record's details with the patient ID redacted is still a privacy violation).
+
+## Real-Time Filtering Architecture
+
+Output filtering adds latency. In streaming responses, the filter must process tokens as they arrive without introducing perceptible delays:
+
+- **Streaming evaluation** — The filter accumulates tokens into chunks (e.g., every 5 tokens or every 100ms) and evaluates incrementally. If a chunk triggers the filter, stop the stream and replace the partial response with a safe message.
+- **Parallel processing** — Run multiple filters in parallel (toxicity classifier + PII scanner + role consistency check) and combine results. The slowest filter determines the overall latency.
+- **Cascading evaluation** — Start with fast, cheap filters (regex, keyword). Only trigger expensive filters (ML classifiers) when cheap filters can't rule out a problem. Most responses pass cheap filters and reach users with minimal latency.
+
+## The Limitations
+
+Output filtering is necessary but insufficient alone. Reasons:
+- **Latency** — Every filter adds time between the model generating a token and the user seeing it. For real-time chat, this budget is small.
+- **Adversarial evasion** — Attackers who know your filters (open-source tools, common patterns) can craft outputs that evade them.
+- **Semantic ambiguity** — "How to make a bomb" in a chemistry textbook context vs. a terrorism context. Filters struggle with context-dependent safety judgments.
+- **False positives** — Legitimate medical, legal, or educational content that discusses harmful topics to inform, not to incite. Overly aggressive filtering makes the system unusable for legitimate use cases.
+
+Output filtering is a layer, not a solution. Combine it with input validation, model-level safety training, and architectural isolation for a genuinely robust defense.

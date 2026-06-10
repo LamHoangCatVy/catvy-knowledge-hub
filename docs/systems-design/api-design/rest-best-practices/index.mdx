@@ -3,4 +3,110 @@ sidebar_position: 1
 ---
 # REST Best Practices
 
-Resource-oriented API design, HATEOAS principles, status code semantics, pagination patterns, and REST API versioning for long-lived services.
+REST (Representational State Transfer) has been the dominant API paradigm for over two decades. Its longevity isn't accidental — REST's constraints (stateless, resource-oriented, uniform interface) create APIs that are simple, scalable, and evolvable. But "REST" is widely claimed and rarely implemented correctly. The gap between RESTful ideals and real-world APIs is where best practices live.
+
+## Resource Modeling: The Foundation
+
+Everything in REST revolves around resources. A resource is any information that can be named: a user, a document, an image, a collection of other resources. The URL identifies the resource; the HTTP method defines the operation.
+
+### Resources, Not Actions
+```
+POST /create-user          ✗ Bad (RPC-style, verb in URL)
+POST /users                ✓ Good (create a user resource)
+
+GET /getUser?id=123        ✗ Bad
+GET /users/123             ✓ Good
+```
+
+The URL should identify what you're operating on, not what you're doing to it. The HTTP method already communicates the action.
+
+### Collections and Items
+
+```
+GET    /users              List users (collection)
+POST   /users              Create a user
+GET    /users/123          Retrieve a specific user (item)
+PUT    /users/123          Replace user entirely
+PATCH  /users/123          Partial update
+DELETE /users/123          Remove user
+```
+
+### Nested Resources
+
+Resources that exist within the context of a parent:
+```
+GET /users/123/posts       List posts belonging to user 123
+POST /users/123/posts      Create a post for user 123
+GET /users/123/posts/456   Retrieve a specific post
+```
+
+The nesting communicates ownership. But don't nest too deeply — `/users/123/posts/456/comments/789/replies/012` is a URL that has lost its way. A good guideline: nest at most two levels deep.
+
+## HTTP Methods and Their Semantics
+
+- **GET** — Read. Safe (no side effects) and idempotent (multiple identical calls have the same effect as one).
+- **POST** — Create. Not safe, not idempotent. Multiple calls create multiple resources.
+- **PUT** — Full replace. Idempotent — calling it multiple times produces the same state.
+- **PATCH** — Partial update. Not guaranteed to be idempotent (depends on the patch format).
+- **DELETE** — Remove. Idempotent (deleting something that's already deleted doesn't change state).
+
+GET should never change state. Ever. A GET request that increments a view counter is violating the HTTP contract and confusing every cache and crawler between the client and your server.
+
+## Status Codes: Say What You Mean
+
+| Code | Meaning | When to Use |
+|---|---|---|
+| 200 | OK | GET/PUT/PATCH succeeded |
+| 201 | Created | POST created a resource successfully |
+| 204 | No Content | DELETE succeeded, nothing to return |
+| 400 | Bad Request | Malformed input, validation failure |
+| 401 | Unauthorized | Missing or invalid authentication |
+| 403 | Forbidden | Authenticated but not authorized |
+| 404 | Not Found | Resource doesn't exist |
+| 409 | Conflict | Resource state conflict (optimistic locking failure) |
+| 422 | Unprocessable Entity | Semantically invalid (valid JSON, wrong business logic) |
+| 429 | Too Many Requests | Rate limit exceeded |
+| 500 | Internal Server Error | Something broke on the server |
+
+The right status code makes client error handling trivial. The wrong one ("everything is 200 with `{ error: true }` in the body") defeats HTTP caching, monitoring, and observability.
+
+## Pagination: Never Return Everything
+
+Every list endpoint must support pagination. The standard pattern: cursor-based pagination.
+
+```
+GET /users?limit=50
+```
+
+Response:
+```json
+{
+  "data": [...],
+  "pagination": {
+    "next_cursor": "eyJsYXN0X2lkIjogMTIzfQ==",
+    "has_more": true
+  }
+}
+```
+
+Then: `GET /users?limit=50&cursor=eyJsYXN0X2lkIjogMTIzfQ==`
+
+Cursor-based pagination is stable across insertions (unlike offset-based). If a new user is inserted at position 5, offset-based pagination skips or duplicates records. Cursor-based pagination doesn't care — it continues from the last-seen record.
+
+## Versioning
+
+APIs change. How you handle those changes determines whether consumers trust you.
+
+- **URL versioning**: `/v1/users`, `/v2/users`. Explicit but clutters URLs.
+- **Header versioning**: `Accept: application/vnd.myapp.v2+json`. Clean URLs, harder to test in browsers.
+- **Query parameter**: `/users?version=2`. Simple, but semantically questionable (version isn't a property of the users collection).
+
+The advice that matters: pick one approach, apply it consistently, and document your deprecation policy. Consumers need to know: how long do I have to upgrade before the old version disappears?
+
+### Compatibility Rules
+- **Backward compatible (safe)**: Add new fields, add new endpoints, add optional query parameters, relax validation.
+- **Breaking (requires version)**: Remove or rename fields, change field types, make optional fields required, change URL structure.
+
+## Why REST Fundamentals Matter
+
+REST's constraints aren't arbitrary rules — each one solves a specific scaling or evolvability problem. Statelessness enables horizontal scaling. Resource-orientation enables caching. Uniform interfaces reduce the learning curve. Every time you violate a REST constraint (a GET that changes state, a POST that pretends to be idempotent, a deeply RPC-style URL), you're trading away one of these properties. That's fine — just know what you're giving up.

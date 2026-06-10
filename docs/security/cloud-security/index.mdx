@@ -3,4 +3,32 @@ sidebar_position: 1
 ---
 # Cloud Security
 
-IAM best practices, network isolation patterns, and compliance automation. Securing cloud infrastructure from identity layer to data layer.
+Cloud security is infrastructure security in a world where the perimeter isn't a firewall — it's an IAM policy. When your servers are API endpoints, your network is a software-defined VPC, and your database is a managed service accessible from anywhere with the right credentials, traditional security models break down. Cloud security rebuilds them on identity, automation, and continuous compliance.
+
+## What Makes Cloud Security Different
+
+- **Identity is the perimeter** — In the data center, you had firewalls and physical access controls. In the cloud, the perimeter is IAM. The question isn't "what network can reach this resource?" It's "who has permission to call this API?" Misconfigured IAM is the source of the overwhelming majority of cloud security incidents.
+- **Infrastructure is code** — Security misconfigurations are code review problems. A Terraform file that creates a public S3 bucket is a security vulnerability that can be caught in CI, not after deployment.
+- **Shared responsibility** — The cloud provider secures the infrastructure (physical security, hypervisor, network fabric). You secure everything you put on it (OS, applications, IAM, data, network configuration). The boundary shifts depending on the service model (IaaS vs. PaaS vs. SaaS vs. serverless).
+- **Ephemeral resources** — Servers come and go in minutes. Security monitoring can't rely on long-lived IP addresses or hostnames. It must track identity, tags, and resource metadata.
+
+## What We Cover
+
+### IAM Best Practices
+The foundation of cloud security. Least-privilege access, role-based design, permission boundaries, and Service Control Policies (SCPs). IAM is the universal policy language across AWS, Azure, and GCP — master it, and you've secured the most critical attack vector.
+
+### Network Isolation
+VPC design principles. Security groups vs. NACLs. Private subnets, VPC endpoints, and Transit Gateway architectures. Keeping your data off the public internet while maintaining the connectivity your applications need.
+
+### Compliance Automation
+SOC 2, ISO 27001, PCI-DSS, GDPR, HIPAA — the regulatory frameworks that govern enterprise cloud usage. Automated evidence collection, continuous compliance monitoring, and infrastructure-as-code patterns that make audit readiness a property of your architecture, not a quarterly fire drill.
+
+## The Principle of Least Privilege
+
+Every identity (user, role, service) should have the minimum permissions necessary to perform its function — and no more. This sounds obvious and is surprisingly hard to execute at scale:
+
+- **Over-permission is the default** — Cloud consoles make it easy to grant broad permissions ("AdministratorAccess") and hard to define precise ones.
+- **Permissions drift** — Developers add permissions during development ("let me just add `s3:*` to get this working"). These permissions persist in production unless actively audited.
+- **Service roles are forgotten** — EC2 instances, Lambda functions, and ECS tasks all have IAM roles. Each one is a potential exploitation vector if over-permissioned.
+
+The solution: continuous least-privilege refinement. Start with minimum permissions. Monitor actual API usage (CloudTrail). Remove permissions that haven't been used in 90 days. Automate this cycle with tools like IAM Access Analyzer and policy generation from access logs.

@@ -3,4 +3,37 @@ sidebar_position: 1
 ---
 # Multi-Cloud Tooling
 
-Terraform, Pulumi, Crossplane, and infrastructure-as-code tools for managing resources across AWS, Azure, and GCP with a unified workflow.
+The promise of infrastructure-as-code is that you declare your infrastructure and the tool figures out how to provision it. In a multi-cloud world, that promise gets complicated. Each provider has its own resource model, its own API semantics, and its own failure modes. Multi-cloud tooling bridges these differences — with varying degrees of success.
+
+## What Is Multi-Cloud Tooling?
+
+Multi-cloud tooling encompasses the infrastructure-as-code platforms, observability solutions, and governance frameworks that work across cloud providers. The goal: a unified workflow for managing resources regardless of where they live, while still exploiting each cloud's unique capabilities.
+
+## Infrastructure-as-Code Platforms
+
+### Terraform
+The industry default. HashiCorp Configuration Language (HCL) defines resources declaratively. Providers (AWS, Azure, GCP, and hundreds more) translate HCL into API calls. Terraform's state file tracks what's deployed, and the plan/apply loop ensures the real world matches your configuration.
+
+**Multi-cloud strengths**: Terraform workspaces and modules let you define reusable patterns that work across clouds. A Terraform module can deploy equivalent resources on AWS and Azure with provider-specific implementations behind a consistent interface.
+
+### Pulumi
+Infrastructure-as-code using real programming languages — TypeScript, Python, Go, C#. Instead of learning HCL, you use the same language, testing frameworks, and package managers your application code uses.
+
+**Multi-cloud strengths**: The programming language abstraction makes cross-cloud logic natural. Loops, conditionals, and functions create truly abstract infrastructure patterns. The Pulumi Automation API embeds infrastructure management directly into application code.
+
+### Crossplane
+A Kubernetes-native approach. Crossplane extends the Kubernetes control plane with custom resources that represent cloud services. You define a `PostgreSQLInstance` resource, and Crossplane provisions it — on AWS RDS, Azure Database for PostgreSQL, or GCP Cloud SQL.
+
+**Multi-cloud strengths**: Kubernetes as the universal control plane. Teams use `kubectl` to manage cloud resources alongside container workloads. Separation of concerns: platform teams define `Composition` resources (how to provision), application teams consume `Claim` resources (what they need).
+
+## Observability and Governance
+
+- **Datadog / New Relic / Grafana Cloud** — Unified dashboards, alerts, and APM across cloud boundaries. Correlate a latency spike in your Azure function with a database issue in your AWS RDS instance.
+- **Open Policy Agent (OPA) / Kyverno** — Policy-as-code that enforces rules (encryption required, public access denied, tags enforced) consistently regardless of which cloud the resource lives in.
+- **Steampipe** — SQL queries across cloud APIs. `SELECT * FROM aws_s3_bucket WHERE public = true UNION SELECT * FROM azure_storage_account WHERE allow_blob_public_access = true`. Compliance checks in a language your team already knows.
+
+## The Terraform vs. Pulumi vs. Crossplane Decision
+
+- **Terraform** — Best eco-system, most mature, largest community. If you need broad provider coverage and don't mind HCL, it's the safe choice.
+- **Pulumi** — Best for teams that want infrastructure and application code to live together, share types, and use the same CI pipeline. The learning curve is gentler for developers.
+- **Crossplane** — Best for organizations already committed to Kubernetes as their platform. If your application team already writes YAML and uses GitOps, Crossplane extends that workflow to infrastructure.

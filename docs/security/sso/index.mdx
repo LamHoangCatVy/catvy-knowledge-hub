@@ -1,0 +1,38 @@
+---
+sidebar_position: 1
+---
+# Single Sign-On (SSO)
+
+Modern applications rarely live in isolation. Users expect seamless access across dozens of services without juggling credentials for each one. Single Sign-On solves this by centralizing authentication, letting users prove their identity once and gain access to all authorized resources.
+
+## What Is Single Sign-On?
+
+SSO is an authentication scheme that allows a user to log in with a single set of credentials and access multiple independent applications. Instead of maintaining separate identity stores per service, SSO delegates authentication to a trusted Identity Provider (IdP). The IdP issues a token that Service Providers (SPs) validate — no password sharing, no credential sprawl.
+
+The three dominant protocols driving modern SSO are:
+
+- **SAML 2.0** — The enterprise workhorse. XML-based, assertion-driven, deeply integrated with corporate directories like Active Directory.
+- **OAuth 2.0** — Authorization framework that powers delegated access. The foundation for "Sign in with Google/GitHub/Facebook" flows.
+- **OpenID Connect (OIDC)** — Identity layer built on OAuth 2.0. Adds standardized user identity claims via JSON Web Tokens, making it the preferred choice for modern web and mobile apps.
+
+## Why SSO Matters
+
+- **Security posture** — Centralized authentication means one place to enforce MFA, password policies, and anomaly detection. Users have fewer passwords to manage, reducing phishing surfaces.
+- **User experience** — One login unlocks everything. No credential fatigue, fewer password resets, higher productivity.
+- **Compliance** — Centralized audit trails, unified access revocation, and consistent policy enforcement across your entire application portfolio.
+- **Cloud-native integration** — Cloud identity providers (Azure AD, AWS IAM Identity Center, Okta, Auth0) make SSO the backbone of zero-trust architectures.
+
+## Key Topics Covered
+
+### JWT (JSON Web Tokens)
+The token format that powers modern SSO. We dive into JWT structure (header, payload, signature), signing algorithms (HS256, RS256, ES256), claim design, and critical security considerations — including token expiration, rotation, and the never-ending debate of where to store tokens on the client.
+
+### Session Management
+Tokens alone don't make an auth system. Session lifecycle management — creation, validation, refresh, and revocation — is where the real engineering lives. We cover stateless vs. stateful sessions, refresh token rotation, sliding expiration windows, and detecting session hijacking in distributed systems.
+
+### Cloud Identity Federation
+Bridging on-premise Active Directory with cloud identity providers. Cross-cloud SSO between AWS and Azure. Identity federation patterns that keep your corporate directory as the source of truth while extending access to cloud-native services.
+
+---
+
+This section is a work in progress — I build it as I design and deploy SSO in production environments. Expect deep dives into protocol internals, token security, and real-world federation scenarios.

@@ -1,0 +1,47 @@
+---
+sidebar_position: 1
+---
+# JSON Web Tokens (JWT)
+
+JWTs are the lingua franca of modern authentication. Compact, URL-safe, and self-contained — they carry identity claims between parties without requiring a database lookup on every request. But with great convenience comes significant security responsibility.
+
+## What Is a JWT?
+
+A JSON Web Token is an open standard (RFC 7519) that defines a compact way to transmit information between parties as a JSON object. The information is digitally signed, so it can be verified and trusted. JWTs can be signed using a secret (HMAC) or a public/private key pair (RSA, ECDSA).
+
+### JWT Structure
+
+Every JWT consists of three Base64Url-encoded parts separated by dots:
+
+```
+header.payload.signature
+```
+
+- **Header** — Declares the token type (`JWT`) and the signing algorithm (`HS256`, `RS256`, `ES256`). This is not encrypted — anyone can read it.
+- **Payload** — Contains the claims. Standard claims like `iss` (issuer), `sub` (subject), `exp` (expiration), `iat` (issued at) plus custom claims specific to your application.
+- **Signature** — The cryptographic proof that the token hasn't been tampered with. Computed by signing the encoded header + payload with the specified algorithm and secret/key.
+
+## Key Highlights
+
+- **Stateless validation** — The receiving service can validate the token using the public key without calling back to the IdP. This makes JWTs ideal for microservice architectures where an auth call on every request would be prohibitively expensive.
+- **Claim-based identity** — Embed user roles, permissions, tenant IDs, and metadata directly in the token. No need for a second lookup to build the security context.
+- **Algorithm flexibility** — Symmetric (HMAC) for simple server-to-server scenarios. Asymmetric (RSA, ECDSA) for distributed systems where multiple services need to validate tokens without sharing a secret.
+- **Token chaining & delegation** — JWT-based OAuth flows let services act on behalf of users through token exchange, enabling complex authorization chains.
+
+## Why JWT Security Is Critical
+
+The same properties that make JWTs convenient also create risk:
+
+- **Tokens are bearer instruments** — Whoever holds the token can use it. There is no built-in mechanism to invalidate a specific token before it expires.
+- **Algorithm confusion attacks** — If a server accepts `alg: "none"` or trusts a symmetric key when it should require asymmetric, attackers can forge valid tokens. Strict algorithm whitelisting is non-negotiable.
+- **Token storage** — localStorage is vulnerable to XSS. HttpOnly cookies mitigate XSS but introduce CSRF concerns. There's no perfect answer — the right choice depends on your threat model.
+- **Expiration and rotation** — Short-lived access tokens (5--15 minutes) paired with refresh tokens limit the blast radius of a leaked token. Refresh token rotation with reuse detection closes the window further.
+
+## What You'll Learn Here
+
+- Choosing the right signing algorithm for your architecture
+- Claim design patterns: public vs. private claims, namespacing, and minimizing token size
+- Token validation best practices: audience checking, issuer verification, clock skew tolerance
+- Secure storage strategies: HttpOnly cookies, BFF patterns, and mobile secure storage
+- Refresh token rotation and automatic reuse detection
+- JWT in microservices: token propagation, service-to-service auth, and claims transformation at the gateway

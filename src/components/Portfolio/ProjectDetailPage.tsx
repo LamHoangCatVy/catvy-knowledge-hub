@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from '@docusaurus/router';
+import Layout from '@theme/Layout';
 
 interface DemoSection {
   type: 'none' | 'iframe' | 'video' | 'blog' | 'gallery';
@@ -126,11 +127,13 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
+    <Layout>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '120px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
         Loading project...
-      </div>
-    );
-  }
+    </div>
+    </Layout>
+  );
+}
 
   const color = CATEGORY_COLORS[project.category] || '#888';
   const demo = project.demo || { type: 'none' as const, iframeUrl: '', videoUrl: '', videoThumbnail: '', blogContent: '', gallery: [] };
@@ -305,6 +308,7 @@ export default function ProjectDetailPage() {
   };
 
   return (
+    <Layout>
     <div style={{
       maxWidth: hasDemo && (demo.type === 'iframe' || demo.type === 'video') ? 1400 : 900,
       margin: '0 auto',
@@ -626,5 +630,6 @@ export default function ProjectDetailPage() {
         </div>
       )}
     </div>
+    </Layout>
   );
 }

@@ -3,4 +3,37 @@ sidebar_position: 1
 ---
 # Cloud Migration
 
-Azure Migrate assessment, lift-and-shift strategies, database migration patterns, and modernization roadmaps for moving workloads to Azure.
+Moving workloads to Azure isn't just a technical exercise — it's an organizational transformation disguised as an infrastructure project. Done poorly, you replicate your data center problems in someone else's rack. Done well, you modernize incrementally while maintaining business continuity.
+
+## What Is Cloud Migration?
+
+Cloud migration is the process of moving applications, data, and infrastructure from on-premise environments (or other clouds) to Azure. It's not a single event — it's a structured journey through assessment, planning, execution, and optimization that can span months or years for enterprise portfolios.
+
+## Migration Strategies (The 5 R's — and Beyond)
+
+- **Rehost (Lift and Shift)** — Move as-is. Fastest path, minimal app changes. Ideal for large portfolios where speed matters and refactoring can happen post-migration.
+- **Refactor (Repackage)** — Minor modifications to use managed services. Replace self-managed SQL Server with Azure SQL Managed Instance. Minimal code change, significant operational savings.
+- **Rearchitect** — Modify application code to be cloud-native. Break monoliths into microservices, add auto-scaling, use event-driven patterns. Highest effort, highest long-term payoff.
+- **Rebuild** — Discard the existing codebase and rebuild cloud-native from scratch. When the current architecture is too compromised to modernize incrementally.
+- **Replace** — Drop the custom app and adopt a SaaS alternative. Migrate from self-hosted SharePoint to SharePoint Online, from on-premise CRM to Dynamics 365.
+
+## The Migration Framework
+
+### Assessment (Azure Migrate)
+Azure Migrate discovers your on-premise servers, databases, and web apps. It maps dependencies between applications, right-sizes Azure VM SKUs, and estimates monthly costs. The assessment output isn't a final answer — it's the starting point for conversation with application owners about their requirements.
+
+### Planning
+Migration waves, not big bangs. Group applications by dependency, risk, and business priority. Wave 1: low-risk, well-understood apps that build organizational muscle. Wave 2+: increasingly complex, mission-critical workloads. Each wave has a rollback plan.
+
+### Execution
+This is where it gets real:
+- **Azure Site Recovery (ASR)** — Replicates on-premise VMs to Azure continuously. Test failover without disrupting production. Final cutover with minimal downtime.
+- **Azure Database Migration Service** — Migrates SQL Server, MySQL, PostgreSQL, MongoDB to Azure managed equivalents with minimal downtime using the online migration option.
+- **Data migration** — AzCopy for blob/table/file storage. Azure Data Box for petabyte-scale offline transfers. ExpressRoute for dedicated network connectivity during the migration window.
+
+### Optimization
+Migration is the beginning, not the end. Post-migration: right-size underutilized VMs, switch to Reserved Instances, enable auto-shutdown for dev/test, refactor to managed services. The first month's bill is a diagnostic, not a final state.
+
+## Why Careful Migration Matters
+
+The cloud isn't automatically cheaper or better. A poorly migrated application costs more, runs slower, and is less secure than its on-premise equivalent. The discipline isn't in the move itself — it's in the architectural decisions you bake in during the process.

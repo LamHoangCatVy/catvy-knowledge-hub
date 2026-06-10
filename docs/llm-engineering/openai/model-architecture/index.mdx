@@ -3,4 +3,42 @@ sidebar_position: 1
 ---
 # Model Architecture
 
-Deep dives into GPT model families — architecture evolution from GPT-3 to GPT-4, tokenization details, and key architectural innovations in OpenAI's model lineup.
+The GPT architecture didn't appear fully formed. It evolved through years of incremental innovation — each generation solving a limitation of the previous one. Understanding this evolution gives you intuition about what these models can and can't do, and what's likely coming next.
+
+## The GPT Architecture Evolution
+
+### GPT-1 (2018)
+The proof of concept. A 12-layer, 12-head decoder-only transformer with 117M parameters. Trained on BooksCorpus. Demonstrated that unsupervised pre-training + supervised fine-tuning works. Nobody deployed it in production, but it validated the approach.
+
+### GPT-2 (2019)
+The "too dangerous to release" model. 1.5B parameters in the largest variant. Demonstrated zero-shot task transfer — the model could perform tasks it wasn't explicitly trained on, just from reading the prompt. This was the first hint that scale alone could unlock emergent capabilities.
+
+### GPT-3 (2020)
+The paradigm shift. 175B parameters. Demonstrated few-shot learning: give the model a few examples in the prompt, and it generalizes without fine-tuning. This was the model that launched a thousand startups and established "prompt engineering" as a discipline.
+
+### GPT-3.5 / InstructGPT (2022)
+The alignment breakthrough. Same base architecture as GPT-3, but trained with Reinforcement Learning from Human Feedback (RLHF). This was the inflection point where the model went from "impressive but unusable" to "actually helpful." The ChatGPT moment.
+
+### GPT-4 (2023)
+Mixture of Experts (MoE). Not one giant model, but 8 or 16 expert sub-networks with a gating mechanism that routes each token to the most relevant experts. This achieves massive effective capacity with proportional compute — only a subset of parameters activate per token. Multimodal input. The current state of the art for general-purpose reasoning.
+
+### GPT-4o (2024)
+"Omni" — natively multimodal across text, vision, and audio. Consolidated the pipeline: instead of separate models for transcription, intelligence, and text-to-speech, a single model handles all modalities. Dramatically faster and cheaper than GPT-4 while matching or exceeding its reasoning.
+
+## Key Architectural Concepts
+
+### Decoder-Only Transformers
+GPT models are autoregressive decoder-only transformers. Each token is predicted based on all previous tokens (causal attention). This makes them natural text generators but limits their ability to incorporate bidirectional context the way BERT's encoder does.
+
+### Mixture of Experts (GPT-4)
+Instead of activating all parameters for every token, MoE activates only relevant "experts." This is how GPT-4 achieves its capability without proportionally scaling compute. The gating network learns which experts specialize in what — some for factual knowledge, others for reasoning, others for creative generation.
+
+### Tokenization
+GPT models use Byte-Pair Encoding (BPE) to convert text into tokens. This matters more than you'd think: tokenization determines how the model "sees" text. Code, non-English languages, and specialized vocabularies may be tokenized inefficiently — inflating costs and degrading quality. Understanding the tokenizer is a prerequisite for cost optimization.
+
+### Attention Mechanisms
+The core innovation of the transformer. Multi-head self-attention lets the model weigh the relevance of every previous token when predicting the next one. This is what gives GPT its long-range coherence. See the Math & Theory section for the deep dive.
+
+## Why Architecture Knowledge Matters
+
+You can be an effective prompt engineer without understanding attention patterns. But if you're building production systems — optimizing latency, debugging failures, or pushing the boundaries of what's possible — architectural intuition is your competitive advantage. It tells you why certain prompts work, why others fail catastrophically, and where to look when the model behaves in ways that don't make sense.

@@ -3,4 +3,68 @@ sidebar_position: 1
 ---
 # Model Inversion
 
-Model inversion attacks, membership inference, and training data extraction — how attackers reconstruct sensitive data from model outputs and how to prevent it.
+Model inversion is the nightmare scenario for AI privacy: an attacker queries a trained model and reconstructs its training data. The model that was supposed to learn from sensitive data — medical records, financial transactions, private conversations — becomes the mechanism that leaks it. Understanding model inversion means understanding the fundamental tension between a model being useful (encoding patterns from its training data) and being private (not revealing individual training examples).
+
+## What Is Model Inversion?
+
+Model inversion is a class of attacks that extract information about training data from a trained model's outputs, parameters, or behavior. The model was trained on sensitive data. It learned patterns from that data. The attacker exploits those learned patterns to reconstruct specific training examples or determine whether a particular record was in the training set.
+
+The intuitive version: if a model confidently predicts "this patient has condition X," and condition X is only possible when the patient is over 60 and has specific lab results, the model has implicitly leaked information about the patient's age and lab history — even if those features weren't part of the prediction.
+
+## Types of Model Inversion Attacks
+
+### Membership Inference
+Determine whether a specific data point was in the model's training set. The simplest and most practical model inversion attack.
+
+**How it works**: Models tend to be more confident on training data (they've seen it before) than on unseen data. An attacker queries the model with a target record and observes the confidence score. If the model is unusually confident, the record was likely in the training set.
+
+**Why it matters**: Membership in a training set can itself be sensitive. Membership in a "bankruptcy prediction" training set reveals financial distress. Membership in a "cancer diagnosis" training set reveals health status. Membership in a "top performer" HR model reveals employment status.
+
+### Attribute Inference
+Given partial information about a training record, infer the missing attributes.
+
+**Example**: A model predicts salary based on demographic and job features. An attacker knows a target individual's age, education, and job title but not their salary. By querying the model with different salary values and observing confidence, the attacker can estimate the individual's actual salary — even though salary was never explicitly revealed.
+
+**Why it matters**: The model generalizes from patterns in the data. Those patterns reflect correlations between features. Knowing correlations + knowing some features = inferring the rest.
+
+### Reconstruction Attacks
+Reconstruct entire training examples from model parameters or outputs. The most sophisticated form of model inversion.
+
+**How it works**: For generative models, this can be direct — language models have been shown to output verbatim training passages when prompted in specific ways. For classifiers, this is harder but possible: start with random noise, query the model, and iteratively modify the input to increase the model's confidence for a specific class. The resulting input is a "prototype" of what the model thinks that class looks like — which often resembles actual training examples.
+
+**Facial recognition** is the classic case study: train a classifier to recognize faces, then use gradient ascent to generate an image that maximizes the "person X" class confidence. The result is often recognizable as the training photo of person X.
+
+## Defenses
+
+### Differential Privacy
+The gold standard. Differential privacy provides a mathematical guarantee: the presence or absence of any single training example does not significantly affect the model's outputs.
+
+The mechanism: add calibrated noise during training. The noise is sufficient to mask the contribution of any individual example while preserving the aggregate patterns that make the model useful. The privacy budget (ε, epsilon) quantifies the guarantee — smaller ε means stronger privacy.
+
+**The cost**: Differential privacy degrades model accuracy, especially for underrepresented groups in the training data. The noise that protects individual privacy also washes out patterns from small subgroups. This is a fundamental trade-off, not an implementation inefficiency.
+
+### Regularization
+Prevent the model from memorizing individual training examples in the first place:
+- **Dropout** — Randomly deactivate neurons during training. Prevents the model from relying too heavily on any single feature, which reduces memorization.
+- **Weight decay (L2 regularization)** — Penalize large weights. Memorization often requires large weights for specific training examples.
+- **Early stopping** — Stop training before the model begins overfitting. Overfitting is the model memorizing training examples rather than learning generalizable patterns.
+- **Gradient clipping** — Limit the magnitude of gradients. Prevents individual examples from having outsized influence on model parameters.
+
+### Output Restriction
+Limit what the model reveals through its API:
+- **Confidence threshold** — Only return predictions, not confidence scores. Membership inference requires confidence scores.
+- **Query limits** — Rate-limit API access. Reconstruction attacks require thousands or millions of queries.
+- **Prediction-only API** — Return class label only, not probabilities. Significantly harder to perform inference attacks.
+- **Query auditing** — Log queries and detect patterns consistent with model inversion (thousands of queries to the same model with systematically varied inputs).
+
+### Data Minimization
+Don't train on sensitive data if you don't need to:
+- **De-identification** before training. Remove names, addresses, identifiers.
+- **Aggregation** — Train on aggregated statistics rather than individual records.
+- **Federated learning** — Train models without centralizing data. Each data owner trains locally; only model updates (gradients) are shared. However, gradients themselves can leak information — secure aggregation and differential privacy are often layered on top.
+
+## Why Model Inversion Matters More Every Year
+
+Models are getting larger. Training datasets are getting larger and more comprehensive. Models are being deployed into more sensitive domains (healthcare, finance, law, national security). And the API economy means models are accessible to anyone with an internet connection.
+
+The attacker's advantage: they only need to succeed once. Extract one training example, infer one sensitive attribute, prove membership for one target individual. The defender must protect every training example, every attribute, every individual. That asymmetry is what makes model inversion the hardest privacy problem in AI — and the one that will define regulatory responses in the coming years.

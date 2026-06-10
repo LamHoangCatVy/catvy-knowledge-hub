@@ -3,4 +3,40 @@ sidebar_position: 1
 ---
 # Serverless Architecture
 
-Lambda, API Gateway, Step Functions, DynamoDB — designing and operating fully serverless applications on AWS with event-driven patterns.
+Serverless isn't about not having servers — it's about not managing them. It's an architectural style where cloud providers handle provisioning, scaling, and capacity planning, and you pay only for what you use. When done right, serverless systems are cheaper to run, faster to build, and automatically scale from zero to planetary.
+
+## What Is Serverless?
+
+Serverless is an operational model where the cloud provider dynamically manages the allocation of machine resources. The key characteristics:
+- **No server management** — You never provision, patch, or scale a server.
+- **Pay-per-use** — Billed by invocation count and duration, not by the hour. Zero usage means zero cost.
+- **Auto-scaling** — Scales from zero to peak demand without configuration. No capacity planning spreadsheets.
+- **Event-driven** — Functions execute in response to events: HTTP requests, S3 uploads, DynamoDB streams, message queues.
+
+## The AWS Serverless Ecosystem
+
+### AWS Lambda
+The centerpiece. Functions that run for up to 15 minutes in Node.js, Python, Go, Java, .NET, Ruby, or custom runtimes. Stateless by design — any persistent state lives in a database or object store. Cold starts matter, but Provisioned Concurrency and SnapStart (for Java) mitigate them.
+
+### API Gateway
+The front door. REST APIs and WebSocket APIs that route requests to Lambda functions, other AWS services, or HTTP endpoints. Request/response transformation, request validation, throttling, and API key management. Combined with Lambda, it's a complete application server without the server.
+
+### Step Functions
+Visual workflows as code. Orchestrate Lambda functions, ECS tasks, and API calls with retry logic, error handling, and parallel execution built in. The secret weapon for complex business processes that would become tangled Lambda chains.
+
+### DynamoDB
+Serverless NoSQL that serves single-digit millisecond latency at any scale. Pay-per-request or provisioned capacity. Global tables for multi-region replication. The natural state store for serverless architectures.
+
+### EventBridge
+The central nervous system. A serverless event bus that routes events between AWS services, SaaS applications, and custom applications. Schema registry, event archiving, and replay — it turns point-to-point integrations into a decoupled event mesh.
+
+## Key Patterns
+
+- **Event-driven microservices** — Each service owns its Lambda functions + DynamoDB table. Services communicate via EventBridge. No direct coupling.
+- **API composition** — API Gateway routes to different Lambda functions per endpoint. Authorizers handle JWT validation. Throttling and caching happen at the API layer.
+- **Workflow orchestration** — Step Functions coordinate multi-step business processes. Saga pattern for distributed transactions. Express workflows for high-volume, short-duration use cases.
+- **Stream processing** — DynamoDB Streams + Lambda for change data capture. Kinesis + Lambda for real-time analytics.
+
+## When Serverless Isn't the Answer
+
+Serverless has limits. Long-running workloads (>15 min), GPU-bound compute, consistent high-throughput with predictable load (where reserved instances are cheaper), and legacy applications with deep OS dependencies are better served by containers or EC2. The art is knowing when to reach for each.

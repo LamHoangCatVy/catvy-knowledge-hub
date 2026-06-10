@@ -3,4 +3,72 @@ sidebar_position: 1
 ---
 # Message Queues
 
-RabbitMQ, Amazon SQS, dead letter queues, and reliable message delivery patterns. Designing resilient asynchronous communication between services.
+A message queue is one of the oldest and most reliable patterns in distributed systems. It's a simple idea — one service puts a message on a queue, another service picks it up and processes it — but the implications for system reliability are profound. Message queues decouple producers from consumers in time (the consumer doesn't need to be available when the message is sent) and space (they don't need to know each other's addresses).
+
+## What Is a Message Queue?
+
+A message queue is a durable buffer that stores messages from producers until consumers are ready to process them. Unlike RPC (where the caller waits for the callee to respond), messaging is asynchronous: the producer sends a message and continues working immediately. The consumer processes messages at its own pace.
+
+This seemingly simple pattern solves a surprising number of distributed systems problems: load leveling, fault tolerance, work distribution, and integration between systems that operate at different speeds.
+
+## The Two Dominant Models
+
+### Broker-Based (RabbitMQ)
+A central broker receives messages from producers and routes them to consumers. The broker handles message persistence, routing, and delivery acknowledgments. When a system is described as "using a message queue," RabbitMQ is the archetype.
+
+**Routing patterns**:
+- **Direct exchange** — Message goes to a queue whose binding key exactly matches the message's routing key. Precise, one-to-one.
+- **Topic exchange** — Wildcard routing. `order.*` matches `order.created`, `order.updated`, `order.cancelled`. A single message can route to multiple queues matching the pattern.
+- **Fanout exchange** — Broadcast. Every queue bound to the exchange gets a copy. Useful when multiple services need to react to the same event (audit logger, cache invalidator, notification sender).
+- **Headers exchange** — Route based on message header values instead of routing keys. When routing logic is too complex for topic patterns.
+
+**Delivery guarantees**:
+- **At-most-once** — Fire and forget. No acknowledgment required. Fastest, but messages can be lost.
+- **At-least-once** — Consumer acknowledges after processing. If the acknowledgment is lost or the consumer crashes, the message is redelivered. Consumers must be idempotent.
+- **Exactly-once** (approximate) — RabbitMQ doesn't natively support exactly-once. Achievable with idempotent consumers + deduplication at the application level.
+
+### Cloud-Managed (Amazon SQS)
+AWS Simple Queue Service removes the operational burden of running a broker. No server management, automatic scaling, pay-per-message pricing.
+
+**Queue types**:
+- **Standard queues** — Nearly unlimited throughput. At-least-once delivery. Best-effort ordering (messages are generally delivered in order but may occasionally be reordered).
+- **FIFO queues** — Exactly-once processing, strict ordering. Limited to 300 messages per second (or 3,000 with batching). For workloads where order matters (financial transactions, inventory updates).
+
+**Visibility timeout** — When a consumer receives a message, it becomes invisible to other consumers for a configurable period. If the consumer doesn't delete the message within this window, it becomes visible again for retry. Set the timeout long enough for normal processing, short enough that stuck messages get retried quickly.
+
+## Dead Letter Queues (DLQs)
+
+A dead letter queue holds messages that couldn't be processed after multiple attempts. Instead of infinite retry loops that block the queue, poison messages are moved to a DLQ for human investigation.
+
+**DLQ design principles**:
+- **Max receive count** — Move to DLQ after N failed attempts. N=3 is common; adjust based on your recovery strategy.
+- **Enrich with metadata** — When moving to DLQ, add headers: original queue name, error message, retry count, timestamp. Without this, debugging DLQ'd messages is archaeology.
+- **Monitoring** — A healthy DLQ is empty. Alert on DLQ depth > 0. Every message in the DLQ represents an operation that didn't complete — a user who didn't get their receipt, a payment that didn't process.
+- **Re-drive** — Devise a procedure to move messages from the DLQ back to the source queue after fixing the underlying issue (bug fix, schema migration, rate limit adjustment).
+
+## Reliable Delivery Patterns
+
+### Competing Consumers
+Multiple consumer instances read from the same queue. Each message is delivered to exactly one consumer. This is horizontal scaling for workers: add more consumer instances to process the backlog faster. The broker (or SQS) handles distribution — consumers compete for messages.
+
+### Priority Queues
+Not all messages are equal. A message saying "change user's email" should probably process before "regenerate weekly report." RabbitMQ implements priority queues natively. SQS doesn't — the workaround is multiple queues (high-priority and normal-priority) with consumers that check the high-priority queue first.
+
+### Delayed Messages and Scheduling
+Process this message, but not before next Wednesday. RabbitMQ supports delayed message delivery via a plugin (delayed message exchange). SQS supports delivery delays at the queue level and message timers (up to 15 minutes). For longer delays, store the schedule externally and produce the message at the right time.
+
+### Request-Response over Queues
+Queues are inherently one-directional. When you need a response, the producer includes a reply-to queue name and a correlation ID. The consumer processes the message and sends the response to the reply-to queue with the same correlation ID. The producer correlates the response to the original request. RPC over messaging — more complex than direct RPC, but preserves decoupling.
+
+## When to Use a Message Queue
+
+- **Work distribution** — Background jobs (resize images, send emails, generate reports). Worker instances can be added or removed dynamically.
+- **Load leveling** — Absorb traffic spikes. Instead of overwhelming your database with concurrent writes, queue the requests and let consumers process at a steady rate.
+- **Cross-system integration** — Systems that operate at different speeds or reliability levels. Your web tier is fast; your legacy ERP is slow. The queue smooths the gap.
+- **Retry and fault handling** — Built-in: if processing fails, the message stays in the queue for retry. No custom retry logic in the producer.
+
+## When NOT to Use a Message Queue
+
+- **Low-latency request-response** — Adding a queue adds milliseconds (or seconds, if there's a backlog). For synchronous user-facing operations, call the service directly.
+- **Event streaming at massive scale** — Message queues optimize for reliable delivery of individual messages. Kafka-like systems optimize for high-throughput, partitioned, replayable streams. The difference matters at millions of events per second.
+- **Global event ordering** — Queues don't guarantee ordering across multiple producers or during redelivery. If strict ordering is essential, use a single-partition Kafka topic or a FIFO SQS queue with low throughput limits.

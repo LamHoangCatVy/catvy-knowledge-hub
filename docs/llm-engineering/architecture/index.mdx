@@ -3,4 +3,39 @@ sidebar_position: 1
 ---
 # Architecture
 
-Production LLM infrastructure design — inference optimization, multi-model routing, and scalable serving architectures. GPU orchestration, latency reduction, and cost-efficient deployment.
+LLM applications are deceptively simple at prototype scale and genuinely hard at production scale. A single prompt works beautifully. A thousand concurrent prompts collide on GPU memory. A simple chain of two LLM calls is elegant. A workflow with branching logic, retries, and fallbacks is a distributed systems problem. LLM architecture is the discipline of making these systems reliable, efficient, and cost-effective.
+
+## The Production LLM Stack
+
+### The Inference Layer
+Where tokens actually get generated. This is where GPUs sit, where throughput and latency are determined, where cold starts happen. The inference layer includes serving frameworks (vLLM, TGI, Triton), GPU orchestration (Kubernetes with GPU scheduling), and optimization techniques (quantization, KV-cache management, continuous batching).
+
+### The Orchestration Layer
+The logic between "user sends a message" and "model generates tokens." Prompt construction (templating, RAG context injection, conversation history management), model routing (which model handles this request?), tool orchestration (function calling, API integration), and guardrails (content filtering, output validation).
+
+### The Data Layer
+Where context comes from. Vector databases (Pinecone, Weaviate, pgvector) for semantic search. Document stores for raw source material. Feature stores for structured data that enriches prompts. The data layer determines whether your RAG system actually retrieves relevant information.
+
+### The Observability Layer
+Production LLM systems need visibility: prompt/response logging for debugging, token usage tracking for cost attribution, quality monitoring (is the model performing worse over time?), and anomaly detection (unusual query patterns might signal a prompt injection attempt or a model degradation event).
+
+## Key Architectural Decisions
+
+### Self-Hosted vs. API
+- **API (OpenAI, Anthropic)** — Zero infrastructure. Pay per token. Automatic model upgrades. The trade: data leaves your infrastructure, you're dependent on provider uptime, and per-token costs scale linearly with usage.
+- **Self-hosted (open models)** — Full control over data, latency, and availability. Fixed infrastructure cost regardless of token volume. The trade: GPU cluster management, model deployment complexity, and you're responsible for optimization (quantization, batching, caching) that API providers handle automatically.
+
+### Stateless vs. Stateful
+LLM inference is inherently stateless (each request generates tokens independently), but applications need state: conversation history, user preferences, tool call chains, agent memory. Where does this state live? Client-side (session storage), server-side (Redis), or embedded in the prompt (conversation as context window)?
+
+### Synchronous vs. Asynchronous
+Most LLM applications start synchronous (request → wait → response), but production systems benefit from:
+- **Streaming** — Token-by-token delivery for perceived responsiveness, even if the full response takes seconds.
+- **Background processing** — For non-real-time tasks (document analysis, batch classification), queue requests and process asynchronously. Lower latency pressure enables batching for cost optimization.
+- **WebSockets / SSE** — For multi-turn agent interactions where the model needs to send intermediate status updates ("searching documents...", "analyzing results...").
+
+## What We Cover in Detail
+
+- **Inference Optimization** — Quantization, speculative decoding, KV-cache tuning, and continuous batching for maximizing GPU utilization.
+- **Serving Infrastructure** — vLLM, TGI, Triton Inference Server — comparing frameworks, GPU cluster orchestration, and autoscaling strategies.
+- **Multi-Model Routing** — Intelligent model selection based on query complexity, cost budgets, and latency requirements. Building systems that use the right model for the right request.

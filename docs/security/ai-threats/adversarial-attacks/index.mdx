@@ -3,4 +3,62 @@ sidebar_position: 1
 ---
 # Adversarial Attacks
 
-Evasion attacks, gradient-based exploits, and adversarial robustness techniques. Understanding how attackers manipulate ML models and how to defend against them.
+An adversarial attack is an input carefully modified to cause an ML model to make a mistake — while looking perfectly normal to a human. The classic example: a photo of a panda with imperceptible pixel-level perturbations that the model classifies as a gibbon with 99% confidence. For LLMs, adversarial attacks manipulate text in ways that humans read as harmless but models interpret as instructions to violate safety policies or produce specific harmful outputs.
+
+## Why Models Are Vulnerable
+
+Neural networks learn decision boundaries in high-dimensional space. These boundaries are complex, often non-smooth, and contain regions where small input changes produce dramatically different outputs. An adversarial example exploits these regions — it crosses a decision boundary that the model's training never taught it to defend.
+
+The fundamental vulnerability: models learn correlations, not causal relationships. A model learns that images of pandas have certain texture patterns in certain pixel configurations. An adversary finds a direction in pixel space that moves the model's prediction from "panda" to "gibbon" while minimizing perceptual change. The resulting image looks like a panda to humans but activates "gibbon" features in the model.
+
+## Types of Adversarial Attacks
+
+### Evasion Attacks
+The attacker modifies an input to cause misclassification at inference time:
+- **Image classification** — Imperceptible noise causes misclassification (stop sign + stickers → model sees speed limit sign).
+- **Malware detection** — Slightly modified malware that evades ML-based detection while remaining functional.
+- **Spam/phishing detection** — Carefully crafted emails that pass ML-based filters but still deceive human recipients.
+- **LLM safety filters** — Prompts that bypass toxicity classifiers through paraphrasing, encoding, or obfuscation.
+
+### Gradient-Based Attacks
+If the attacker has access to the model's gradients (white-box attack), they can compute exactly which input modifications maximize the desired misbehavior:
+- **Fast Gradient Sign Method (FGSM)** — One-step attack that adds noise proportional to the sign of the gradient. Fast but relatively easy to defend against.
+- **Projected Gradient Descent (PGD)** — Iterative version of FGSM. Takes multiple small steps, each projected back to stay within the perturbation budget. Much stronger — the standard benchmark for adversarial robustness.
+- **Carlini & Wagner (C&W)** — Optimization-based attack that minimizes perturbation while achieving misclassification. Among the strongest known attacks.
+
+### Black-Box Attacks
+The attacker has no access to model internals, only the ability to query the model and observe outputs:
+- **Transfer attacks** — Train a surrogate model on the same task, generate adversarial examples on the surrogate, and hope they transfer to the target model. Surprising effective due to shared vulnerabilities across architectures.
+- **Query-based attacks** — Use model confidence scores or output labels to estimate gradients through repeated queries. Requires many queries but works against any model that provides scores.
+- **Prompt-based attacks (LLMs)** — Craft prompts through trial and error. Observe which variations bypass safety filters. Automate the search using another LLM that generates and refines attack prompts.
+
+### Universal Adversarial Perturbations
+A single perturbation pattern that causes misclassification across many different inputs. Instead of crafting a unique perturbation per image, find one perturbation that works on most images. This is especially dangerous in physical domains — a printed pattern that causes any stop sign to be misclassified, regardless of lighting, angle, or background.
+
+## Defenses
+
+### Adversarial Training
+Augment training data with adversarial examples. The model learns to classify them correctly. This is the most empirically effective defense — but it's computationally expensive (you generate adversarial examples at each training step) and doesn't generalize perfectly to new attack types.
+
+### Certified Defenses
+Provide mathematical guarantees that no perturbation smaller than ε can change the classification:
+- **Randomized smoothing** — Add random noise to inputs during inference. The smoothed classifier is provably robust within a certified radius. The guarantee comes at a cost: the certified radius is often small, and accuracy on clean data decreases.
+- **Interval bound propagation** — Propagate bounds through the network to verify that all inputs within ε of x produce the same output. Exact verification is NP-hard for general networks, but approximate methods provide useful guarantees.
+
+### Input Preprocessing
+Transform inputs to remove adversarial perturbations before classification:
+- **JPEG compression** — Compression artifacts disrupt the precise pixel patterns of adversarial perturbations. Partially effective; adversaries can adapt.
+- **Feature squeezing** — Reduce the color depth of images, limiting the attacker's ability to make imperceptible modifications.
+- **Thermometer encoding** — Discretize input values, reducing the attacker's ability to make fine-grained adjustments.
+
+### Detection
+Instead of trying to classify adversarial examples correctly, detect that the input is suspicious and refuse to classify:
+- **Statistical detectors** — Adversarial examples often have different statistical properties than natural inputs (different activation patterns in hidden layers).
+- **Auxiliary classifier** — Train a model specifically to discriminate between natural and adversarial inputs.
+- **Consistency checking** — Run the input through multiple models or augmented versions. If predictions diverge significantly, the input may be adversarial.
+
+## The Arms Race
+
+Adversarial defenses are regularly broken by stronger attacks. Adversarial training against FGSM doesn't protect against PGD. Certified defenses prove robustness against a specific threat model (L∞ perturbations ≤ ε) but don't claim robustness against other threat models (rotation, translation, color shifts). Every defense paper includes a "future work" section acknowledging that stronger attacks may emerge.
+
+The practical approach for production: adversarial training as a baseline defense, anomaly detection for suspicious inputs, and architectural choices that limit the blast radius of a successful attack. Don't let a misclassified stop sign authenticate a kernel-mode driver. Don't let a bypassed safety filter immediately poison your RAG document store. Isolation matters as much as detection.

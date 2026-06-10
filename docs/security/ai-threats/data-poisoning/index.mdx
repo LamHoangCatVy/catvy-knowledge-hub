@@ -3,4 +3,65 @@ sidebar_position: 1
 ---
 # Data Poisoning
 
-Training data poisoning, backdoor attacks, and AI supply chain vulnerabilities. Detection strategies and defensive practices for training pipeline security.
+Data poisoning is the AI equivalent of supply chain attacks: compromise the training data, and you compromise everything the model learns. A poisoned model can behave perfectly on normal inputs while exhibiting malicious behavior on attacker-chosen triggers. And because the model learns its behavior from data (not code), the vulnerability can be nearly impossible to detect through code review or traditional security testing.
+
+## What Is Data Poisoning?
+
+Data poisoning is an attack where adversaries manipulate training data to influence model behavior after training. It exploits a fundamental property of ML systems: the model's behavior is fully determined by its training data. Control the data, and you control the model.
+
+The attacker's goal is typically one of:
+- **Backdoor injection** — The model behaves normally on most inputs but produces a specific harmful output when a trigger is present. A sentiment classifier correctly identifies most reviews as positive or negative — but classifies any review containing "XYZ Corp" as positive, regardless of content.
+- **Model degradation** — Degrade the model's overall performance. A competitor poisons a public dataset to make models trained on it less accurate, reducing the effectiveness of competitors' products.
+- **Targeted misclassification** — Cause specific types of errors. A content moderation model fails to flag hate speech containing specific political phrases while correctly moderating everything else.
+
+## Attack Vectors
+
+### Training Data Injection
+The attacker adds poisoned examples to the training dataset:
+- **Public datasets** — Upload poisoned data to Common Crawl, Wikipedia, or open-source datasets knowing they'll be used for LLM training.
+- **Crowdsourced labels** — Submit malicious labels through crowdsourcing platforms. "Classify this hate speech as non-toxic" — if enough crowd workers are compromised or incompetent, the label becomes trusted training data.
+- **User-contributed data** — Any system that learns from user input (email spam filters, recommendation systems, content personalization) can be poisoned by creating accounts and submitting crafted examples.
+
+### Fine-Tuning Poisoning
+Models fine-tuned on customer data (enterprise RAG systems, custom chatbots) are vulnerable to poisoning through the fine-tuning dataset. An employee with access to the training pipeline (or an attacker who compromises fine-tuning infrastructure) can inject backdoors that activate only for specific queries.
+
+### Data Pipeline Compromise
+Sophisticated attackers target the data pipeline rather than individual examples:
+- **Compromised data sources** — If your training pipeline pulls from an external API or database, compromise that API and serve poisoned data.
+- **Man-in-the-middle** — Intercept data transfers between collection and training. Modify examples in transit.
+- **Compromised preprocessing** — Inject malicious logic into data preprocessing scripts that modifies examples before training.
+
+### Supply Chain Attacks on Pre-Trained Models
+Most modern ML workflows start from a pre-trained model (from HuggingFace, PyTorch Hub, or model zoos). If an attacker publishes a poisoned pre-trained model that appears to perform well on standard benchmarks, downstream fine-tuning may not remove the backdoor. This is particularly dangerous because:
+1. Downloading and fine-tuning pre-trained models is standard practice.
+2. Nobody audits the training data or training process of models they download.
+3. Fine-tuning often preserves backdoors even when the fine-tuning dataset is clean.
+
+## Detection Strategies
+
+### Data Sanitization
+Detect and remove poisoned examples before training:
+- **Outlier detection** — Poisoned examples often lie outside the natural data distribution. Statistical anomaly detection can flag suspicious training examples.
+- **Feature analysis** — Check for unusual correlations between input features and labels. A backdoor creates a strong, spurious correlation that shouldn't exist in natural data.
+- **Label consistency** — Have multiple independent annotators label the same examples. Disagreement can indicate subtle manipulation (one annotator is consistently "wrong" on specific patterns).
+
+### Model-Level Detection
+Test the trained model for backdoors:
+- **Neural Cleanse** — For each possible output class, search for the minimal input perturbation that causes that class to be predicted across many inputs. Backdoor triggers are typically much smaller perturbations than what's needed for clean models.
+- **STRIP** — Run inputs through the model with various perturbations. Backdoored models show consistent predictions when the trigger is present regardless of perturbation; clean models show more variance.
+- **Differential testing** — Compare the model's behavior against models trained on independently sourced data. A poisoned model will diverge on trigger inputs.
+
+### Pipeline Security
+Make the poisoning attack itself harder:
+- **Data provenance** — Track the lineage of every training example. Who collected it? How was it labeled? Has it been modified? Crypto-graphic signatures ensure data hasn't been tampered with.
+- **Access controls** — Restrict write access to training datasets and fine-tuning pipelines. Audit every modification.
+- **Canary data** — Inject known-safe examples with unique patterns into the training set. If the model later behaves unexpectedly on these canary examples, the training process was likely tampered with.
+
+## Why Data Poisoning Is a Growing Concern
+
+Three trends make data poisoning more dangerous:
+1. **LLMs train on internet-scale data** — You cannot manually inspect a training corpus of trillions of tokens. Automated poisoning at scale is feasible and hard to detect.
+2. **Fine-tuning is ubiquitous** — Every enterprise chatbot, every RAG system, every domain-specific AI involves some form of fine-tuning or RLHF. Each step in the pipeline is a poisoning opportunity.
+3. **Model sharing is standard practice** — HuggingFace has 500K+ models. Nobody audits them. A poisoned model with strong benchmark performance gets downloaded, integrated, and trusted.
+
+The defense isn't any single technique — it's an assumption that poisoning will be attempted and a pipeline designed to detect and contain it when it happens.

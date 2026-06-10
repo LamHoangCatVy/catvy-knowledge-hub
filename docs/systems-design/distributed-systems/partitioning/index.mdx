@@ -3,4 +3,72 @@ sidebar_position: 1
 ---
 # Data Partitioning
 
-Sharding strategies, consistent hashing, range partitioning — how to split data across nodes while maintaining query performance and rebalancing efficiency.
+When your dataset outgrows a single machine, you split it across multiple machines. That's partitioning — also called sharding. It's the core mechanism for horizontal scalability, and getting it wrong leads to hot spots, expensive rebalancing, and queries that touch every partition in the cluster (a "scatter-gather" anti-pattern that defeats the purpose of partitioning).
+
+## What Is Partitioning?
+
+Partitioning divides a dataset into distinct subsets — partitions or shards — each stored on a different node. The goal: distribute data and query load evenly across the cluster so that adding nodes proportionally increases capacity.
+
+The two fundamental questions of partitioning:
+1. **How do you decide which record goes to which partition?** (The partitioning scheme)
+2. **How do you route a query to the right partition?** (The routing strategy)
+
+## Partitioning Strategies
+
+### Range Partitioning
+Assign contiguous key ranges to each partition. Partition 1: A--F, Partition 2: G--L, Partition 3: M--R, etc.
+
+**Advantages**: Range scans are efficient (`SELECT * WHERE key BETWEEN 'A' AND 'F'` hits a single partition). Natural for time-series data (partition by date range).
+
+**Disadvantages**: Write hot spots. If all new keys are timestamps, all writes go to the partition holding today's date range. One partition burns while others idle.
+
+**Who uses it**: HBase, Bigtable, and some PostgreSQL setups with `PARTITION BY RANGE`.
+
+### Hash Partitioning
+Compute `hash(key) % N` to determine the partition. Cryptographic hash functions produce uniform distributions, so data spreads evenly.
+
+**Advantages**: Excellent load balancing. No hot spots from skewed key distributions.
+
+**Disadvantages**: Range queries are expensive — they must scatter to every partition. Adding or removing nodes requires rehashing most data (the `% N` changes).
+
+**Who uses it**: Riak, Cassandra (with virtual nodes), MongoDB sharding.
+
+### Consistent Hashing
+A variant of hash partitioning designed for dynamic clusters. Nodes and keys are placed on a ring (hash space). Each key is assigned to the first node encountered when moving clockwise around the ring.
+
+**Advantages**: Adding or removing a node only affects its immediate neighbors — not the entire cluster. A fraction (1/N) of keys are remapped rather than all keys.
+
+**Disadvantages**: Standard consistent hashing can produce uneven distributions. Virtual nodes (each physical node gets multiple positions on the ring) solve this by smoothing the distribution.
+
+**Who uses it**: DynamoDB, Riak, Akka, Discord (for guild-to-server assignment).
+
+### Directory-Based Partitioning
+A mapping service (directory) tracks which partition holds which key range. Clients query the directory first, then go directly to the correct partition.
+
+**Advantages**: Maximum flexibility. You can repartition dynamically, use custom partitioning logic, and handle skewed access patterns by splitting hot partitions.
+
+**Disadvantages**: The directory becomes a bottleneck and single point of failure if not replicated.
+
+**Who uses it**: Amazon DynamoDB (the metadata service routes requests to storage nodes), systems with a dedicated router component.
+
+## Partitioning and Secondary Indexes
+
+Primary key lookups are straightforward with partitioning: hash the key, go to the correct partition. Secondary indexes complicate things dramatically:
+
+- **Local secondary indexes** — Each partition maintains its own index for its data. Write: good (single partition). Read: terrible (must query every partition because you don't know which partition has the matching rows). Also called "scatter-gather."
+- **Global secondary indexes** — The index is itself partitioned (usually by a different key than the primary table). Write: expensive (update index + table, potentially on different partitions). Read: fast (route to the correct index partition directly).
+
+DynamoDB gives you both options and makes you choose. PostgreSQL's `PARTITION BY` with indexes leans toward local.
+
+## Rebalancing
+
+Clusters grow and shrink. When you add nodes, you need to redistribute data. The ideal rebalancing:
+- Moves the minimum amount of data possible.
+- Keeps the cluster available during redistribution.
+- Doesn't concentrate load on a single node during the migration.
+
+**Strategies**: `hash(key) % N` fails here (N changes → most keys move). Consistent hashing and virtual nodes keep redistribution minimal. Range partitioning can split hot partitions and move halves to new nodes.
+
+## Why Partitioning Design Matters
+
+A poor partitioning scheme surfaces as a production incident: a single partition becomes a hot spot, latency spikes, the database becomes the bottleneck for the entire application. Fixing it requires rethinking the key design — which, for a live system with terabytes of data, is a migration project measured in weeks, not hours. Getting partitioning right at design time is one of the highest-leverage architectural decisions you can make.

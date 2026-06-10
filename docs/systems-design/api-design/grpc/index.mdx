@@ -3,4 +3,104 @@ sidebar_position: 1
 ---
 # gRPC
 
-Protocol Buffers service definitions, bidirectional streaming, interceptors, and gRPC performance optimization for high-throughput microservice communication.
+gRPC is a high-performance, open-source RPC (Remote Procedure Call) framework that Google developed to connect their microservices at planetary scale. It's not just "REST but faster" — it's a fundamentally different communication paradigm built on HTTP/2, Protocol Buffers, and code generation. If you're building service-to-service communication where latency and throughput matter, gRPC is likely the right tool.
+
+## What Is gRPC?
+
+gRPC (gRPC Remote Procedure Call) lets a client call a method on a server on a different machine as if it were a local function. The framework handles serialization, transport, authentication, and error handling — the developer defines the service interface and the business logic.
+
+The name is recursive (gRPC → gRPC Remote Procedure Call → ...), which tells you something about the culture that produced it.
+
+## Protocol Buffers: The Schema Language
+
+Protocol Buffers (protobuf) is gRPC's interface definition language and serialization format. You define your service and messages in `.proto` files:
+
+```protobuf
+syntax = "proto3";
+
+service UserService {
+  rpc GetUser (GetUserRequest) returns (User);
+  rpc ListUsers (ListUsersRequest) returns (stream User);
+  rpc UpdateUser (stream UpdateUserRequest) returns (User);
+  rpc Chat (stream ChatMessage) returns (stream ChatMessage);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  int64 created_at = 4;
+}
+```
+
+From this `.proto` file, the protobuf compiler generates:
+- **Client stubs** — Classes with methods matching your service definition. `client.GetUser(request)` looks and feels like a local call.
+- **Server skeletons** — Abstract classes/interfaces you implement to provide the actual business logic.
+- **Message classes** — Strongly typed objects with efficient serialization/deserialization.
+
+### Why Protocol Buffers Instead of JSON
+
+- **Binary format** — 3--10x smaller than equivalent JSON. Less network bandwidth, faster serialization.
+- **Schema enforcement** — Fields have types. You cannot send a string where an integer is expected. Backward compatibility is managed through field numbering, not field names.
+- **Code generation** — Type-safe clients and servers in 12+ languages. No hand-writing serialization code, no mismatches between documentation and implementation.
+
+## HTTP/2: The Transport
+
+gRPC runs on HTTP/2, which provides:
+
+- **Multiplexing** — Multiple requests and responses can be in flight simultaneously over a single TCP connection. No head-of-line blocking the way HTTP/1.1 had.
+- **Bidirectional streaming** — Both client and server can send messages independently over the same connection. This enables real-time communication patterns impossible with request-response HTTP.
+- **Header compression** — HTTP/2 compresses headers, reducing overhead for API calls with repeated metadata (authentication tokens, trace IDs).
+- **Server push** — The server can proactively send resources to the client (less commonly used in gRPC, more in web contexts).
+
+## gRPC Communication Patterns
+
+### Unary (Request-Response)
+The simplest: client sends one request, server sends one response. Equivalent to a traditional REST call. Example: `GetUser(user_id) → User`.
+
+### Server Streaming
+Client sends one request, server sends a stream of responses. Example: `ListUsers(filter) → stream of User messages`. The server pushes results as they become available rather than waiting to collect everything.
+
+### Client Streaming
+Client sends a stream of requests, server sends one response. Example: uploading a large file in chunks, or aggregating sensor readings. The server processes the stream and returns a summary.
+
+### Bidirectional Streaming
+Both client and server send independent streams. Example: a chat service where both sides send messages asynchronously, or a real-time collaboration tool. Messages can be interleaved in any order.
+
+## Interceptors: gRPC Middleware
+
+Interceptors are gRPC's equivalent of middleware. They wrap every RPC call and can:
+- **Logging** — Log every request/response with timing, status codes, and metadata.
+- **Authentication** — Validate JWT tokens, extract user identity, inject it into the request context.
+- **Tracing** — Propagate trace IDs (OpenTelemetry) across service boundaries.
+- **Retry and timeouts** — Implement retry logic with backoff, enforce deadlines.
+- **Rate limiting** — Reject requests that exceed per-client or per-method limits.
+
+Interceptors compose — you can stack authentication, logging, tracing, and retry interceptors without modifying business logic.
+
+## gRPC vs. REST
+
+| Feature | gRPC | REST |
+|---|---|---|
+| Protocol | HTTP/2 | HTTP/1.1 (or HTTP/2) |
+| Data format | Protobuf (binary) | JSON (text) |
+| Schema | `.proto` files, strict | OpenAPI/Swagger, optional |
+| Streaming | Native bidirectional | WebSockets, SSE, or polling |
+| Browser support | Requires gRPC-Web proxy | Native |
+| Human readability | Need tools to decode | Readable in any browser devtools |
+| Performance | ~7--10x faster serialization | Baseline |
+| Ecosystem maturity | Growing rapidly | Universal |
+
+## When to Use gRPC
+
+gRPC excels for **internal microservice communication** — the server-to-server calls within your architecture that aren't exposed to browsers or external consumers. High-throughput, low-latency, strongly typed, and polyglot (the generated client handles language differences transparently).
+
+Use REST or GraphQL for external APIs consumed by browsers or third parties. The binary format isn't debuggable in Chrome DevTools, and gRPC-Web (the browser-compatible variant) doesn't support all streaming patterns.
+
+## Why gRPC Architecture Matters
+
+gRPC makes strong opinions: use protobuf, use HTTP/2, generate your code. These opinions reduce the surface area of decisions and mistakes. But they also create lock-in — your entire ecosystem must support protobuf tooling, your load balancers must handle HTTP/2, your monitoring tools must decode binary payloads. Adopting gRPC is adopting a platform, not just a library. The decision deserves the same architectural scrutiny as choosing a database.

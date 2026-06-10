@@ -3,4 +3,46 @@ sidebar_position: 1
 ---
 # AI Threats
 
-Adversarial attacks, data poisoning, model inversion, and the evolving threat landscape for machine learning systems. Understanding and defending against AI-specific vulnerabilities.
+Traditional security threats target software vulnerabilities, misconfigurations, or human error. AI threats target the model itself — its training data, its inference behavior, and the information encoded in its parameters. These are threats that don't exist in traditional software because traditional software doesn't learn from data, doesn't make probabilistic decisions, and doesn't encode sensitive information in its weights.
+
+## The AI Threat Landscape
+
+AI systems introduce three novel threat categories that map to three stages of the ML lifecycle:
+
+- **Training-time attacks** — The model is compromised before it's deployed. Data poisoning, backdoor injection, supply chain attacks on pre-trained models.
+- **Inference-time attacks** — The deployed model is exploited through carefully crafted inputs. Adversarial examples, model inversion, membership inference.
+- **Post-deployment attacks** — The model's outputs are used in attacks on downstream systems. Generated phishing content, deepfakes, automated exploitation.
+
+## Why AI Threats Are Different
+
+### The Model Is a Black Box
+You can't inspect a neural network's code to find a vulnerability. Its behavior is an emergent property of its architecture + training data + training process. A vulnerability is a pattern of inputs that produces unintended or harmful outputs — and you can't find these by reading code.
+
+### The Attack Surface Is Blurry
+An LLM that summarizes emails, retrieves documents, and calls APIs has a massive attack surface. A poisoned document in the retrieval store, a crafted email in the inbox, a tool response that contains hidden instructions — any of these can manipulate the model's behavior. The boundary between "data" and "code" is the core challenge.
+
+### Probabilistic Defenses Are Unreliable
+A firewall rule either blocks traffic or it doesn't. An AI safety filter says "I'm 94% confident this content is safe." That 6% matters — and adversaries will find the inputs that fall in the 6%. Defenses that rely on probabilistic classification need to be designed with failure in mind.
+
+### Information Leakage Is Inevitable (Without Mitigation)
+Models memorize training data. They can be prompted to reproduce it. They can reveal membership (was this data point in the training set?) through subtle statistical signals. Preventing information leakage requires deliberate architecture, not just hoping for the best.
+
+## What We Cover
+
+### Adversarial Attacks
+Inputs specifically designed to fool ML models — imperceptible perturbations that change classification, carefully worded prompts that bypass safety filters, gradient-based attacks that extract model internals. Understanding how adversaries think about breaking AI systems.
+
+### Data Poisoning
+Compromising the training pipeline. Backdoor attacks that cause the model to behave maliciously when a specific trigger is present but normally otherwise. Supply chain attacks that inject poisoned data into public training datasets. Detection and prevention strategies for training pipeline security.
+
+### Model Inversion
+Extracting sensitive information from model outputs. Reconstructing training data from model responses. Membership inference — determining whether a specific record was used to train the model. Privacy-preserving ML techniques (differential privacy, federated learning) and their limitations.
+
+## The Defensive Mindset
+
+AI threat defense requires thinking like an adversary who understands:
+1. How models are trained (to poison data).
+2. How models perform inference (to craft adversarial inputs).
+3. What information models encode (to extract it).
+
+You're not defending against random attackers trying random things. You're defending against sophisticated adversaries who understand the ML stack as well as you do — possibly better. The defense starts with threat modeling each stage of your AI pipeline and ends with defense-in-depth that assumes any single layer will fail.

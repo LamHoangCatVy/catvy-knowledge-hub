@@ -3,4 +3,91 @@ sidebar_position: 1
 ---
 # GraphQL
 
-Schema-first design, resolver patterns, federated GraphQL architectures, and solving the N+1 problem. Building efficient, flexible APIs with GraphQL.
+GraphQL flips the REST model on its head. Instead of the server deciding what data each endpoint returns, the client specifies exactly what it needs in a single request. The result: no more over-fetching, no more under-fetching, no more waiting on backend teams to add the one field your frontend needs. But that flexibility comes with architectural challenges that have spawned an entire ecosystem of solutions.
+
+## What Is GraphQL?
+
+GraphQL is a query language and runtime for APIs. Developed at Facebook in 2012 (open-sourced 2015), it was built to solve the specific challenge of the Facebook newsfeed — a complex UI that needed data from dozens of services in a single page load.
+
+The three core operations:
+- **Queries** — Read data. The client specifies exactly which fields to return, including nested relationships.
+- **Mutations** — Write data. Similar syntax to queries but with side effects.
+- **Subscriptions** — Real-time updates. The server pushes data to clients when events occur. Typically implemented over WebSockets.
+
+## The Schema-First Philosophy
+
+GraphQL development starts with the schema — a strongly typed definition of the data graph:
+
+```graphql
+type User {
+  id: ID!
+  name: String!
+  email: String!
+  posts(first: Int = 10): [Post!]!
+  createdAt: DateTime!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String!
+  author: User!
+  comments: [Comment!]!
+}
+
+type Query {
+  user(id: ID!): User
+  posts(filter: PostFilter): [Post!]!
+}
+```
+
+The schema is the contract. It specifies what data exists, what types it has, what relationships exist between types, and what queries/mutations are available. The schema is a living document — frontend and backend teams negotiate it collaboratively, and the agreed-upon schema drives implementation on both sides.
+
+## Resolvers: Connecting Schema to Data
+
+Every field in a GraphQL schema is backed by a resolver — a function that knows how to fetch that field's data. The magic: resolvers compose. When a client requests `{ user(id: "123") { name, posts { title } } }`, the GraphQL engine:
+
+1. Calls `Query.user` resolver → returns User object
+2. Calls `User.name` resolver → returns the name
+3. Calls `User.posts` resolver → returns list of Post objects
+4. Calls `Post.title` resolver for each post → returns each title
+
+This is where GraphQL's power lives — and where its biggest challenge appears.
+
+## The N+1 Problem (and DataLoader)
+
+The naive resolver approach creates the N+1 problem: one query for the user, then N queries for the posts (one per user), then M queries for the comments (one per post). What started as one GraphQL query becomes hundreds of database queries.
+
+**DataLoader** is the standard solution. It batches and caches database requests within a single GraphQL execution. When multiple `User.posts` resolvers fire, DataLoader collects all the user IDs, issues a single `SELECT * FROM posts WHERE user_id IN (...)` query, and distributes the results back to each resolver. This collapses N+1 database queries into 2 or 3.
+
+## Federation: GraphQL at Scale
+
+A monolithic GraphQL server works beautifully — until your organization has 50 teams, each owning different parts of the data graph. Federation splits the schema across services while presenting a unified graph to clients:
+
+- **Subgraphs** — Independent GraphQL services, each owning a portion of the overall schema (Users service owns User type, Posts service owns Post type).
+- **Supergraph (Gateway)** — Composes subgraphs into a single unified schema. The gateway receives client queries, splits them into sub-queries sent to the relevant subgraphs, and stitches the responses together.
+
+Apollo Federation is the dominant implementation, with alternatives from Hasura, WunderGraph, and others.
+
+### Federation Key Concepts
+
+- **Entities** — Types that span multiple subgraphs. The `User` type might have fields provided by both the Users service (name, email) and the Posts service (post count).
+- **@key directive** — Defines the primary key for an entity. The gateway uses it to look up entities across subgraphs.
+- **Entity resolvers** — Each subgraph implements a resolver that knows how to fetch its portion of an entity given the key.
+
+## When to Use GraphQL (and When Not To)
+
+**Use GraphQL when**:
+- Your frontend needs flexible, heterogeneous data in a single request (dashboards, feed pages, mobile apps with limited bandwidth).
+- Multiple client teams consume the same API and have different data requirements.
+- Your data model has rich relationships that clients frequently traverse.
+
+**Use REST instead when**:
+- Your API is simple and resources map cleanly to CRUD operations.
+- Caching is critical (GraphQL's single POST endpoint defeats HTTP caching; persisted queries help but add complexity).
+- You need file upload/download, WebSocket streaming, or long-running operations — REST handles these naturally, GraphQL has added them incrementally with varying maturity.
+- Your consumers are external third parties who expect standard REST conventions.
+
+## Why GraphQL Design Matters
+
+GraphQL's flexibility is a double-edged sword. A poorly designed schema (deep nesting, no pagination requirements, overly permissive queries) enables clients to issue queries that bring your database to its knees. A well-designed schema — with depth limits, mandatory pagination on list fields, and query cost analysis — provides developer velocity without production risk. The difference is intentional design versus hoping for the best.

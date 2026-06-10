@@ -3,4 +3,43 @@ sidebar_position: 1
 ---
 # Multi-Cloud Patterns
 
-Cloud-agnostic architecture patterns — abstraction layers, service mesh across providers, and designing for portability without sacrificing cloud-native benefits.
+Portability across clouds sounds appealing until you realize every cloud has its own IAM model, networking stack, database semantics, and deployment idioms. Multi-cloud patterns provide the architectural vocabulary for building systems that work across providers without sacrificing reliability or drowning in abstraction layers.
+
+## What Are Multi-Cloud Patterns?
+
+Multi-cloud patterns are reusable architectural blueprints that abstract cloud-specific implementation details while preserving the performance, security, and reliability benefits of cloud-native services. They sit at the intersection of portability and pragmatism.
+
+## Core Patterns
+
+### Abstraction Layer
+Rather than calling cloud APIs directly, applications interact with an abstraction layer that translates generic operations (provision compute, write to blob storage, enqueue message) into provider-specific API calls. This layer can be as thin as a library (SDK wrapper) or as thick as a complete control plane.
+
+**Trade-off**: The more you abstract, the more you lose provider-specific features (Lambda's versioned aliases, BigQuery's slot reservations). The abstraction tends to converge on the lowest common denominator.
+
+### Service Mesh Across Clouds
+Service meshes (Istio, Consul Connect, Linkerd) extend across cloud boundaries to create a unified networking and observability fabric. Services discover each other regardless of location, traffic is encrypted in transit, and the mesh provides consistent retry, timeout, and circuit-breaking policies.
+
+**Key enabler**: WireGuard or IPsec tunnels between cloud VPCs, or solutions like HashiCorp Consul's mesh gateways that bridge networks.
+
+### Event Bus Federation
+Rather than coupling services across clouds through direct API calls, events flow through a federated event bus. AWS EventBridge + Azure Event Grid, or Kafka clusters with mirror-maker cross-cloud replication. Services react to events local to their cloud, and the event bus handles cross-cloud delivery.
+
+This pattern shines for eventually consistent, decoupled architectures where a slight delay in cross-cloud event propagation is acceptable.
+
+### Data Replication Topologies
+Where does the data live? Options:
+- **Single source of truth** — Data lives in one cloud, other clouds access it with cross-cloud latency penalty.
+- **Read replicas across clouds** — Writes go to the primary, reads come from a local replica. Asynchronous replication with eventual consistency.
+- **Active-active** — Bidirectional replication with conflict resolution. The hardest pattern; avoid unless absolutely necessary.
+
+### CI/CD Unification
+One pipeline, many deployment targets. Tools like Spinnaker, Argo CD, and Harness deploy the same container image to multiple Kubernetes clusters running in different clouds. Infrastructure-as-code tooling (Terraform, Pulumi) manages the cloud-specific resources while the application layer stays consistent.
+
+## When NOT to Be Multi-Cloud
+
+Multi-cloud patterns add meaningful complexity. Before reaching for them, ask:
+- Is your workload genuinely portable, or are you building an abstraction you'll never use?
+- Are you better off going deep on one cloud and negotiating better terms?
+- Does your team have the operational maturity to manage multiple clouds, or will it fragment your already-strained on-call rotations?
+
+The best multi-cloud pattern is often: pick one cloud, commit fully, and invest the complexity budget elsewhere.

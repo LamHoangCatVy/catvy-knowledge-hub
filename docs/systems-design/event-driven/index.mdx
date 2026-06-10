@@ -3,4 +3,42 @@ sidebar_position: 1
 ---
 # Event-Driven Architecture
 
-Kafka streaming, message queue patterns, saga orchestration, and event sourcing. Designing loosely coupled, scalable systems through asynchronous communication.
+In a synchronous system, Service A calls Service B and waits for a response. If B is slow, A is slow. If B is down, A fails. Scale this to dozens of services, and you've built a distributed monolith — independently deployable services that are so tightly coupled at runtime that they might as well be one process. Event-driven architecture breaks this coupling by replacing direct calls with asynchronous events.
+
+## What Is Event-Driven Architecture?
+
+Event-driven architecture (EDA) is a design paradigm where services communicate by producing and consuming events — immutable facts about things that happened. A service publishes an event when something noteworthy occurs. Other services subscribe to events they care about. The producer doesn't know who's consuming, and the consumer doesn't know who produced it.
+
+The fundamental unit: an **event** — a record that something happened: "OrderPlaced," "PaymentProcessed," "UserRegistered." Events are past-tense, immutable, and self-contained (they carry enough data for consumers to act without calling back to the producer).
+
+## Why Go Event-Driven?
+
+- **Loose coupling** — The producer doesn't know or care about consumers. Adding a new consumer (e.g., "send welcome email when UserRegistered") doesn't touch the producer's code or deployment. This is the killer feature.
+- **Resilience** — If a consumer is down, events accumulate in the broker. When the consumer recovers, it processes the backlog. The producer doesn't time out, retry, or circuit-break — it published and moved on.
+- **Scalability** — Events naturally partition into topics and partitions. Multiple consumers can process events in parallel (competing consumers pattern), scaling throughput horizontally.
+- **Audit trail** — Events are immutable records of everything that happened. With event sourcing, the event log is the source of truth — the current state is a projection of the event history.
+
+## The Event Backbone
+
+### Apache Kafka
+A distributed streaming platform designed for high-throughput, durable event storage. Kafka is more like a distributed commit log than a traditional message queue: events are written to topics, partitioned for parallelism, and persisted to disk. Consumers track their own position (offset) — they can replay old events, jump to the latest, or process at their own pace.
+
+### Traditional Message Queues (RabbitMQ, SQS)
+Optimized for reliable message delivery with complex routing. RabbitMQ uses exchanges and queues with fine-grained routing rules (topic exchanges, header matching). SQS provides fully managed queues with dead-letter queues and configurable retention. Best for work distribution patterns where each message must be processed exactly once by one consumer.
+
+## Key Challenges
+
+- **Eventual consistency** — In a synchronous system, you know immediately if an operation succeeded. In EDA, a consumer might process an event seconds or minutes later. The system as a whole is temporarily inconsistent. This requires a mental model shift for both developers and product owners.
+- **Schema evolution** — Events are contracts that outlive the services that produce them. Changing an event schema (adding/removing/renaming fields) requires careful compatibility management. Schema registries (Confluent Schema Registry for Avro, or protobuf-based approaches) enforce compatibility rules at the infrastructure level.
+- **Ordering** — Within a Kafka partition, events are strictly ordered. But across partitions, ordering is not guaranteed. If business logic requires global ordering (e.g., "the withdrawal must process after the deposit that funded it"), you need to route related events to the same partition (by account ID).
+- **Duplication** — At-least-once delivery means consumers must be idempotent — processing the same event twice should produce the same outcome. This isn't a flaw; it's a design assumption that must be addressed at the consumer level.
+
+## What We Cover
+
+- **Apache Kafka** — Topic design, consumer groups, exactly-once semantics, and Kafka Streams.
+- **Message Queues** — RabbitMQ, SQS, dead letter queues, and reliable delivery patterns.
+- **Saga Patterns** — Orchestration vs. choreography, compensating transactions, and distributed data consistency.
+
+## When Not to Go Event-Driven
+
+Event-driven architecture adds meaningful complexity. You now have a message broker to operate, schemas to manage, eventual consistency to reason about, and debugging that spans log files across multiple services rather than a single call stack. Start with synchronous request-response. Add events where they solve a real problem: when services need to be truly decoupled, when you need independent scalability, or when the natural business domain is event-based (order processing, notification pipelines, real-time analytics).

@@ -3,4 +3,31 @@ sidebar_position: 1
 ---
 # Security
 
-GenAI-specific security threats, prompt injection defenses, cloud security best practices, and AI threat modeling. Securing LLM deployments from adversarial attacks to data poisoning.
+Traditional application security is a mature discipline. We know how to prevent SQL injection, how to manage TLS certificates, how to design least-privilege IAM policies. GenAI security is the wild west — entirely new attack surfaces, threat models still being catalogued, and defense techniques that are months behind the attacks they're meant to stop. This section covers both: the well-established cloud security patterns that keep your infrastructure secure, and the bleeding-edge AI-specific threats that keep security researchers up at night.
+
+## What Makes AI Security Different
+
+LLMs introduce attack vectors that have no equivalent in traditional software:
+
+- **The model is the attack surface** — You can't firewall a prompt. The model processes untrusted input by design, and that input can manipulate model behavior in ways that traditional input validation can't detect.
+- **Nondeterminism is a security risk** — The same prompt can produce different outputs on different invocations. This variability makes it hard to guarantee that a security filter works 100% of the time.
+- **The boundary between data and code blurs** — Prompts are a hybrid of data and instructions. A malicious prompt blurs this line intentionally, tricking the model into treating attacker-controlled text as system-level instructions.
+- **Model outputs are untrusted** — Generated text can contain hidden instructions, encoded malicious payloads, or factual errors that downstream systems treat as authoritative.
+
+## Key Domains
+
+### Prompt Security
+Defending the LLM input/output boundary. Injection attacks that trick the model into ignoring its system prompt. Jailbreak techniques that bypass safety guardrails. Output filtering pipelines that catch harmful, toxic, or inappropriate model responses before they reach users.
+
+### Cloud Security
+The infrastructure layer beneath your AI applications. IAM best practices for least-privilege access to models and data. Network isolation patterns that keep training data and inference endpoints off the public internet. Compliance frameworks (SOC 2, ISO 27001, GDPR) applied to AI workloads with novel data governance challenges.
+
+### AI Threats
+Adversaries don't need to steal your model — they can extract its training data through carefully crafted queries. They can poison your fine-tuning dataset so the model behaves maliciously in specific scenarios. They can craft inputs that are imperceptibly different to humans but completely change the model's output. Understanding these threats is the first step to defending against them.
+
+### Single Sign-On
+Centralized authentication for the modern enterprise. JWT architecture, session management, and cloud identity federation. The backbone of secure access to AI systems and the infrastructure they run on.
+
+## The Security Mindset for AI Systems
+
+The most dangerous assumption in AI security: "the model will behave reasonably." It won't — not reliably, not under adversarial pressure, not at scale. Every LLM interaction must be treated as potentially hostile input going into a potentially compromised system. The defense patterns in this section start from that assumption and build outward.

@@ -3,4 +3,38 @@ sidebar_position: 1
 ---
 # Cost Modeling
 
-AWS pricing deep dive — Reserved Instances, Savings Plans, Spot instances, and FinOps automation. Building cost visibility into architecture from day one.
+Your AWS bill tells a story — but only if you know how to read it. Cost modeling is the practice of forecasting, attributing, and optimizing cloud spend before you deploy, not after you get the invoice. For enterprise workloads running hundreds of services across dozens of accounts, cost isn't an afterthought — it's a design constraint as fundamental as latency or throughput.
+
+## What Is Cloud Cost Modeling?
+
+Cost modeling maps your architecture to actual AWS pricing dimensions, giving you a predictive model of what a system will cost under different usage patterns. It answers questions like:
+
+- What will this service cost at 1,000 vs. 10,000 vs. 1 million requests per day?
+- Should we use Reserved Instances, Savings Plans, or Spot for this workload?
+- How do we attribute costs to teams, features, or customers for chargeback?
+- Where is the next dollar of optimization best spent?
+
+## Key Pricing Levers on AWS
+
+### Compute Pricing Models
+- **On-Demand** — Pay by the second with no commitment. Baseline for variable or unknown workloads.
+- **Reserved Instances (RIs)** — 1 or 3-year commitment for up to 72% discount. Best for steady-state, predictable workloads.
+- **Savings Plans** — Commitment to hourly spend (not specific instance types) for 1 or 3 years. More flexible than RIs, similar discounts.
+- **Spot Instances** — Bid on spare capacity at up to 90% discount. Interruptible with 2-minute warning. Ideal for fault-tolerant, stateless workloads.
+
+### Data Transfer Economics
+Data transfer is one of the most misunderstood AWS costs. Ingress is free. Egress within the same region and AZ is usually free. Cross-AZ traffic ($0.01/GB each direction) adds up fast. Cross-region and internet egress are the biggest surprises. Architectural choices — like multi-AZ deployments with chatty protocols — can multiply your networking bill.
+
+### Storage Tiering
+S3 Intelligent-Tiering automatically moves objects between access tiers based on usage patterns. Lifecycle policies transition aging data to cheaper tiers (S3 Standard → Infrequent Access → Glacier). Understanding your data's access pattern is the key to storage cost optimization.
+
+## FinOps: Making Cost an Engineering Practice
+
+- **Tagging strategy** — The foundation of cost attribution. Every resource gets tagged with owner, environment, application, and cost center. Without tags, your bill is an opaque lump sum.
+- **Budgets and alerts** — AWS Budgets sends alerts when spend exceeds thresholds. Not just for cost control — a sudden spike often signals a bug (runaway Lambda loop, misconfigured autoscaling).
+- **CUR (Cost and Usage Report)** — The most granular billing data AWS provides. Feed it into Athena or a BI tool to slice costs by any dimension.
+- **Reservation management** — Coverage tracking, expiration alerting, and RI/Savings Plan marketplace strategies for optimizing your commitment portfolio.
+
+## Why Cost Modeling Matters Before You Build
+
+It's expensive to re-architect after launch. A service designed for multi-AZ with synchronous writes might cost 10x more than its event-driven equivalent — with negligible user-experience difference. Cost modeling during design ensures your architecture serves the business, not just the engineering team's preference.

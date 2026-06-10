@@ -1,0 +1,42 @@
+---
+sidebar_position: 1
+---
+# Session Management
+
+Authentication gets you in the door. Session management keeps you there — securely. It's the discipline of controlling how long a user stays logged in, when their access should be refreshed, and how to detect when someone else has stolen their session.
+
+## What Is Session Management?
+
+Session management is the set of practices that govern the lifecycle of an authenticated user's interaction with a system. It spans three critical phases:
+
+1. **Session creation** — What happens after successful authentication. Token issuance, session record creation, device fingerprint binding.
+2. **Session maintenance** — Token refresh flows, idle timeout enforcement, concurrent session limits, step-up authentication for sensitive operations.
+3. **Session termination** — Explicit logout, timeout-based expiry, forced revocation from an admin console, or anomaly-triggered termination.
+
+## Stateless vs. Stateful Sessions
+
+| Approach | How It Works | Trade-offs |
+|---|---|---|
+| **Stateless (JWT)** | All session data lives in the token. Server validates signature only. | No server-side storage, scales horizontally. But no way to revoke individual tokens before expiry. |
+| **Stateful (Server-side)** | Session ID stored in a cookie. Actual session data lives in Redis/DB. | Instant revocation, rich session data. Requires a session store lookup on every request — adds latency and infrastructure. |
+| **Hybrid** | Short-lived stateless JWT (5--15 min) + stateful refresh token. | Best of both worlds: low latency for the hot path, revocation control through the refresh token lifecycle. |
+
+## Key Highlights
+
+- **Refresh token rotation** — Every time a refresh token is used, issue a new one and invalidate the old. If a stolen refresh token is reused after the legitimate user has already rotated it, you've detected a breach — revoke all tokens for that user immediately.
+- **Sliding expiration** — Extend the session on activity, but cap the absolute maximum session lifetime. This balances user convenience with security — an active user shouldn't be logged out mid-workflow, but a session shouldn't live forever.
+- **Session hijacking detection** — Monitor for impossible travel (login from Vietnam, then Germany 5 minutes later), device fingerprint changes, IP hopping patterns. These are your early warning signals.
+- **Concurrent session control** — Limit the number of active sessions per user. Force-logout the oldest session when the limit is exceeded, or prompt the user to choose. This prevents credential sharing abuse and limits lateral movement.
+
+## Why Session Management Matters in Production
+
+A poorly designed session system is a silent vulnerability. Token leaks from XSS, misconfigured CORS, or client-side logging expose sessions. Without rotation and detection, a stolen token gives indefinite access. In distributed systems, the challenge compounds — synchronizing session state across instances, handling network partitions gracefully, and maintaining consistent revocation semantics.
+
+## What You'll Learn Here
+
+- Implementing refresh token rotation with automatic reuse detection
+- Designing sliding expiration with absolute session caps
+- Session store architecture: Redis clusters, sticky sessions, and failover strategies
+- Detecting session anomalies: impossible travel, device fingerprint drift, velocity checks
+- OIDC session management: RP-initiated logout, back-channel logout, session iframes
+- Browser security: SameSite cookies, __Host- prefix, partitioned storage in the Privacy Sandbox era

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import Layout from '@theme/Layout';
 
 interface DemoSection {
   type: 'none' | 'iframe' | 'video' | 'blog' | 'gallery';
@@ -139,6 +140,7 @@ export default function ProjectListPage() {
   }, [projects, filter, search, sort]);
 
   return (
+    <Layout>
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '100px 24px 60px' }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -295,5 +297,6 @@ export default function ProjectListPage() {
         </button>
       </div>
     </div>
+    </Layout>
   );
 }

@@ -3,4 +3,28 @@ sidebar_position: 1
 ---
 # AWS
 
-Landing Zone design, serverless architectures, cost modeling, and AWS-native deployment patterns. From multi-account governance to FinOps automation in enterprise AWS environments.
+Amazon Web Services is the largest public cloud provider, with over 200 services spanning compute, storage, networking, machine learning, and IoT. But AWS's true power lies in how its services compose together into well-architected systems — and its true risk lies in how easily things can spiral without deliberate design.
+
+## What Makes AWS Different
+
+AWS pioneered the public cloud market with S3 and EC2 in 2006, and it still sets the pace for innovation. Its service catalog is staggering, but the core primitives that enable enterprise-scale architectures haven't changed:
+
+- **Compute continuum** — EC2 for full control, ECS/EKS for container orchestration, Lambda for serverless event-driven compute, Fargate for serverless containers. You choose the abstraction level that fits your workload.
+- **Data ecosystem** — RDS and Aurora for relational, DynamoDB for key-value at any scale, ElastiCache for in-memory workloads, S3 as the universal data lake foundation.
+- **Networking fabric** — VPC gives you an isolated virtual network. Transit Gateway connects hundreds of VPCs. PrivateLink keeps traffic off the public internet. Global Accelerator routes users to the nearest healthy endpoint.
+- **Identity and governance** — IAM is the universal policy language. Organizations and SCPs enforce guardrails across accounts. CloudTrail records every API call for auditability.
+
+## Key Areas We Explore
+
+### Landing Zone Design
+Multi-account architecture is the foundation of AWS governance at scale. We cover the AWS Organizations hierarchy, Service Control Policies (SCPs) as preventive guardrails, and Control Tower for automation. The goal: secure by default, permissive where needed.
+
+### Serverless Architecture
+Event-driven systems built on Lambda, API Gateway, Step Functions, DynamoDB, and EventBridge. How to think in events, design for cold starts, manage state without servers, and orchestrate complex workflows with Step Functions.
+
+### Cost Modeling
+The AWS bill as an engineering concern. Reserved Instances vs. Savings Plans vs. Spot instances. FinOps automation that gives teams cost visibility without slowing them down. Building cost awareness into architecture reviews from day one.
+
+## The AWS Well-Architected Lens
+
+Everything we cover maps back to the six Well-Architected pillars: Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization, and Sustainability. These aren't abstract ideals — they're concrete design principles that prevent the most common AWS anti-patterns.

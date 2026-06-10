@@ -3,4 +3,36 @@ sidebar_position: 1
 ---
 # Distributed Systems
 
-Consensus protocols, data replication, sharding strategies, and distributed coordination at scale. Building systems that stay reliable when everything can fail.
+A distributed system is any system where components located on networked computers communicate and coordinate their actions by passing messages. If that sounds like every system you've ever worked on — it is. The moment your application has a database on a different machine, a cache server, or a second instance behind a load balancer, you're building a distributed system. The question isn't whether you're building one; it's whether you're doing it deliberately.
+
+## Why Distributed Systems Are Hard
+
+The fundamental challenge: in a distributed system, you can't trust anything.
+
+- **Networks are unreliable** — Messages get delayed, dropped, duplicated, or reordered. There is no such thing as "instantaneous" communication between machines.
+- **Clocks are unsynchronized** — Each machine has its own clock, and they drift apart. You cannot rely on timestamps for ordering events across machines.
+- **Nodes fail independently** — A machine can crash at any point during any operation. Partial failures (some nodes up, some down) are the norm, not the exception.
+- **Consistency costs availability** — The CAP theorem formalizes this: during a network partition, you must choose between consistency (all nodes see the same data) and availability (every request gets a response). You can't have both.
+
+The art of distributed systems is building abstractions that hide these realities from application code. A database with ACID transactions, a message queue with exactly-once delivery, a consensus system with linearizable reads — these are all complex distributed protocols that present a simple interface.
+
+## The Distributed Systems Toolbox
+
+### Consensus
+How do a group of machines agree on a single value or sequence of operations — even when some machines fail or the network partitions? Consensus algorithms (Raft, Paxos, and their modern variants) are the protocols that make distributed agreement possible. They're the foundation of leader election, distributed locking, and replicated state machines.
+
+### Replication
+Keeping copies of data on multiple machines so that the failure of any one machine doesn't cause data loss or unavailability. But replication introduces consistency challenges: if you write to one replica and read from another, do you see the latest write? The answer depends on your replication strategy and consistency model.
+
+### Partitioning (Sharding)
+When your data is too large for a single machine, you split it across multiple machines. Each machine owns a subset (a shard). The challenge: how do you split the data so that queries remain efficient, load stays balanced, and adding or removing machines doesn't require reshuffling everything?
+
+## What We Cover
+
+- **Consensus Algorithms** — Raft, Paxos, leader election, and how distributed systems agree.
+- **Replication Strategies** — Leader-follower, multi-leader, quorum-based — and the consistency trade-offs each demands.
+- **Partitioning & Sharding** — Consistent hashing, range partitioning, and designing for horizontal scalability.
+
+## The Mindset
+
+Distributed systems engineering isn't about memorizing protocols — it's about developing a paranoid intuition for what can go wrong. Every assumption you make ("the network is reliable," "clocks are synchronized," "this operation will complete") will eventually be violated at scale. The job is to build systems where those violations are handled gracefully, not discovered in production at 3 AM.

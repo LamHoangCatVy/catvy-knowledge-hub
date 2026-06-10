@@ -3,4 +3,33 @@ sidebar_position: 1
 ---
 # Active Directory
 
-Azure AD architecture, identity federation patterns, B2B/B2C configurations, and hybrid identity management for enterprise scenarios.
+Azure Active Directory — now Microsoft Entra ID — is more than a directory service. It's the identity control plane for Microsoft's entire cloud ecosystem. Understanding Entra ID architecture is foundational to every Azure workload, every Microsoft 365 tenant, and every hybrid identity deployment in the enterprise.
+
+## What Is Microsoft Entra ID?
+
+Entra ID is a cloud-native identity and access management service that handles authentication and authorization for Azure, Microsoft 365, and thousands of third-party SaaS applications. It's multi-tenant by design, globally distributed, and handles over a billion authentications daily.
+
+Unlike traditional on-premise Active Directory (which uses LDAP and Kerberos), Entra ID uses modern protocols — SAML, OAuth 2.0, OpenID Connect, and WS-Federation. It's built for the internet, not the intranet.
+
+## Core Concepts
+
+### Tenants
+A tenant is a dedicated, isolated instance of Entra ID. Each organization gets its own tenant. Within a tenant, you define users, groups, and application registrations. The tenant boundary is a security boundary — users in one tenant cannot see users in another (unless you explicitly configure B2B or multi-tenant access).
+
+### Identity Types
+- **Cloud-native identities** — Users created directly in Entra ID with no on-premise dependency.
+- **Hybrid identities** — Users synced from on-premise Active Directory via Entra Connect (or Entra Cloud Sync). Password hash sync, pass-through authentication, or federation (AD FS) — each with different trade-offs for password management and availability.
+- **External identities** — B2B guests from other Entra ID tenants, Google accounts, or email-based verification. B2C for customer-facing identity.
+
+### Conditional Access
+The policy engine that evaluates every authentication request against signals — user, location, device compliance, risk level, application sensitivity — and enforces controls: require MFA, block access, require compliant device, limit session duration. Conditional Access is Entra ID's killer feature and the foundation of Zero Trust on Azure.
+
+## Key Highlights
+
+- **Application registrations** — Every app that uses Entra ID for auth gets a service principal. Enterprise apps, app registrations, and managed identities (for Azure resources) are all flavors of the same identity model.
+- **Privileged Identity Management (PIM)** — Just-in-time elevated access. Instead of standing admin privileges, users activate roles for a limited time with approval workflows and audit logging. Reduces the blast radius of compromised admin accounts.
+- **Identity Protection** — ML-based risk detection. Impossible travel, sign-in from anonymous IP, leaked credentials, token anomalies. Automated remediation: force password reset, block access, require MFA re-authentication.
+
+## Why Entra ID Matters
+
+In the Microsoft ecosystem, identity is the perimeter. Firewalls and network segmentation matter less when your workforce is remote, your apps are SaaS, and your data is in the cloud. Entra ID is the consistent policy layer that spans on-premise and cloud, Microsoft and third-party, employee and customer identity. Get this right, and you've secured the most critical attack vector in your enterprise.

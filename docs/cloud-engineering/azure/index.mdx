@@ -3,4 +3,25 @@ sidebar_position: 1
 ---
 # Azure
 
-Azure Active Directory architecture, cloud migration strategies, and hybrid identity management patterns. Enterprise deployment and modernization on Microsoft Azure.
+Microsoft Azure is the enterprise cloud. While AWS leads in raw service breadth, Azure dominates where organizations are deeply invested in the Microsoft ecosystem — Active Directory, Windows Server, .NET, SQL Server, and Office 365. Understanding Azure means understanding hybrid identity, enterprise migration, and Microsoft's opinionated approach to cloud architecture.
+
+## What Makes Azure Different
+
+Azure isn't just "another cloud." It's built around Microsoft's enterprise DNA:
+
+- **Identity-first architecture** — Azure Active Directory (now Microsoft Entra ID) isn't an add-on. It's the control plane. Every Azure resource, every API call, every authentication attempt flows through the identity layer.
+- **Hybrid by design** — Azure Stack, Azure Arc, and ExpressRoute make on-premise and cloud work as one fabric. This isn't a migration story; it's a "run everywhere" story.
+- **Enterprise agreement integration** — Most Fortune 500 companies already have Microsoft Enterprise Agreements. Azure consumption fits into existing licensing, support, and procurement relationships.
+- **Developer ecosystem** — Visual Studio, GitHub, Azure DevOps, and TypeScript/JavaScript first-class support make the development workflow deeply integrated.
+
+## Key Areas We Explore
+
+### Active Directory / Microsoft Entra ID
+The identity backbone for enterprise Azure. From hybrid join (on-prem AD synced to Entra ID) to fully cloud-native identity, B2B guest access, B2C customer identity, and conditional access policies. If you're running enterprise workloads on Azure, you're building on Entra ID.
+
+### Cloud Migration
+Moving workloads to Azure — assessment tools (Azure Migrate), migration strategies (rehost, refactor, rearchitect), database migration (Azure Database Migration Service), and the Azure Well-Architected Framework for migration. The goal: a structured, repeatable process, not a lift-and-shift gamble.
+
+## The Azure Design Philosophy
+
+Azure organizes its services around resource groups (management boundaries), subscriptions (billing and scale boundaries), and management groups (policy inheritance). This hierarchy enforces governance from the top down. Combined with Azure Policy (guardrails) and Azure Blueprints (repeatable compliance environments), Azure bakes governance into the infrastructure layer — a philosophy different from AWS's more additive approach.

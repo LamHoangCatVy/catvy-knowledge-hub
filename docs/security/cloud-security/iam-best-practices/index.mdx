@@ -3,4 +3,86 @@ sidebar_position: 1
 ---
 # IAM Best Practices
 
-Least privilege design, role-based access control, permission boundaries, SCPs, and IAM audit automation for enterprise cloud environments.
+IAM (Identity and Access Management) is the single most important security control in any cloud environment. Every resource, every API call, every data access flows through IAM. A misconfigured IAM policy is a direct path from the public internet to your most sensitive data. Getting IAM right isn't an operations task — it's a fundamental architectural concern.
+
+## Core Concepts
+
+### Identity Types
+- **Users** — Long-term identities for humans. Should have MFA enforced. Should never have long-lived access keys if avoidable — use temporary credentials through SSO instead.
+- **Roles** — Temporary identities that can be assumed by users, services, or external identities. The fundamental unit of least-privilege: a role defines exactly what can be done, and identities assume the role when they need to do it.
+- **Groups** — Collections of users. Assign permissions to groups, add users to groups. Simplifies management at scale.
+- **Policies** — JSON documents that define permissions (who can do what to which resources under what conditions).
+
+### Evaluation Logic
+An IAM policy evaluation follows a strict logic:
+1. **Explicit deny ALWAYS wins** — If any policy explicitly denies an action, access is denied. Period.
+2. **If no explicit deny, an explicit allow is needed** — The default is deny. Without an explicit allow statement, access is denied.
+3. **Permissions boundaries and SCPs** — These don't grant permissions. They limit maximum permissions. Even if a policy allows `s3:*`, an SCP that denies `s3:DeleteBucket` makes bucket deletion impossible.
+
+## Policy Design Principles
+
+### Least Privilege, Not Least Effort
+Every policy should grant exactly the permissions needed and no more:
+
+```
+✗ Bad: {"Action": "s3:*", "Resource": "*"}
+✓ Good: {"Action": ["s3:GetObject", "s3:PutObject"], "Resource": "arn:aws:s3:::my-app-bucket/*"}
+```
+
+The bad example works. Until someone accidentally deletes the bucket, or an attacker who compromises that role exfiltrates every S3 object in your account.
+
+### Resource-Level Permissions
+Grant access to specific resources, not all resources of a type:
+```
+✓ "Allow ec2:StartInstances on instances tagged env=dev"
+✗ "Allow ec2:StartInstances on *"
+```
+
+Tag-based conditions let you grant a developer access to their team's resources without granting access to production infrastructure.
+
+### Condition Keys
+Use policy conditions to add context-aware restrictions:
+- `aws:SourceIp` — Only allow access from corporate IP ranges.
+- `aws:MultiFactorAuthPresent` — Require MFA for sensitive operations.
+- `aws:RequestedRegion` — Restrict actions to approved regions (data residency).
+- `s3:ResourceTag` — Only allow access to buckets with specific tags.
+- `ec2:ResourceTag` — Only allow starting instances in a specific environment.
+
+Conditions transform broad policies into precise ones without creating dozens of nearly identical policies.
+
+### Permission Boundaries
+A permission boundary is an IAM managed policy that defines the maximum permissions an identity can ever receive. Used to delegate administration safely: "You can create IAM roles for your team, but those roles can never exceed these boundaries."
+
+Example: A developer can create roles for their application, but the permission boundary ensures those roles can never access S3 buckets outside their project, regardless of what policies the developer attaches.
+
+### Service Control Policies (SCPs)
+SCPs are the organizational equivalent of permission boundaries. Applied to AWS accounts or organizational units, they define the maximum permissions any identity in that account can have. SCPs are how you enforce:
+- "No one in this organization can delete CloudTrail logs."
+- "No one can create resources outside us-east-1 and eu-west-1."
+- "Root user cannot be used (except in break-glass emergency)."
+
+SCPs don't grant permissions — they only deny. They're preventive guardrails at the organizational level.
+
+## Operational Practices
+
+### Credential Management
+- **No long-lived access keys for humans** — Use IAM Identity Center with temporary credentials. If you absolutely must have access keys, rotate them automatically (90-day maximum).
+- **Service roles for compute** — Lambda functions get execution roles. EC2 instances get instance profiles. ECS tasks get task roles. Never embed credentials in application code or configuration files.
+- **External identity federation** — Federate with your corporate identity provider (Entra ID, Okta, Ping). Users authenticate with their existing corporate credentials. No new IAM users to manage.
+
+### IAM Access Analyzer
+Continuously analyzes resource policies (S3 buckets, IAM roles, KMS keys, Lambda functions, SQS queues) for external access:
+- "This S3 bucket is accessible to any AWS account."
+- "This IAM role can be assumed by an external account."
+- "This KMS key is shared with accounts outside your organization."
+
+Findings that represent intended sharing can be archived. Unexpected findings are security incidents waiting to happen.
+
+### Policy Validation and Testing
+- **IAM Policy Simulator** — Test whether a specific action would be allowed or denied for a given identity. Essential for debugging "why can't this service call that API?"
+- **Infrastructure-as-Code validation** — Tools like cfn-guard, OPA, and Checkov validate IAM policies in Terraform/CloudFormation before deployment.
+- **Access logging and review** — CloudTrail logs every API call. IAM Access Analyzer can generate IAM policies based on actual usage — remove permissions that haven't been exercised in a configurable window.
+
+## Why IAM Is the Most Important Cloud Security Topic
+
+You can have perfect network segmentation, encrypted data at rest and in transit, comprehensive logging, and a WAF in front of every endpoint. If an attacker obtains credentials with `AdministratorAccess`, none of those controls matter. IAM is the gate — and getting it right is the highest-leverage security investment you can make in the cloud.

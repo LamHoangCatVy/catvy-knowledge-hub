@@ -3,4 +3,48 @@ sidebar_position: 1
 ---
 # Multi-Model Routing
 
-Intelligent model selection, cost-performance trade-offs, fallback chains, and routing architectures that dynamically select the optimal model per request.
+Not every question deserves your best model. A query asking "What's 2+2?" doesn't need GPT-4o — it needs any model that can count to four. Multi-model routing is the art and science of selecting the right model for each request, balancing cost, latency, and quality in a system where the "best" model isn't always the right one.
+
+## What Is Multi-Model Routing?
+
+Multi-model routing is an architecture where incoming requests are evaluated and directed to different models based on the request's characteristics. Simple queries go to fast, cheap models. Complex queries go to capable, expensive models. The goal: achieve GPT-4o quality at something closer to GPT-4o-mini cost.
+
+## Routing Strategies
+
+### Classification-Based Routing
+A lightweight classifier model (GPT-4o-mini, or a fine-tuned smaller model) evaluates each query and assigns it to a tier:
+
+- **Tier 1 (Trivial)** — Greetings, small talk, well-known facts. Route to GPT-4o-mini or similar. Cost: ~$0.15/1M tokens.
+- **Tier 2 (Standard)** — Product questions, document Q&A, summarization. Route to GPT-4o-mini with RAG. Cost: ~$0.15--$1/1M tokens.
+- **Tier 3 (Complex)** — Multi-step reasoning, code generation, analysis requiring deep domain knowledge. Route to GPT-4o or o1. Cost: ~$2.50--$15/1M tokens.
+
+The classifier's job: determine which tier a query belongs to with high precision. A false negative (complex query routed to a weak model) degrades quality. A false positive (simple query routed to an expensive model) wastes money. The router must be tuned for your specific cost-quality trade-off.
+
+### Cascade Routing
+Try the cheapest model first. If its response passes a quality check, return it. If not, escalate to the next tier.
+
+- **Step 1**: GPT-4o-mini generates a response.
+- **Step 2**: Quality evaluation (confidence score, consistency check, structured output validation).
+- **Step 3**: If quality check fails or confidence is low → escalate to GPT-4o.
+- **Step 4 (optional)**: If GPT-4o also fails → escalate to o1 for reasoning-heavy tasks.
+
+The cascade is conservative: you only pay the premium when the cheap model demonstrably can't handle the query. The trade-off: added latency for the small percentage of queries that need escalation.
+
+### Embedding-Based Routing
+Compute embeddings for the incoming query and compare against a database of known query categories → model assignments. When a user asks about your return policy, the embedding matches previous FAQ queries that were handled well by GPT-4o-mini → route accordingly. When they ask for a custom contract analysis, the embedding doesn't match any cheap-tier pattern → route to GPT-4o.
+
+This approach works well when you have historical data showing which models handle which types of queries effectively.
+
+### Cost-Budget Routing
+Define a cost budget per user session or per feature. Within the budget, use the best available model. Beyond the budget, fall back to cheaper models or rate-limit. This is useful for freemium products where power users subsidize themselves and free-tier users get basic capability.
+
+## Routing Intelligence: What Makes a Good Router?
+
+A router is only as good as its discrimination. Key metrics:
+- **Precision at each tier** — What percentage of queries routed to the expensive model actually needed it?
+- **Recall for complex queries** — What percentage of genuinely complex queries were correctly routed to the capable model? (Missing these hurts user experience directly.)
+- **Cost efficiency** — How does your blended per-token cost compare to the naive "always use GPT-4o" baseline?
+
+## Why Routing Architecture Matters
+
+Direct cost savings are the obvious win, but the architectural benefit is deeper: routing decouples your application code from specific models. When a new, cheaper model is released that matches GPT-4o-mini's quality on your specific task distribution, you update the router — not every prompt in your codebase. Routing is an abstraction layer that makes your LLM infrastructure evolvable.

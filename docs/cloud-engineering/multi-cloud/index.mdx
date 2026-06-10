@@ -3,4 +3,36 @@ sidebar_position: 1
 ---
 # Multi-Cloud
 
-Cloud-agnostic design patterns, infrastructure management tooling, and cross-provider architecture strategies. Building portable, resilient systems across cloud boundaries.
+Running on multiple cloud providers used to be an accident — M&A, shadow IT, isolated teams making independent choices. Today, it's increasingly a deliberate strategy: avoiding vendor lock-in, optimizing costs through arbitrage, meeting data sovereignty requirements, and leveraging the unique strengths of each provider. But multi-cloud done wrong multiples complexity faster than it adds value.
+
+## What Is Multi-Cloud?
+
+Multi-cloud is an architecture where an organization uses services from two or more public cloud providers (AWS, Azure, GCP, etc.) in a single, coordinated architecture. It's distinct from hybrid cloud (on-premise + cloud) — though they often coexist.
+
+The spectrum ranges from:
+- **Unmanaged multi-cloud** (teams pick their own cloud) — Maximum complexity, no organizational leverage.
+- **Portable workloads** (containerized apps that can run anywhere) — Kubernetes as the abstraction layer.
+- **Best-of-breed services** (Lambda for compute, BigQuery for analytics, Entra ID for identity) — Each cloud for what it does best, with deliberate integration points.
+- **Active-active multi-cloud** (workloads running simultaneously on multiple providers) — The rarest and most sophisticated pattern.
+
+## Why Organizations Go Multi-Cloud
+
+- **Vendor leverage** — Negotiating power. When 80% of your infrastructure is with one provider, they have none. When workloads are portable, you have options.
+- **Resilience** — No single cloud provider is a single point of failure. Regional outages happen. Provider-level outages are rare but catastrophic when you're all-in.
+- **Regulatory compliance** — Some jurisdictions require data to be stored in specific providers or regions. Some contracts require government-certified clouds.
+- **Service specialization** — AWS has the broadest ecosystem. Azure dominates enterprise identity. GCP leads in data analytics and ML. Picking the best tool for each job.
+- **M&A reality** — When your company acquires another, you inherit their cloud infrastructure. Federation is often cheaper and faster than migration.
+
+## Key Challenges
+
+- **Talent** — Few engineers are truly multi-cloud fluent. The operational cognitive load of managing AWS IAM, Azure Entra ID, and GCP IAM simultaneously is real.
+- **Data egress costs** — Moving data between clouds is expensive and slow. The cloud providers designed it that way. Architectural choices must account for data gravity.
+- **Consistent governance** — Each cloud has its own IAM model, networking semantics, and audit logging format. Unified visibility requires a deliberate abstraction layer.
+
+## What We Cover
+
+### Multi-Cloud Patterns
+Design patterns for cloud-agnostic systems: abstraction layers, service mesh across providers, consistent CI/CD pipelines, and strategies for balancing portability with cloud-native advantages.
+
+### Multi-Cloud Tooling
+Terraform, Pulumi, and Crossplane for managing infrastructure across providers. Observability tools that give a unified view. Policy-as-code that enforces governance regardless of where the workload runs.

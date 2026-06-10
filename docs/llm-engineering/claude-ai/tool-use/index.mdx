@@ -3,4 +3,48 @@ sidebar_position: 1
 ---
 # Tool Use
 
-Claude's tool calling capabilities — function definitions, structured outputs, and multi-step tool orchestration for building autonomous AI agents with Anthropic's API.
+Claude's tool use (function calling) capability is what transforms it from a conversational AI into an autonomous agent that can interact with the world. It's not just about calling APIs — it's about knowing when to use a tool, how to structure the call, what to do with the result, and how to recover when the tool fails.
+
+## What Is Tool Use?
+
+Tool use is Claude's ability to recognize that a task requires external information or action, select the appropriate tool from a defined set, construct a valid function call, and incorporate the result into its reasoning. It's the bridge between language understanding and real-world execution.
+
+A developer defines tools through JSON Schema function definitions — specifying the tool's name, description, and parameters. Claude receives these definitions in the system prompt and can invoke them autonomously during a conversation.
+
+## Tool Definition Patterns
+
+### Descriptive Naming
+A tool named `get_weather` is self-documenting. A tool named `api_v2_endpoint_7` forces the model to guess. Claude uses the tool name and description to decide which tool to call — treat tool definitions as part of your prompt engineering strategy.
+
+### Structured Parameters
+JSON Schema lets you define parameter types, required fields, enums, and descriptions. The more precise your schema, the more reliably Claude constructs valid function calls. Use `enum` for categorical parameters (not free-text strings the model might hallucinate), `description` to clarify ambiguous fields, and `required` to prevent omitted parameters.
+
+### Tool Descriptions That Guide Behavior
+A tool description isn't just documentation — it shapes Claude's decision-making.
+- Bad: `"description": "Search the database"`
+- Good: `"description": "Search the customer database by name, email, or account ID. Returns up to 10 matching records. Use this when the user asks about a specific customer's information."`
+
+The description tells Claude when the tool is appropriate, what it expects, and what it returns — all context that improves call quality.
+
+## Multi-Step Tool Orchestration
+
+Simple tool use is one-and-done: query → tool call → response. Production agent workflows require multiple steps:
+
+1. **Parallel calls** — When the user asks "Compare our Q4 revenue with last year's," Claude calls `get_revenue(period: "Q4_2024")` and `get_revenue(period: "Q4_2023")` simultaneously, then synthesizes the results.
+
+2. **Sequential dependency** — When the user asks "Find the customer who placed order #12345 and get their support history," Claude first calls `get_order(order_id: "12345")` to get the customer ID, then calls `get_support_history(customer_id: ...)` with the result.
+
+3. **Error handling** — When a tool returns an error, Claude should recognize it, possibly retry, and explain to the user that the operation failed. The worst failure mode: Claude assumes the error message is the tool's actual response and generates a plausible-but-wrong answer.
+
+4. **Confirmation gates** — For destructive operations (cancel subscription, send email), Claude should present a summary and ask for confirmation before making the final call. This requires a pause-and-wait architecture in your application loop.
+
+## Structuring Tool Results for Claude
+
+How you format tool results significantly impacts Claude's downstream reasoning:
+- Include the tool name and status (success/error) explicitly.
+- For large results, summarize key findings before passing the full data.
+- If a result might be confusing or incomplete, annotate it. "The database returned 0 results — this may indicate the customer doesn't exist, or the query was too narrow."
+
+## Why Tool Use Architecture Matters
+
+Tool use is where LLM applications go from impressive demos to unreliable products. A single hallucinated parameter, a misinterpreted error response, or a missing tool for a common user request — any of these can break the experience. The discipline of tool use engineering is about making these failures rare, recoverable, and graceful.

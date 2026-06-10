@@ -3,4 +3,30 @@ sidebar_position: 1
 ---
 # Math & Theory
 
-The mathematical foundations powering modern LLMs — attention mechanisms, transformer architectures, loss functions, and RLHF reward modeling. Understanding the theory behind the models.
+You don't need to understand backpropagation to use ChatGPT. But if you're debugging why a prompt fails, optimizing inference latency, or choosing between model architectures for a production system, the mathematics is no longer optional — it's your competitive advantage. This section covers the theoretical foundations that explain what LLMs actually do under the hood.
+
+## Why Theory Matters in an API-First World
+
+When models were research artifacts, understanding their internals was mandatory. Today, APIs abstract away everything from training to token generation. So why invest in theory?
+
+- **Debugging intuition** — When a model consistently fails on a specific task, architectural knowledge tells you where to look. Is it a tokenization issue? An attention pattern problem? A limitation of autoregressive generation?
+- **Optimization leverage** — Understanding attention complexity (O(n²) with sequence length) explains why long contexts are expensive and why flash attention matters. Theory connects symptoms to root causes.
+- **Architectural decisions** — Should you use a decoder-only model (GPT) or encoder-decoder (T5)? Should you fine-tune or use RAG? These questions have mathematical answers, not just empirical ones.
+- **Future-proofing** — API providers upgrade models constantly. Understanding the underlying math means you can reason about new capabilities and limitations without waiting for blog posts.
+
+## What We Cover
+
+### Attention Mechanisms
+The mathematical core of transformers. Self-attention, multi-head attention, cross-attention, and the innovations that make attention efficient at scale (flash attention, sparse attention). This is where we derive the O(n²) complexity, explain why it matters, and explore the solutions researchers have developed.
+
+### Transformers Deep Dive
+The complete architecture — not just "attention is all you need," but every component: positional encoding (sinusoidal, learned, rotary), layer normalization variants (pre-norm vs. post-norm), residual connections, feed-forward networks, and how they compose into the architecture that powers every modern LLM.
+
+### Loss Functions
+What are we actually optimizing? Cross-entropy loss for next-token prediction, contrastive loss for representation learning, and the reward modeling behind RLHF (Reinforcement Learning from Human Feedback). Understanding loss functions reveals why models behave the way they do — what they're rewarded for and what they're not.
+
+## How to Approach This Section
+
+These pages assume you're comfortable with linear algebra (matrix multiplication, dot products, softmax) and basic probability. I don't assume prior knowledge of deep learning or NLP — concepts are built from first principles, with intuitive explanations alongside the mathematics.
+
+The goal isn't to train a model from scratch. It's to develop the intuitions that make you a better LLM engineer — someone who reasons about model behavior from first principles rather than treating models as magical black boxes that occasionally misbehave.

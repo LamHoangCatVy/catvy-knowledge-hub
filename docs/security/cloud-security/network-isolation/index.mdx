@@ -3,4 +3,72 @@ sidebar_position: 1
 ---
 # Network Isolation
 
-VPC security architecture — security groups, NACLs, private subnets, VPC endpoints, and defense-in-depth network segmentation strategies.
+The cloud network is software-defined, globally distributed, and — if misconfigured — wide open to the internet. Network isolation is the practice of designing network architectures that keep your resources reachable by the right entities and invisible to everyone else. In the cloud, your network topology is code. The mistake that exposes a database to the public internet is one misconfigured Terraform resource away.
+
+## The VPC: Your Private Network in the Cloud
+
+A Virtual Private Cloud (VPC) is an isolated virtual network dedicated to your account. It's your private slice of the cloud provider's infrastructure — logically isolated from all other tenants. Within a VPC, you control:
+- IP address ranges (CIDR blocks).
+- Subnets (segments of the VPC in specific availability zones).
+- Route tables (how traffic flows between subnets and to the internet).
+- Network gateways (internet gateway, NAT gateway, VPN gateway, VPC endpoints).
+
+### Public vs. Private Subnets
+
+- **Public subnet** — Has a route to an Internet Gateway. Resources in public subnets can have public IP addresses and receive inbound traffic from the internet. Place load balancers, bastion hosts, and public-facing services here.
+- **Private subnet** — No route to an Internet Gateway. Resources have only private IP addresses. Place databases, internal services, and application servers here. These resources cannot be reached from the internet directly.
+
+A well-architected VPC has resources in private subnets by default. Only components that genuinely need internet accessibility (load balancers, API gateways) live in public subnets.
+
+## Security Groups vs. NACLs
+
+Two layers of network filtering, operating at different levels:
+
+### Security Groups (Stateful)
+Act as virtual firewalls at the **instance level** (EC2 instance, RDS database, Lambda in a VPC). They are stateful: if you allow outbound traffic, the response traffic is automatically allowed back in, regardless of inbound rules.
+
+- **Default: deny all inbound, allow all outbound.**
+- **Whitelist model**: specify what's allowed. Everything else is denied.
+- **Reference other security groups**: allow traffic from any instance with Security Group X, not just specific IPs.
+
+Best practice: define security groups by role (`web-server-sg`, `database-sg`, `monitoring-sg`), not by individual instance. A web server security group allows inbound HTTP/HTTPS from the load balancer's security group. A database security group allows inbound on port 5432 from the web server security group.
+
+### Network ACLs (Stateless)
+Operate at the **subnet level**. They are stateless: inbound and outbound rules are evaluated independently. If you allow inbound traffic, you must explicitly allow the corresponding outbound response.
+
+- **Default: allow all inbound and outbound.**
+- **Use for coarse-grained subnet-level controls**: block specific IP ranges, block specific protocols, add a subnet-wide deny rule that security groups can't override.
+
+Security groups are the primary control for most architectures. NACLs add a subnet-level safety net — useful for blocking known malicious IPs or adding defense-in-depth to sensitive subnets.
+
+## Private Connectivity: Avoiding the Public Internet
+
+The most secure network traffic is traffic that never touches the public internet.
+
+### VPC Endpoints
+Connect to AWS services (S3, DynamoDB, SQS, KMS, etc.) without going through the public internet:
+- **Gateway Endpoints** — Free. Supported for S3 and DynamoDB. Traffic stays on the AWS backbone.
+- **Interface Endpoints (AWS PrivateLink)** — Powered by PrivateLink. Creates an ENI in your subnet with a private IP that maps to the AWS service. Supports most AWS services. Traffic never leaves the AWS network.
+
+VPC Endpoints are the difference between "my EC2 instance in a private subnet can't access S3 without a NAT gateway" (expensive + goes through internet) and "my private instance accesses S3 directly over the AWS backbone" (free + never touches the internet).
+
+### Transit Gateway
+When you have hundreds of VPCs, mesh peering becomes an n² problem — every VPC peered with every other. Transit Gateway provides a hub-and-spoke model: all VPCs connect to the TGW, which routes traffic between them. Combined with routing tables that segment which VPCs can talk to which others, Transit Gateway gives you a centralized network architecture without the complexity of full mesh peering.
+
+### AWS PrivateLink
+Expose a service in your VPC to other VPCs (in your account, other accounts, or even other organizations) without exposing it to the internet. The consumer creates an interface endpoint; the provider creates an endpoint service. Traffic flows entirely within AWS, using private IP addresses, with no internet gateway, NAT, or public IP required.
+
+## Defense-in-Depth Network Architecture
+
+A mature network security posture layers multiple controls:
+
+- **Resource placement** — Everything in private subnets by default. Public subnets are the exception, justified case-by-case.
+- **Security groups** — Instance-level, least-privilege access. Reference other security groups, not IP ranges.
+- **NACLs** — Subnet-level rules as a safety net. Block known bad actors and enforce "thou shalt not" rules.
+- **VPC endpoints** — Keep AWS service traffic off the internet.
+- **VPC Flow Logs** — Record every network flow. Ingest into your SIEM. Alert on anomalous patterns: a database instance suddenly sending data to an IP in a country you don't operate in.
+- **AWS Network Firewall / WAF** — Inspect traffic at the VPC or application layer. Detect and block common exploits (SQL injection, XSS) and known malicious IPs.
+
+## Why Network Isolation Is Foundational
+
+In the cloud, exposing a resource to the internet is one misconfiguration away. An S3 bucket set to public. A security group with `0.0.0.0/0` on port 22. A database with a public IP "temporarily for debugging" that never gets reverted. Network isolation isn't about one control — it's about multiple layers that catch mistakes before they become breaches. The goal: even if one security group is misconfigured, you're protected by the subnet's NACLs. Even if the NACLs are too permissive, the resource is in a private subnet with no internet route. Even if routing is wrong, VPC endpoints keep the traffic on the AWS backbone. Layers. Always layers.

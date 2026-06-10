@@ -3,4 +3,37 @@ sidebar_position: 1
 ---
 # Use Cases
 
-Enterprise applications of OpenAI — from customer support automation to code generation. Production deployment patterns and agent framework integration.
+OpenAI's models are general-purpose, but production deployments are always specific. The difference between a proof-of-concept and a system handling real users isn't the model — it's the architecture around it: prompt templating, retrieval, guardrails, and monitoring.
+
+## Enterprise Patterns
+
+### Customer Support Automation
+The most common enterprise LLM use case for good reason. Models triage tickets, suggest responses to agents, and handle tier-1 inquiries autonomously. The architecture: RAG over knowledge base articles and ticket history, strict guardrails against hallucination (cite sources, say "I don't know" confidently), escalation to humans when confidence drops below threshold.
+
+**Key considerations**: Tone consistency, PII handling, integration with existing ticketing systems (Zendesk, ServiceNow), measuring deflection rate without degrading CSAT.
+
+### Document Intelligence
+Extracting structured data from unstructured documents — contracts, invoices, reports, medical records. GPT-4o with vision reads scanned PDFs that OCR tools struggle with. Structured Outputs mode guarantees JSON schema adherence, making the extraction pipeline deterministic and testable.
+
+**Key considerations**: Multi-page document chunking strategies, handling tables and forms, confidence scoring for extracted fields, human-in-the-loop review for high-stakes documents.
+
+### Code Generation & Review
+GitHub Copilot showed what's possible, but enterprises build custom code assistants tuned to their codebases. Code explanation, test generation, migration (Python 2 → 3, Angular → React), and security review. The key insight: RAG over the codebase (embeddings of all source files) so the model generates code consistent with existing patterns.
+
+**Key considerations**: Licensing and IP concerns, security review of generated code (never trust unfiltered LLM output in production), integration with CI/CD pipelines.
+
+### Agent Frameworks
+Single-turn Q&A is table stakes. Multi-step agents that reason, plan, and execute are the frontier. An agent receives a high-level goal ("research competitor X and summarize findings"), breaks it into subtasks, calls tools (web search, database queries, internal APIs), evaluates results, and synthesizes a response. OpenAI's Assistants API and function calling are the building blocks.
+
+**Key considerations**: Agent loops (how many steps before timeout?), tool reliability (what happens when a tool call fails?), cost containment (a runaway agent can spend $100 before anyone notices), and the fundamental tension between autonomy and control.
+
+## Production Deployment Patterns
+
+### The Guardrails Layer
+Never send unfiltered model output to users. A guardrails layer sits between the model and your application: content safety filters (toxicity, PII, off-topic), output validation (does the JSON match the expected schema?), hallucination checks (do claims have source citations?), and business rule enforcement (can this user see this type of content?).
+
+### Observability
+LLM observability is fundamentally different from traditional application monitoring. Instead of latency and error rates alone, you need: prompt/response logging (for debugging and evaluation), token usage tracking (per user, per feature, per model), quality metrics (is the model getting worse over time?), and drift detection (are user queries changing in ways that degrade performance?).
+
+### Evaluation Pipelines
+You can't improve what you don't measure. Evaluation frameworks (like Braintrust, LangSmith, or custom tools) run test suites against your prompts: accuracy on golden datasets, regression detection (did the model stop handling a specific edge case?), and human annotation pipelines for subjective quality (tone, helpfulness, safety).

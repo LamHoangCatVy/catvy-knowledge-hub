@@ -3,4 +3,59 @@ sidebar_position: 1
 ---
 # Replication Strategies
 
-Leader-follower, multi-leader, and quorum-based replication — trade-offs between consistency, availability, and partition tolerance in distributed databases.
+Replication keeps copies of your data on multiple machines. The promise: if one machine fails, another has the data. In practice, replication is where the hardest distributed systems trade-offs live — because keeping copies in sync across machines with unreliable networks is a problem with no perfect solution.
+
+## Why Replicate?
+
+- **High availability** — A node fails. If its data is replicated elsewhere, the system keeps running. Without replication, every piece of un-replicated data is a single failure away from becoming unavailable.
+- **Read scalability** — Serve reads from replicas, scaling read throughput beyond what a single machine can handle. Your primary handles writes; replicas handle reads.
+- **Geographic locality** — Put replicas closer to users. A user in Tokyo reads from the Tokyo replica instead of crossing the Pacific for every query.
+- **Durability** — Multiple copies mean multiple chances for data to survive hardware failures, corruption, or data center disasters.
+
+## Replication Architectures
+
+### Leader-Follower (Single-Leader)
+The most common pattern. One node is the leader — all writes go to it. The leader propagates changes to followers via a replication log. Followers serve reads.
+
+- **Synchronous replication** — The leader waits for a follower to acknowledge the write before confirming to the client. Guarantees the follower has the data. But: if the synchronous follower is slow or down, writes stall.
+- **Asynchronous replication** — The leader confirms writes to the client immediately and propagates to followers in the background. Fast and resilient to follower failures. But: if the leader fails before replication completes, committed writes are lost.
+- **Semi-synchronous** — One follower is synchronous. Others are asynchronous. If the synchronous follower fails, another becomes synchronous. Best of both worlds: durability guarantee without global write stalls.
+
+**Who uses it**: PostgreSQL (streaming replication), MySQL (replication), MongoDB (replica sets), Kafka (leader partitions with follower replicas).
+
+### Multi-Leader
+Multiple nodes accept writes. Each leader replicates its writes to all other leaders. This is the hardest pattern to get right.
+
+**The fundamental challenge**: write conflicts. Two leaders accept writes to the same record simultaneously. Whose write wins? Conflict resolution strategies include:
+- **Last write wins (LWW)** — Timestamp-based. Simple, but loses data silently if clocks are skewed.
+- **Conflict-free Replicated Data Types (CRDTs)** — Mathematical structures that converge to the same value regardless of write order. Counters, sets, maps — each with merge semantics that guarantee convergence.
+- **Application-level resolution** — Surface conflicts to the application, which has domain knowledge to resolve them. Most flexible, most work.
+
+**Who uses it**: CouchDB, some multi-datacenter PostgreSQL deployments, collaborative editing tools (Google Docs uses operational transforms, a CRDT variant).
+
+### Quorum-Based (Leaderless)
+No distinguished leader. Clients write to multiple nodes and read from multiple nodes. Consistency is determined by quorum sizes:
+
+```
+W (write quorum) + R (read quorum) > N (total replicas)
+```
+
+If W + R > N, there's guaranteed overlap between write and read sets — at least one node that participated in the write will be consulted in the read, ensuring the read sees the latest value.
+
+- **Typical configuration**: N=3, W=2, R=2. Write must reach 2 of 3 nodes. Read must reach 2 of 3 nodes. Can tolerate one node failure.
+- **Sloppy quorum and hinted handoff**: If a designated node is unavailable during a write, write to another node temporarily. When the original node recovers, hand off the data. Maintains availability during transient failures.
+
+**Who uses it**: DynamoDB (adjustable consistency), Cassandra (tunable per-operation).
+
+## Consistency Models
+
+Replication inevitably creates a window where replicas disagree. The consistency model defines what the system guarantees during that window:
+
+- **Strong consistency (Linearizability)** — Reads always return the most recent write. As if there's only one copy. Requires synchronous replication or quorum with strict coordination. Highest guarantee, highest latency.
+- **Eventual consistency** — Given enough time without new writes, all replicas converge to the same value. No timing guarantee. Reads may see stale data. Low latency, hard to reason about.
+- **Causal consistency** — Operations that are causally related (e.g., "write comment" happens after "create post") are seen in order. Operations without causal relationship may be seen in any order. A pragmatic middle ground.
+- **Read-your-writes** — A client always sees its own writes, even if other clients might see stale data. Essential for user experience: you update your profile and see the update immediately, even if others see it a second later.
+
+## Why Replication Is So Hard
+
+The tension is irreducible: you can have availability (the system keeps working when nodes fail), or you can have strong consistency (reads always see the latest write), but during a network partition, you cannot have both. Every replication strategy is a bet on which matters more for the specific application — and that bet has real-world consequences when the network inevitably fails.
